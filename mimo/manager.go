@@ -28,13 +28,11 @@ func NewMimoServerManager(conf_path string) *MimoServerManager {
 }
 
 func (manager *MimoServerManager) AddServer(port int) bool {
-	mimo := NewMimoServer(port)
+	mimo := NewMimoServer(port, manager)
 	if _, has := manager.Servers[port]; has {
 		log.Println("ignore add server port:", port)
 		return false
 	}
-	mimo.ConfDir = filepath.Dir(manager.ConfPath)
-
 	log.Println("add server port:", port)
 	manager.Servers[port] = mimo
 	return true
