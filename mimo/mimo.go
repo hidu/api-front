@@ -122,6 +122,8 @@ func (mimo *MimoServer) loadModule(moduleName string) error {
 func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module) func(http.ResponseWriter, *http.Request) {
 	log.Println(mimo.Port, "bind path [", path_uri, "]")
 	return func(rw http.ResponseWriter, req *http.Request) {
+		log.Println(req.URL.String())
+
 		relPath := req.URL.Path[len(path_uri):]
 		req.Header.Del("Connection")
 		body, _ := ioutil.ReadAll(req.Body)
@@ -129,20 +131,27 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 		logData := make(map[string]interface{})
 
 		defer (func() {
-			log.Println(mimo.Port, req.RemoteAddr, req.Method, req.URL.Path, "master:", masterIndex, logData)
+			uri := req.URL.Path
+			if req.URL.RawQuery != "" {
+				uri += "?" + req.URL.RawQuery
+			}
+			log.Println(mimo.Port, req.RemoteAddr, req.Method, uri, "master:", masterIndex, logData)
 		})()
 
 		var wg sync.WaitGroup
-
+		
+		addrInfo:=strings.Split(req.RemoteAddr,":")
+		
 		for n, back := range backs {
 			wg.Add(1)
+			log.Println("back is", back.Url)
 			go (func(index int, back *Backend, rw http.ResponseWriter, req *http.Request) {
 				defer wg.Done()
 
 				start := time.Now()
-				isMaster := masterIndex == n
+				isMaster := masterIndex == index
 				backLog := make(map[string]interface{})
-				logData[fmt.Sprintf("back_%d", n)] = backLog
+				logData[fmt.Sprintf("back_%d", index)] = backLog
 
 				backLog["isMaster"] = isMaster
 
@@ -159,17 +168,20 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 
 				reqNew, _ := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 				reqNew.Header = req.Header
+				reqNew.Header.Set("HTTP_X_FORWARDED_FOR",addrInfo[0])
 
 				httpClient := &http.Client{}
 
-				httpClient.Timeout = time.Duration(mod.TimeoutMs) * time.Microsecond
+				httpClient.Timeout = time.Duration(mod.TimeoutMs) * time.Millisecond
 
 				resp, err := httpClient.Do(reqNew)
 
 				if err != nil {
-					log.Println("Error Fetching "+urlNew, err)
-					rw.WriteHeader(http.StatusBadGateway)
-					rw.Write([]byte("mimo error:" + err.Error()))
+					log.Println("fetch "+urlNew, err)
+					if isMaster {
+						rw.WriteHeader(http.StatusBadGateway)
+						rw.Write([]byte("mimo error:" + err.Error()))
+					}
 					return
 				}
 				defer resp.Body.Close()
@@ -180,7 +192,9 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 						}
 					}
 					n, err := io.Copy(rw, resp.Body)
-					log.Println("io.copy:", n, err)
+					if(err!=nil){
+						log.Println(urlNew,"io.copy:", n, err)
+					}
 				}
 
 				used := time.Now().Sub(start)
@@ -191,3 +205,5 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 
 	}
 }
+
+

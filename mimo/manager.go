@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
+	"os"
 )
 
 var randR *rand.Rand
@@ -17,6 +18,7 @@ func init() {
 type MimoServerManager struct {
 	Servers  map[int]*MimoServer
 	ConfPath string
+	LogFile *os.File
 }
 
 func NewMimoServerManager(conf_path string) *MimoServerManager {
@@ -47,6 +49,11 @@ func (manager *MimoServerManager) AddServer(port int) bool {
 }
 
 func (manager *MimoServerManager) Start() {
+
+	logPath:=filepath.Dir(filepath.Dir(manager.ConfPath))+"/log/mimo.log"
+	manager.setupLog(logPath)
+	defer manager.LogFile.Close()
+	
 	var wg sync.WaitGroup
 	for _, mimo := range manager.Servers {
 		wg.Add(1)
@@ -56,4 +63,27 @@ func (manager *MimoServerManager) Start() {
 		})(mimo)
 	}
 	wg.Wait()
+}
+
+func (manager *MimoServerManager) setupLog(logPath string) {
+	logPathDay:=logPath+"."+time.Now().Format("20060102")
+	DirCheck(logPathDay)
+	var err error
+	manager.LogFile, err = os.OpenFile(logPathDay, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	if err != nil {
+		log.Fatalln("create log file failed [", logPathDay, "]", err)
+	}
+	log.SetOutput(manager.LogFile)
+	SetInterval(func() {
+		logPathDay:=logPath+"."+time.Now().Format("20060102")
+		if !File_exists(logPathDay) {
+			manager.LogFile.Close()
+			DirCheck(logPathDay)
+			manager.LogFile, err = os.OpenFile(logPathDay, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+			if err != nil {
+				log.Println("create log file failed [", logPathDay, "]", err)
+			}
+			log.SetOutput(manager.LogFile)
+		}
+	}, 30)
 }

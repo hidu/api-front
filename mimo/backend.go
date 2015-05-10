@@ -41,6 +41,7 @@ func (backs *Backends) init() error {
 		if bak.Master {
 			masterTotal++
 		}
+		log.Println("backend url:", bak.Url, "isMaster:", bak.Master)
 	}
 
 	if masterTotal == 0 {

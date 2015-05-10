@@ -1,5 +1,9 @@
 package mimo
 
+import (
+	"log"
+)
+
 type Module struct {
 	Name      string
 	Desc      string              `json:"desc"`
@@ -9,6 +13,7 @@ type Module struct {
 }
 
 func (module *Module) init() {
+	log.Println("start load module [", module.Name, "] conf")
 	for _, backs := range module.Paths {
 		backs.init()
 	}
