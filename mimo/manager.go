@@ -2,9 +2,17 @@ package mimo
 
 import (
 	"log"
+	"math/rand"
 	"path/filepath"
 	"sync"
+	"time"
 )
+
+var randR *rand.Rand
+
+func init() {
+	randR = rand.New(rand.NewSource(time.Now().UnixNano()))
+}
 
 type MimoServerManager struct {
 	Servers  map[int]*MimoServer

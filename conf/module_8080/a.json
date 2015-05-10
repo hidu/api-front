@@ -1,8 +1,12 @@
 {
     "desc":"test",
+    "timeout_ms":3000,
     "paths":{
         "/":[
-            {"url":"http://www.baidu.com/"}
+            {"url":"http://127.0.0.1/a/"}
+        ],
+        "/b":[
+            {"url":"http://127.0.0.1/b/"}
         ]
     }
 }
