@@ -1,4 +1,4 @@
-package mimo
+package proxy
 
 import (
 	"bytes"
@@ -8,7 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"path"
+	//	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -24,6 +24,7 @@ type MimoServer struct {
 	ConfDir string
 	Rw      sync.RWMutex
 	routers Routers
+	web     *WebAdmin
 }
 type Routers []*Router
 
@@ -49,6 +50,7 @@ func NewMimoServer(port int, manager *MimoServerManager) *MimoServer {
 	mimo.ConfDir = fmt.Sprintf("%s/module_%d", filepath.Dir(manager.ConfPath), mimo.Port)
 	mimo.Modules = make(map[string]*Module)
 	mimo.routers = make([]*Router, 0)
+	mimo.web = NewWebAdmin(mimo)
 	return mimo
 }
 
@@ -70,7 +72,7 @@ func (mimo *MimoServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			return
 		}
 	}
-	rw.Write([]byte("hello http mimi transfer"))
+	mimo.web.ServeHTTP(rw, req)
 }
 
 func (mimo *MimoServer) loadAllModules() {
@@ -80,35 +82,39 @@ func (mimo *MimoServer) loadAllModules() {
 		mimo.loadModule(moduleName)
 	}
 }
-
+func (mimo *MimoServer) newModule(name string) *Module {
+	mod := NewModule()
+	mod.Name = name
+	mod.ConfPath = fmt.Sprintf("%s/%s.json", mimo.ConfDir, name)
+	return mod
+}
 func (mimo *MimoServer) loadModule(moduleName string) error {
 	mimo.Rw.Lock()
 	defer mimo.Rw.Unlock()
 
-	conf_path := fmt.Sprintf("%s/%s.json", mimo.ConfDir, moduleName)
-	relName, _ := filepath.Rel(filepath.Dir(mimo.ConfDir), conf_path)
+	mod := mimo.newModule(moduleName)
+
+	relName, _ := filepath.Rel(filepath.Dir(mimo.ConfDir), mod.ConfPath)
 	logMsg := fmt.Sprint("load module [", relName, "]")
 
 	log.Println(logMsg, "start")
 
-	data, err := ioutil.ReadFile(conf_path)
+	data, err := ioutil.ReadFile(mod.ConfPath)
 	if err != nil {
 		log.Println(logMsg, "failed,", err)
 		return err
 	}
-	var mod *Module
 	err = json.Unmarshal(data, &mod)
 	if err != nil {
 		log.Println(logMsg, "failed,", err)
 		return err
 	}
 	log.Println(logMsg, "success")
-	mod.Name = moduleName
 	mod.init()
 	mimo.Modules[moduleName] = mod
 
 	for path_name, back := range mod.Paths {
-		path_uri := filepath.ToSlash(path.Clean(fmt.Sprintf("/%s/%s", moduleName, path_name)))
+		path_uri := filepath.ToSlash(fmt.Sprintf("/%s/%s", moduleName, strings.TrimLeft(path_name, "/")))
 		router := &Router{
 			Path:   path_uri,
 			Hander: mimo.newHandler(path_uri, back, mod),
@@ -139,9 +145,9 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 		})()
 
 		var wg sync.WaitGroup
-		
-		addrInfo:=strings.Split(req.RemoteAddr,":")
-		
+
+		addrInfo := strings.Split(req.RemoteAddr, ":")
+
 		for n, back := range backs {
 			wg.Add(1)
 			log.Println("back is", back.Url)
@@ -168,7 +174,7 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 
 				reqNew, _ := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 				reqNew.Header = req.Header
-				reqNew.Header.Set("HTTP_X_FORWARDED_FOR",addrInfo[0])
+				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
 
 				httpClient := &http.Client{}
 
@@ -180,6 +186,7 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 					log.Println("fetch "+urlNew, err)
 					if isMaster {
 						rw.WriteHeader(http.StatusBadGateway)
+						rw.Header().Set("back-url", urlNew)
 						rw.Write([]byte("mimo error:" + err.Error()))
 					}
 					return
@@ -191,9 +198,10 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 							rw.Header().Add(k, v)
 						}
 					}
+					rw.Header().Set("back-url", urlNew)
 					n, err := io.Copy(rw, resp.Body)
-					if(err!=nil){
-						log.Println(urlNew,"io.copy:", n, err)
+					if err != nil {
+						log.Println(urlNew, "io.copy:", n, err)
 					}
 				}
 
@@ -206,4 +214,9 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 	}
 }
 
-
+func (mimo *MimoServer) getModuleByName(name string) *Module {
+	if mod, has := mimo.Modules[name]; has {
+		return mod
+	}
+	return nil
+}

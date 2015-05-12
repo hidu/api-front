@@ -2,13 +2,13 @@ package main
 
 import (
 	"flag"
-	"github.com/hidu/mimo/mimo"
+	"github.com/hidu/api-proxy/proxy"
 )
 
-var conf_path = flag.String("conf", "./conf/mimo.json", "server conf path")
+var conf_path = flag.String("conf", "./conf/proxy.json", "server conf path")
 
 func main() {
 	flag.Parse()
-	manager := mimo.NewMimoServerManager(*conf_path)
+	manager := proxy.NewMimoServerManager(*conf_path)
 	manager.Start()
 }

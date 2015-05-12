@@ -1,12 +1,21 @@
 {
-    "desc":"test",
-    "timeout_ms":3000,
-    "paths":{
-        "/":[
-            {"url":"http://127.0.0.1/a/"}
+    "note": "",
+    "timeout_ms": 3000,
+    "paths": {
+        "/": [
+            {
+                "url": "http://127.0.0.1/a/",
+                "master": true,
+                "note": "nihao"
+            }
         ],
-        "/b":[
-            {"url":"http://127.0.0.1/b/"}
-        ]
+        "/b": [
+            {
+                "url": "http://127.0.0.1/b/",
+                "master": false,
+                "note": ""
+            }
+        ],
+        "请修改,如: /": []
     }
 }

@@ -1,4 +1,4 @@
-package mimo
+package proxy
 
 import (
 	"encoding/json"

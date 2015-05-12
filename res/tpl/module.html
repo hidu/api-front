@@ -1,0 +1,141 @@
+<div class="wrap">
+<br/>
+<form method="post" action="/_module" class="form-horizontal">
+<input type="hidden" name="do" value="base">
+<fieldset>
+<legend>模块基础信息</legend>
+
+<input type="hidden" name="module_name_orig" value="{{.module.Name}}">
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">名称:</label>
+    <div class="col-sm-3">
+         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="module_name" value="{{.module.Name}}"> 
+    </div>
+    <span>{{.base_url}}{{.module.Name}}</span>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">描述:</label>
+    <div class="col-sm-3">
+     <input class="form-control" type="text" name="note" value="{{.module.Note}}">
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">超时:</label>
+    <div class="col-sm-3">
+        <input class="form-control" type="text" name="timeout" value="{{.module.TimeoutMs}}">
+    </div>
+    ms
+</div>
+
+<div class="t_c"><input type="submit" value="保 存" class="btn btn-default"></div>
+</fieldset>
+</form>
+
+<!-- -------------------------------------------------- -->
+
+<script>
+function module_backend_li(url,note,master){
+	var opts=[{"label":"是","value":1},{"label":"否","value":0}]
+    var html=$("#module_list_tpl").text().replace("${url}",url).replace("${note}",note);
+	var c="";
+	for(var i=0;i<opts.length;i++){
+		var op=opts[i]
+		c+="<option value='"+op["value"]+"' "+(op["value"]==master?"selected=selected":"")+">"+op["label"]+"</option>";
+	}
+    html=html.replace("${master_options}",c);
+    return html;
+}
+
+function module_backend_li_del(obj){
+    var p=$(obj).parents('.back_url_div');
+    if(p.find("[name=url]").val()=="" ||confirm('确定删除?')){
+        p.remove();
+    };
+    return false;
+}
+</script>
+
+<script type="text/plain" id="module_list_tpl" target="ifr_form">
+<div class="form-inline back_url_div">
+
+<div class="form-group">
+    <label class="col-sm-3 control-label">url:</label>
+    <div class="col-sm-3">
+       <input type="text"  class="form-control" name="url" value="${url}">
+    </div>
+</div>
+
+<div class="form-group">
+ <label class="col-sm-3 control-label">备注:</label>
+ <div class="col-sm-3">
+   <input type="text"  class="form-control" name="note" value="${note}">
+ </div>
+</div>
+
+<div class="form-group">
+  <label class="col-sm-3 control-label">主:<a href="#" title="是否将这个后端的结果返回，同时多个或一个没有时将随机选取一个！">?</a></label>
+  <div class="col-sm-8">
+       <select name="master" class="form-control" >
+            ${master_options}
+       </select>
+       <button onclick="return module_backend_li_del(this)">X</button>
+</div>
+</div>
+
+</div>
+</script>
+
+{{range $name,$backends:=.module.Paths}}
+<form method="post" action="/_module" target="ifr_form">
+
+<input type="hidden" name="do" value="path">
+
+<fieldset>
+
+<legend>名字空间</legend>
+<input type="hidden" name="path_orig" value="{{$name}}">
+<input type="hidden" name="module_name" value="{{$.module.Name}}">
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">绑定路径:</label>
+    <div class="col-sm-3">
+        <input type="text" class="form-control" name="path" value="{{$name}}">
+    </div>
+</div>
+<br/>
+
+
+<div class="form-group">
+ <label class="col-sm-2 control-label">后端服务列表:</label>
+ <div class="col-sm-3">
+    <a href="#" onclick="var h=module_backend_li('','',false);$(this).parents('form').find('div.backend_list').append(h);return false;">add</a>
+ </div>
+</div>
+
+<div class="c"></div>
+<div class="backend_list">
+{{range $i,$backend:=$backends}}
+  <script>
+  document.write(module_backend_li("{{$backend.Url}}","{{$backend.Note}}",{{$backend.Master}}));
+  </script>
+{{end}}
+</div>
+
+<div class="t_c"><input type="submit" value="保 存" class="btn btn-default"></div>
+</fieldset>
+</form>
+
+
+{{end}}
+
+</div>
+
+
+
+<iframe name="ifr_form" style="display:none;"></iframe>  
+
+
+

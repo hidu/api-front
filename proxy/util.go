@@ -1,11 +1,13 @@
-package mimo
+package proxy
 
 import (
-	"time"
-	"os"
 	"log"
+	"os"
 	"path/filepath"
+	"time"
 )
+
+const TIME_FORMAT_STD string = "2006-01-02 15:04:05"
 
 func SetInterval(call func(), sec int64) *time.Ticker {
 	ticker := time.NewTicker(time.Duration(sec) * time.Second)
@@ -28,10 +30,10 @@ func File_exists(file_path string) bool {
 	return os.IsExist(err)
 }
 
-func DirCheck(file_path string){
-	dir:=filepath.Dir(file_path)
-	if(!File_exists(dir)){
-		err:=os.MkdirAll(dir,0777)
-		log.Println("mkdir dir:",dir,err)
+func DirCheck(file_path string) {
+	dir := filepath.Dir(file_path)
+	if !File_exists(dir) {
+		err := os.MkdirAll(dir, 0777)
+		log.Println("mkdir dir:", dir, err)
 	}
 }

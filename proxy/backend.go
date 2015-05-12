@@ -1,15 +1,17 @@
-package mimo
+package proxy
 
 import (
 	"fmt"
 	"log"
 	"net/url"
+	"strings"
 )
 
 type Backend struct {
-	Url    string `json:url`
+	Url    string `json:"url"`
 	Master bool   `json:"master"`
-	Weight int
+	Note   string `json:"note"`
+	Weight int    `json:"-"`
 }
 
 func (back *Backend) init() error {
@@ -27,6 +29,16 @@ func (back *Backend) init() error {
 		back.Weight = 1
 	}
 	return nil
+}
+
+func NewBackend(urlStr string, note string, master bool) (*Backend, error) {
+	back := &Backend{
+		Url:    strings.TrimSpace(urlStr),
+		Master: master,
+		Note:   note,
+	}
+	err := back.init()
+	return back, err
 }
 
 type Backends []*Backend

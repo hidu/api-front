@@ -1,12 +1,12 @@
-package mimo
+package proxy
 
 import (
 	"log"
 	"math/rand"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
-	"os"
 )
 
 var randR *rand.Rand
@@ -18,7 +18,7 @@ func init() {
 type MimoServerManager struct {
 	Servers  map[int]*MimoServer
 	ConfPath string
-	LogFile *os.File
+	LogFile  *os.File
 }
 
 func NewMimoServerManager(conf_path string) *MimoServerManager {
@@ -50,10 +50,10 @@ func (manager *MimoServerManager) AddServer(port int) bool {
 
 func (manager *MimoServerManager) Start() {
 
-	logPath:=filepath.Dir(filepath.Dir(manager.ConfPath))+"/log/mimo.log"
+	logPath := filepath.Dir(filepath.Dir(manager.ConfPath)) + "/log/mimo.log"
 	manager.setupLog(logPath)
 	defer manager.LogFile.Close()
-	
+
 	var wg sync.WaitGroup
 	for _, mimo := range manager.Servers {
 		wg.Add(1)
@@ -66,7 +66,7 @@ func (manager *MimoServerManager) Start() {
 }
 
 func (manager *MimoServerManager) setupLog(logPath string) {
-	logPathDay:=logPath+"."+time.Now().Format("20060102")
+	logPathDay := logPath + "." + time.Now().Format("20060102")
 	DirCheck(logPathDay)
 	var err error
 	manager.LogFile, err = os.OpenFile(logPathDay, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
@@ -75,7 +75,7 @@ func (manager *MimoServerManager) setupLog(logPath string) {
 	}
 	log.SetOutput(manager.LogFile)
 	SetInterval(func() {
-		logPathDay:=logPath+"."+time.Now().Format("20060102")
+		logPathDay := logPath + "." + time.Now().Format("20060102")
 		if !File_exists(logPathDay) {
 			manager.LogFile.Close()
 			DirCheck(logPathDay)

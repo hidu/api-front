@@ -1,0 +1,7 @@
+<div>
+<ul>
+{{range $i,$name:=.moduleNames}}
+    <li><a href="/_module?name={{$name}}">{{$name}}</a></li>
+{{end}}
+</ul>
+</div>
