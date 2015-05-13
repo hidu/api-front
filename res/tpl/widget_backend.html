@@ -1,0 +1,33 @@
+
+<div class="panel panel-default">
+    <div class="panel-heading">
+        一个后端
+        <a href="#" onclick="return module_backend_li_del(this)">删除</a>
+    </div>
+    <div class="panel-body">
+        <div class="row form-group">
+          <div class="col-lg-12">
+            <div class="input-group" title="后端服务url地址,如: http://10.10.10.10/myapi/">
+                <label class="input-group-addon">网址:</label> 
+                <input type="text" class="form-control" name="url" value="${url}" required="required" pattern="^http(s?)://.+" >
+            </div>
+            </div>
+        </div>
+        
+        <div class="row form-group">
+        <div class="col-lg-6">
+            <div class="input-group">
+                <label class="input-group-addon">备注:</label> 
+                <input type="text" class="form-control" name="note" value="${note}">
+            </div>
+        </div>
+        <div class="col-lg-6 form-inline">
+        <div class="form-group">
+                <label class="ontrol-label">返回结果:<a href="#" title="是否将这个后端的结果（http response）返回，同时多个或一个没有时将随机选取一个！">?</a></label> 
+                <select name="master" class="form-control"> ${master_options}</select>
+       </div>
+        </div>
+        </div>
+    </div>
+
+</div>

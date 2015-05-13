@@ -50,7 +50,7 @@ func (manager *MimoServerManager) AddServer(port int) bool {
 
 func (manager *MimoServerManager) Start() {
 
-	logPath := filepath.Dir(filepath.Dir(manager.ConfPath)) + "/log/mimo.log"
+	logPath := filepath.Dir(filepath.Dir(manager.ConfPath)) + "/log/api-proxy.log"
 	manager.setupLog(logPath)
 	defer manager.LogFile.Close()
 

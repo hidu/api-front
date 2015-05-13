@@ -6,6 +6,8 @@ import (
 	"log"
 	"regexp"
 	"sync"
+	"path/filepath"
+	"time"
 )
 
 type Module struct {
@@ -68,7 +70,15 @@ func (module *Module) Save() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(module.ConfPath, data, 0655)
+	oldData,_:=ioutil.ReadFile(module.ConfPath)
+	if(string(oldData)!=string(data)){
+		back_path:=filepath.Dir(module.ConfPath)+"/_back/"+filepath.Base(module.ConfPath)+"."+time.Now().Format(TIME_FORMAT_INT)
+		DirCheck(back_path)
+		err=ioutil.WriteFile(back_path, oldData, 0644)
+		log.Println("backup ",back_path,err)
+	}
+	err=ioutil.WriteFile(module.ConfPath, data, 0644)
+	return err
 }
 
 func (module *Module) Clone() *Module {
@@ -77,5 +87,6 @@ func (module *Module) Clone() *Module {
 	json.Unmarshal(data, &mod)
 	mod.Name = module.Name
 	mod.ConfPath = module.ConfPath
+	mod.Exists=module.Exists
 	return mod
 }

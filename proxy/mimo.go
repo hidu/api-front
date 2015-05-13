@@ -46,16 +46,21 @@ func (rs Routers) Swap(i, j int) {
 	rs[i], rs[j] = rs[j], rs[i]
 }
 
-func (rs Routers) DeleteByModuleName(moduleName string) {
-	newRs := make([]*Router, 0, len(rs))
-	for _, mod := range rs {
-		if mod.ModuleName != moduleName {
-			newRs = append(newRs, mod)
-		} else {
-			log.Println("routers delete ", moduleName, mod.Path)
+func (rs *Routers)String()string{
+	s:="";
+	for _,r:=range *rs{
+		s+=r.ModuleName+" "+r.Path+"\n"
+	}
+	return s
+}
+
+func (rs Routers) getBindPathIndex(bind_path string) int{
+	for i, r := range rs {
+		if r.Path == bind_path {
+			return i
 		}
 	}
-	rs = newRs
+	return -1
 }
 
 func NewMimoServer(port int, manager *MimoServerManager) *MimoServer {
@@ -80,7 +85,7 @@ func (mimo *MimoServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	//	mimo.Rw.RLock()
 	//	defer mimo.Rw.RUnlock()
 	for _, router := range mimo.routers {
-		if strings.HasPrefix(req.URL.Path, router.Path) {
+		if router!=nil && router.Path!="" && strings.HasPrefix(req.URL.Path, router.Path) {
 			router.Hander(rw, req)
 			return
 		}
@@ -123,22 +128,31 @@ func (mimo *MimoServer) loadModule(moduleName string) error {
 		return err
 	}
 	log.Println(logMsg, "success")
+	
 	mod.init()
+	mod.Exists=true
 	mimo.Modules[moduleName] = mod
-	mimo.routers.DeleteByModuleName(moduleName)
 
 	for path_name, back := range mod.Paths {
+		path_uri := filepath.ToSlash(fmt.Sprintf("/%s/%s", moduleName, strings.TrimLeft(path_name, "/")))
+		
+		oldIndex:=mimo.routers.getBindPathIndex(path_uri)
+		
 		if len(back) < 1 {
 			log.Println("apiModule", moduleName, path_name, "no backend,skip")
 			continue
 		}
-		path_uri := filepath.ToSlash(fmt.Sprintf("/%s/%s", moduleName, strings.TrimLeft(path_name, "/")))
 		router := &Router{
 			ModuleName: moduleName,
 			Path:       path_uri,
 			Hander:     mimo.newHandler(path_uri, back, mod),
 		}
-		mimo.routers = append(mimo.routers, router)
+		
+		if(oldIndex<0){
+			mimo.routers = append(mimo.routers, router)
+		}else{
+			mimo.routers[oldIndex]=router
+		}
 	}
 	sort.Sort(mimo.routers)
 	return nil
@@ -146,6 +160,7 @@ func (mimo *MimoServer) loadModule(moduleName string) error {
 
 func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module) func(http.ResponseWriter, *http.Request) {
 	log.Println(mimo.Port, mod.Name, "bind path [", path_uri, "]")
+	
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Println(req.URL.String())
 
@@ -198,9 +213,11 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 				httpClient := &http.Client{}
 
 				httpClient.Timeout = time.Duration(mod.TimeoutMs) * time.Millisecond
-
+				
 				resp, err := httpClient.Do(reqNew)
-
+				
+				rw.Header().Set("Server","api-proxy")
+				
 				if err != nil {
 					log.Println("fetch "+urlNew, err)
 					if isMaster {

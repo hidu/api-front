@@ -1,9 +1,7 @@
 <br>
-<div class="wrap">
 <h2>api列表</h2>
 <ul>
 {{range $i,$name:=.moduleNames}}
     <li><a href="/_api?name={{$name}}">{{$name}}</a></li>
 {{end}}
 </ul>
-</div>

@@ -100,6 +100,8 @@ func (wr *webReq) apiModuleEdit() {
 			mod.Paths["请修改,如: /"] = make(Backends, 0)
 		}
 		wr.values["module"] = mod
+		wr.values["widget_backend"]=render_html("widget_backend.html",wr.values,false)
+		wr.values["api_url"]="http://"+req.Host+"/"+mod.Name
 		wr.render("api.html", true)
 		return
 	}
@@ -187,6 +189,7 @@ func (wr *webReq) moduleBackendSave() {
 		}
 		backends = append(backends, back)
 	}
+	backends.init()
 	if len(backends) > 0 {
 		mod.UpdateBackends(backend_path, backends)
 	} else {

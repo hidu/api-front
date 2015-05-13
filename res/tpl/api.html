@@ -1,6 +1,7 @@
+
 <div class="wrap">
 <br/>
-<form method="post" action="/_api" class="form-horizontal" target="ifr_form">
+<form method="post" action="/_api" class="form-horizontal" target="ifr_form" autocomplete="off">
 <input type="hidden" name="do" value="base">
 <fieldset>
 <legend>api基础信息</legend>
@@ -8,11 +9,13 @@
 <input type="hidden" name="module_name_orig" value="{{.module.Name}}">
 
 <div class="form-group">
-    <label class="col-sm-2 control-label">模块名称:</label>
+    <label class="col-sm-2 control-label">目录:</label>
     <div class="col-sm-3">
-         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="module_name" value="{{.module.Name}}"> 
+         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="module_name" value="{{.module.Name|html}}" placeholder="一级目录，需满足 [\w-]+"> 
     </div>
-    <span>{{.base_url}}{{.module.Name}}</span>
+    {{if .module.Exists}}
+    <span><a href="{{.api_url}}/" target="_blank">{{.api_url}}/</a></span>
+    {{end}}
 </div>
 
 <div class="form-group">
@@ -59,62 +62,36 @@ function module_backend_li_del(obj){
 </script>
 
 <script type="text/plain" id="module_list_tpl" target="ifr_form">
-<div class="form-inline back_url_div">
-
-<div class="form-group">
-    <div class="col-sm-3"></div>
-    <label class="col-sm-1 control-label">url:</label>
-    <div class="col-sm-3">
-       <input type="text"  class="form-control" name="url" value="${url}" style="width:200px">
-    </div>
-</div>
-
-<div class="form-group">
-
- <label class="col-sm-3 control-label">备注:</label>
- <div class="col-sm-3">
-   <input type="text"  class="form-control" name="note" value="${note}">
- </div>
-</div>
-
-<div class="form-group">
-  <label class="col-sm-3 control-label">主:<a href="#" title="是否将这个后端的结果返回，同时多个或一个没有时将随机选取一个！">?</a></label>
-  <div class="col-sm-8">
-       <select name="master" class="form-control" >
-            ${master_options}
-       </select>
-       <button onclick="return module_backend_li_del(this)">X</button>
-</div>
-</div>
-
-</div>
+<div class="back_url_div">{{.widget_backend}}</div>
 </script>
 
 {{range $name,$backends:=.module.Paths}}
-<form method="post" action="/_api" target="ifr_form">
+<form method="post" action="/_api" target="ifr_form" autocomplete="off">
 
 <input type="hidden" name="do" value="path">
 
 <fieldset>
 
-<legend>子路径</legend>
+<legend>子目录</legend>
 <input type="hidden" name="path_orig" value="{{$name}}">
 <input type="hidden" name="module_name" value="{{$.module.Name}}">
 
 <div class="form-horizontal">
 
 <div class="form-group">
-    <label class="col-sm-2 control-label">绑定路径:</label>
+    <label class="col-sm-2 control-label">子目录:</label>
     <div class="col-sm-3">
         <input type="text" class="form-control" name="path" value="{{$name}}" required="required" pattern="^/[\w-/]*">
     </div>
-    <span>{{$.base_url}}{{$.module.Name}}{{$name}}</span>
+    {{if $.module.Exists}}
+    <span><a href="{{$.api_url}}{{$name}}" target="_blank">{{$.api_url}}{{$name}}</a></span>
+    {{end}}
 </div>
 
 <div class="form-group">
  <label class="col-sm-2 control-label">后端服务:</label>
    <div class="col-sm-3">
-      <a href="#" onclick="var h=module_backend_li('','',false);$(this).parents('form').find('div.backend_list').append(h);return false;">add</a>
+      <a href="#" class="btn btn-default" onclick="var h=module_backend_li('','',false);$(this).parents('form').find('div.backend_list').append(h);return false;">添加新后端</a>
     </div>
 </div>
 
