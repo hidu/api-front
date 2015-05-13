@@ -3,6 +3,7 @@
 *.a
 *.so
 /log
+/conf/api_*
 # Folders
 _obj
 _test

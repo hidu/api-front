@@ -31,7 +31,7 @@ a{text-decoration: none}
 
 #nav ul#left_submenu li:HOVER{background: white;}
 #nav ul#left_submenu li:HOVER a{color:#446CB3}
-#nav ul li a{display: inline-block;width:50px; color:white;}
+#nav ul li a{display: inline-block; color:white;}
 
 #network-tb td{vertical-align: top}
 

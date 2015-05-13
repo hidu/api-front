@@ -1,14 +1,14 @@
 <div class="wrap">
 <br/>
-<form method="post" action="/_module" class="form-horizontal">
+<form method="post" action="/_api" class="form-horizontal" target="ifr_form">
 <input type="hidden" name="do" value="base">
 <fieldset>
-<legend>模块基础信息</legend>
+<legend>api基础信息</legend>
 
 <input type="hidden" name="module_name_orig" value="{{.module.Name}}">
 
 <div class="form-group">
-    <label class="col-sm-2 control-label">名称:</label>
+    <label class="col-sm-2 control-label">模块名称:</label>
     <div class="col-sm-3">
          <input class="form-control" type="text" required="required" pattern="[\w-]+" name="module_name" value="{{.module.Name}}"> 
     </div>
@@ -62,13 +62,15 @@ function module_backend_li_del(obj){
 <div class="form-inline back_url_div">
 
 <div class="form-group">
-    <label class="col-sm-3 control-label">url:</label>
+    <div class="col-sm-3"></div>
+    <label class="col-sm-1 control-label">url:</label>
     <div class="col-sm-3">
-       <input type="text"  class="form-control" name="url" value="${url}">
+       <input type="text"  class="form-control" name="url" value="${url}" style="width:200px">
     </div>
 </div>
 
 <div class="form-group">
+
  <label class="col-sm-3 control-label">备注:</label>
  <div class="col-sm-3">
    <input type="text"  class="form-control" name="note" value="${note}">
@@ -89,30 +91,33 @@ function module_backend_li_del(obj){
 </script>
 
 {{range $name,$backends:=.module.Paths}}
-<form method="post" action="/_module" target="ifr_form">
+<form method="post" action="/_api" target="ifr_form">
 
 <input type="hidden" name="do" value="path">
 
 <fieldset>
 
-<legend>名字空间</legend>
+<legend>子路径</legend>
 <input type="hidden" name="path_orig" value="{{$name}}">
 <input type="hidden" name="module_name" value="{{$.module.Name}}">
+
+<div class="form-horizontal">
 
 <div class="form-group">
     <label class="col-sm-2 control-label">绑定路径:</label>
     <div class="col-sm-3">
-        <input type="text" class="form-control" name="path" value="{{$name}}">
+        <input type="text" class="form-control" name="path" value="{{$name}}" required="required" pattern="^/[\w-/]*">
     </div>
+    <span>{{$.base_url}}{{$.module.Name}}{{$name}}</span>
 </div>
-<br/>
-
 
 <div class="form-group">
- <label class="col-sm-2 control-label">后端服务列表:</label>
- <div class="col-sm-3">
-    <a href="#" onclick="var h=module_backend_li('','',false);$(this).parents('form').find('div.backend_list').append(h);return false;">add</a>
- </div>
+ <label class="col-sm-2 control-label">后端服务:</label>
+   <div class="col-sm-3">
+      <a href="#" onclick="var h=module_backend_li('','',false);$(this).parents('form').find('div.backend_list').append(h);return false;">add</a>
+    </div>
+</div>
+
 </div>
 
 <div class="c"></div>
