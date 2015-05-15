@@ -16,9 +16,10 @@ func init() {
 }
 
 type MimoServerManager struct {
-	Servers  map[int]*MimoServer
-	ConfPath string
-	LogFile  *os.File
+	Servers    map[int]*MimoServer
+	ConfPath   string
+	LogFile    *os.File
+	ServerConf *mimoServerConf
 }
 
 func NewMimoServerManager(conf_path string) *MimoServerManager {
@@ -26,25 +27,27 @@ func NewMimoServerManager(conf_path string) *MimoServerManager {
 	manager.Servers = make(map[int]*MimoServer)
 	serConf := loadServerConf(conf_path)
 
+	manager.ServerConf = serConf
 	manager.ConfPath, _ = filepath.Abs(conf_path)
 
 	for _, signConf := range serConf.Server {
 		if !signConf.Enable {
+			log.Println("server ", signConf.Name, signConf.Port, " is not enable,skip")
 			continue
 		}
-		manager.AddServer(signConf.Port)
+		manager.AddServer(signConf)
 	}
 	return manager
 }
 
-func (manager *MimoServerManager) AddServer(port int) bool {
-	mimo := NewMimoServer(port, manager)
-	if _, has := manager.Servers[port]; has {
-		log.Println("ignore add server port:", port)
+func (manager *MimoServerManager) AddServer(conf *ServerConfItem) bool {
+	mimo := NewMimoServer(conf, manager)
+	if _, has := manager.Servers[conf.Port]; has {
+		log.Println("ignore add server port:", conf.Port)
 		return false
 	}
-	log.Println("add server port:", port)
-	manager.Servers[port] = mimo
+	log.Println("add server port:", conf.Port)
+	manager.Servers[conf.Port] = mimo
 	return true
 }
 
@@ -63,6 +66,7 @@ func (manager *MimoServerManager) Start() {
 		})(mimo)
 	}
 	wg.Wait()
+	log.Println("all server shutdown")
 }
 
 func (manager *MimoServerManager) setupLog(logPath string) {

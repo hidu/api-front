@@ -6,11 +6,15 @@ import (
 	"log"
 )
 
+type ServerConfItem struct {
+	Port   int    `json:"port"`
+	Enable bool   `json:"enable"`
+	Name   string `json:"name"`
+	Note   string `json:"note"`
+}
+
 type mimoServerConf struct {
-	Server []struct {
-		Port   int  `json:"port"`
-		Enable bool `json:"enable"`
-	} `json:"server"`
+	Server []*ServerConfItem `json:"server"`
 }
 
 func loadServerConf(conf_path string) *mimoServerConf {

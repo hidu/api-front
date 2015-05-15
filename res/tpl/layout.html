@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="author" content="duwei">
 <meta name="src" content="https://github.com/hidu/mimo">
-<title>api proxy | {{.version}}</title>
+<title>api proxy | {{.version}} | {{.conf.Name}}</title>
 <link rel="stylesheet" href="/_res/css/bootstrap.css">
 <link rel="stylesheet" href="/_res/css/style.css">
 <script type="text/javascript" src="/_res/js/jquery-2.1.4.min.js"></script>
@@ -18,6 +18,7 @@
            <li><a href="/_apis">API列表</a></li>
            <li><a href="/_api">添加API</a></li>
        </ul>
+       <div class="pull-left" style='margin-left:20%;margin-top:8px'>{{.conf.Note}}</div>
        <!-- 
        <div class='right'>
           <ul>
@@ -35,6 +36,7 @@
 </div>
 <div class="clear"></div>
 <div id="body" class="container">
+  
 {{.body}}
 </div>
 <div class="clear"></div>

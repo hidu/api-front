@@ -48,6 +48,8 @@ func (wr *webReq) execute() {
 	req := wr.req
 	wr.values["version"] = 0.1
 	wr.values["base_url"] = "http://" + req.Host + "/"
+	wr.values["server_list"] = wr.web.mimoServer.manager.ServerConf.Server
+	wr.values["conf"] = wr.web.mimoServer.ServerConf
 	if wr.req.URL.Path == "/_api" {
 		wr.apiModuleEdit()
 		return
@@ -71,6 +73,9 @@ func (wr *webReq) apisList() {
 
 func (wr *webReq) alert(msg string) {
 	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s")</script>`, msg)))
+}
+func (wr *webReq) alertAndGo(msg string, urlstr string) {
+	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s");top.location.href="%s";</script>`, msg, urlstr)))
 }
 
 func (wr *webReq) render(tplName string, layout bool) {
@@ -100,8 +105,8 @@ func (wr *webReq) apiModuleEdit() {
 			mod.Paths["请修改,如: /"] = make(Backends, 0)
 		}
 		wr.values["module"] = mod
-		wr.values["widget_backend"]=render_html("widget_backend.html",wr.values,false)
-		wr.values["api_url"]="http://"+req.Host+"/"+mod.Name
+		wr.values["widget_backend"] = render_html("widget_backend.html", wr.values, false)
+		wr.values["api_url"] = "http://" + req.Host + "/" + mod.Name
 		wr.render("api.html", true)
 		return
 	}
@@ -137,13 +142,17 @@ func (wr *webReq) moduleBaseSave() {
 	mod.Note = req.FormValue("note")
 	mod.TimeoutMs = int(timeout)
 
+	if module_name_orig != moduleName {
+		wr.web.mimoServer.deleteModule(module_name_orig)
+	}
+
 	err = mod.Save()
 	if err != nil {
 		wr.alert("保存失败：" + err.Error())
 		return
 	}
 	wr.web.mimoServer.loadModule(moduleName)
-	wr.alert("已经更新！")
+	wr.alertAndGo("已经更新！", "/_api?name="+moduleName)
 }
 
 func (wr *webReq) moduleBackendSave() {
