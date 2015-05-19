@@ -2,23 +2,23 @@ package proxy
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"sort"
 	"strings"
-	"log"
 )
 
 type RouterItem struct {
-	ApiName string
-	BindPath   string
-	Hander     http.HandlerFunc
+	ApiName  string
+	BindPath string
+	Hander   http.HandlerFunc
 }
 
 func NewRouterItem(apiName string, bindPath string, hander http.HandlerFunc) *RouterItem {
 	return &RouterItem{
-		ApiName: apiName,
-		BindPath:   bindPath,
-		Hander:     hander,
+		ApiName:  apiName,
+		BindPath: bindPath,
+		Hander:   hander,
 	}
 }
 
@@ -73,7 +73,7 @@ func (rs *Routers) Sort() {
 
 func (rs *Routers) DeleteRouterByPath(bind_path string) {
 	if router, has := rs.BindMap[bind_path]; has {
-		log.Println("unbind router,apiName=",router.ApiName,"bindPath=",bind_path)
+		log.Println("unbind router,apiName=", router.ApiName, "bindPath=", bind_path)
 		delete(rs.BindMap, bind_path)
 	}
 	rs.Sort()
@@ -81,6 +81,6 @@ func (rs *Routers) DeleteRouterByPath(bind_path string) {
 
 func (rs *Routers) BindRouter(bind_path string, router *RouterItem) {
 	rs.BindMap[bind_path] = router
-	log.Println("bind router,apiName=",router.ApiName,"bindPath=",bind_path)
+	log.Println("bind router,apiName=", router.ApiName, "bindPath=", bind_path)
 	rs.Sort()
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"text/template"
 	"time"
+	"github.com/hidu/goutils"
 )
 
 type WebAdmin struct {
@@ -45,13 +46,20 @@ type webReq struct {
 }
 
 func (wr *webReq) execute() {
-	req := wr.req
 	wr.values["version"] = 0.1
-	wr.values["base_url"] = "http://" + req.Host + "/"
+	wr.values["base_url"] = "http://" + wr.req.Host + "/"
 	wr.values["server_list"] = wr.web.mimoServer.manager.ServerConf.Server
+	host_info := strings.Split(wr.req.Host, ":")
+	if host_info[1] == "" {
+		host_info[1] = "80"
+	}
+	wr.values["host_name"] = host_info[0]
+	port, _ := strconv.ParseInt(host_info[1], 10, 64)
+	wr.values["host_port"] = int(port)
 	wr.values["conf"] = wr.web.mimoServer.ServerConf
+
 	if wr.req.URL.Path == "/_api" {
-		wr.apiModuleEdit()
+		wr.apiEdit()
 		return
 	}
 	if wr.req.URL.Path == "/_apis" {
@@ -62,12 +70,12 @@ func (wr *webReq) execute() {
 }
 
 func (wr *webReq) apisList() {
-	moduleNames := make([]string, 0, 100)
+	apiNames := make([]string, 0, 100)
 
-	for name := range wr.web.mimoServer.Modules {
-		moduleNames = append(moduleNames, name)
+	for name := range wr.web.mimoServer.Apis {
+		apiNames = append(apiNames, name)
 	}
-	wr.values["moduleNames"] = moduleNames
+	wr.values["apiNames"] = apiNames
 	wr.render("list.html", true)
 }
 
@@ -83,30 +91,32 @@ func (wr *webReq) render(tplName string, layout bool) {
 	wr.rw.Write([]byte(html))
 }
 
-func (wr *webReq) apiModuleEdit() {
+var web_tmp_name = "tpl_api_proxy"
+
+func (wr *webReq) apiEdit() {
 	req := wr.req
 	name := req.FormValue("name")
 	if req.Method != "POST" {
-		var mod *Module
+		var api *Api
 		if name != "" {
-			modOld := wr.web.mimoServer.getModuleByName(name)
-			if modOld == nil {
-				wr.values["error"] = "module not exists!  <a href='/_module'>add new</a>"
+			apiOld := wr.web.mimoServer.getApiByName(name)
+			if apiOld == nil {
+				wr.values["error"] = "api not exists!  <a href='/_api'>add new</a>"
 				wr.render("error.html", true)
 				return
 			}
-			mod = modOld.Clone()
+			api = apiOld.Clone()
 		} else {
-			mod = NewModule()
+			api = NewApi()
 		}
-		if len(mod.Paths) == 0 {
-			mod.Paths["/"] = make(Backends, 0)
+		api.Hosts.AddNewHost(NewHost(web_tmp_name, "http://127.0.0.1/", false))
+		if len(api.Paths) == 0 {
+			api.Paths.RegirestNewPath(NewApiPath("/", "default"))
 		} else {
-			mod.Paths["请修改,如: /"] = make(Backends, 0)
+			api.Paths.RegirestNewPath(NewApiPath("/your_path_change", "your_path_change"))
 		}
-		wr.values["module"] = mod
-		wr.values["widget_backend"] = render_html("widget_backend.html", wr.values, false)
-		wr.values["api_url"] = "http://" + req.Host + "/" + mod.Name
+		wr.values["api"] = api
+		wr.values["api_url"] = "http://" + req.Host + "/" + api.Name
 		wr.render("api.html", true)
 		return
 	}
@@ -114,13 +124,13 @@ func (wr *webReq) apiModuleEdit() {
 	do := req.FormValue("do")
 	switch do {
 	case "base":
-		wr.moduleBaseSave()
+		wr.apiBaseSave()
 	case "path":
-		wr.moduleBackendSave()
+		wr.apiPathSave()
 
 	}
 }
-func (wr *webReq) moduleBaseSave() {
+func (wr *webReq) apiBaseSave() {
 	req := wr.req
 	timeout, err := strconv.ParseInt(req.FormValue("timeout"), 10, 64)
 	if err != nil {
@@ -128,92 +138,107 @@ func (wr *webReq) moduleBaseSave() {
 		return
 	}
 
-	moduleName := req.FormValue("module_name")
-	mod := wr.web.mimoServer.getModuleByName(moduleName)
-	module_name_orig := req.FormValue("module_name_orig")
-	if module_name_orig == "" && mod != nil {
+	apiName := req.FormValue("api_name")
+	api := wr.web.mimoServer.getApiByName(apiName)
+	api_name_orig := req.FormValue("api_name_orig")
+	if api_name_orig == "" && api != nil {
 		wr.alert("失败：新创建的模块已经存在")
 		return
 	}
-	if mod == nil {
-		mod = wr.web.mimoServer.newModule(moduleName)
+	if api == nil {
+		api = wr.web.mimoServer.newApi(apiName)
+	}
+	host_name := req.PostForm["host_name"]
+	host_name_orig := req.PostForm["host_name_orig"]
+	host_url := req.PostForm["host_url"]
+	host_note := req.PostForm["host_note"]
+
+	tmp := make(map[string]string)
+	for _, val := range host_name {
+		if _, has := tmp[val]; has {
+			wr.alert("别名:" + val + "，重复了")
+			return
+		}
 	}
 
-	mod.Note = req.FormValue("note")
-	mod.TimeoutMs = int(timeout)
+	for i, name := range host_name {
+		if name == "" || name == web_tmp_name {
+			continue
+		}
+		host := NewHost(name, host_url[i], true)
+		host.Note = host_note[i]
 
-	if module_name_orig != moduleName {
-		wr.web.mimoServer.deleteModule(module_name_orig)
+		//		wr.web.mimoServer.
+		api.Hosts.AddNewHost(host)
+		name_orig := host_name_orig[i]
+		api.HostRename(name_orig, name)
+	}
+	api.HostCheckDelete(host_name)
+
+	if len(host_name) != len(host_url) || len(host_name) != len(host_note) {
+		wr.alert("保存失败：后端服务数据错误")
 	}
 
-	err = mod.Save()
+	if api == nil {
+		api = wr.web.mimoServer.newApi(apiName)
+		indexPath := NewApiPath("/", "default all")
+		api.Paths.RegirestNewPath(indexPath)
+	}
+
+	api.Note = req.FormValue("note")
+	api.TimeoutMs = int(timeout)
+
+	if api_name_orig != apiName {
+		wr.web.mimoServer.deleteApi(api_name_orig)
+	}
+
+	err = api.Save()
 	if err != nil {
 		wr.alert("保存失败：" + err.Error())
 		return
 	}
-	wr.web.mimoServer.loadModule(moduleName)
-	wr.alertAndGo("已经更新！", "/_api?name="+moduleName)
+	wr.web.mimoServer.loadApi(apiName)
+	wr.alertAndGo("已经更新！", "/_api?name="+apiName)
 }
 
-func (wr *webReq) moduleBackendSave() {
+func (wr *webReq) apiPathSave() {
 	req := wr.req
-	moduleName := req.FormValue("module_name")
-	mod := wr.web.mimoServer.getModuleByName(moduleName)
-	if mod == nil {
+	apiName := req.FormValue("api_name")
+	api := wr.web.mimoServer.getApiByName(apiName)
+	if api == nil {
 		wr.alert("api模块不存在")
 		return
 	}
 
 	backend_path := strings.TrimSpace(req.FormValue("path"))
-	if !mod.IsValidPath(backend_path) {
+	if !api.IsValidPath(backend_path) {
 		wr.alert("api绑定路径错误,正确的格式：/ 或者 /a")
 		return
 	}
 	path_orig := strings.TrimSpace(req.FormValue("path_orig"))
 
-	urls := req.Form["url"]
-	notes := req.Form["note"]
-	masters := req.Form["master"]
-	if len(urls) != len(notes) || len(urls) != len(masters) {
-		wr.alert("数据不完整")
-		return
-	}
-	if backend_path != path_orig && mod.isPathRegistered(backend_path) {
+	note := req.FormValue("note")
+
+	if backend_path != path_orig && api.isPathRegistered(backend_path) {
 		wr.alert(backend_path + " 已经存在")
 		return
 	}
+	host_names := req.Form["host_names"]
+	if len(host_names) == 0 {
+		host_names = []string{}
+	}
+	api_path := NewApiPath(backend_path, note)
+	api_path.HostNames = host_names
 
-	backends := make(Backends, 0, len(urls))
-	for i, urlStr := range urls {
-		urlStr = strings.TrimSpace(urlStr)
-		if urlStr == "" {
-			continue
-		}
-		note := notes[i]
-		master := masters[i]
-		back, err := NewBackend(urlStr, note, master == "1")
-		if err != nil {
-			wr.alert(urlStr + " 解析出错:" + err.Error())
-			return
-		}
-		backends = append(backends, back)
-	}
-	backends.init()
-	if len(backends) > 0 {
-		mod.UpdateBackends(backend_path, backends)
-	} else {
-		mod.deletePath(backend_path)
-	}
-	if backend_path != path_orig {
-		mod.deletePath(path_orig)
-	}
+	api.Paths.RegirestNewPath(api_path)
+	api.Paths.PathRename(path_orig, backend_path)
 
-	err := mod.Save()
+	err := api.Save()
 	if err != nil {
 		wr.alert("保存配置失败:" + err.Error())
 		return
 	}
-	wr.web.mimoServer.loadModule(moduleName)
+	wr.web.mimoServer.loadApi(apiName)
 	wr.alert("已经更新！")
 }
 
@@ -232,6 +257,20 @@ func render_html(fileName string, values map[string]interface{}, layout bool) st
 				return fmt.Sprintf("%d", n)
 			}
 		},
+		"in_array": func(name string, names []string) bool {
+			for _, v := range names {
+				if v == name {
+					return true
+				}
+			}
+			return false
+		},
+		"str_eq": func(x, y interface{}) bool {
+
+			ret := fmt.Sprintf("%x", x) == fmt.Sprintf("%x", y)
+			//			fmt.Println("str_eq:",x,y,ret)
+			return ret
+		},
 	}
 
 	tpl, _ := template.New("page").Funcs(myfn).Parse(string(html))
@@ -244,5 +283,5 @@ func render_html(fileName string, values map[string]interface{}, layout bool) st
 		values["body"] = body
 		return render_html("layout.html", values, false)
 	}
-	return body
+	return utils.Html_reduceSpace(body)
 }

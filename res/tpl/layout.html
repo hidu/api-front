@@ -19,8 +19,13 @@
            <li><a href="/_api">添加API</a></li>
        </ul>
        <div class="pull-left" style='margin-left:20%;margin-top:8px'>{{.conf.Note}}</div>
-       <!-- 
        <div class='right'>
+         <select onchange="location.href=location.protocol+'//'+location.hostname+':'+$(this).val()+location.pathname" autocomplete="off">
+        {{range $i,$server:=.server_list}}
+            <option value="{{$server.Port}}" {{if str_eq $server.Port $.host_port}}selected=selected{{end}}>{{$server.Name}}</option>
+        {{end}}
+       </select>
+       <!-- 
           <ul>
             {{if .isLogin}}
               <li>{{.uname}}</li> 
@@ -29,8 +34,8 @@
               <li><a href="/_login">login</a></li>
             {{end}}
          </ul> 
-         </div>
         -->
+         </div>
        <div class="clear"></div>
 </div>
 </div>

@@ -8,9 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	//	"path"
 	"path/filepath"
-	//	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -18,7 +16,7 @@ import (
 
 type MimoServer struct {
 	Enable     bool
-	Modules    map[string]*Module
+	Apis       map[string]*Api
 	manager    *MimoServerManager
 	ConfDir    string
 	Rw         sync.RWMutex
@@ -30,7 +28,7 @@ type MimoServer struct {
 func NewMimoServer(conf *ServerConfItem, manager *MimoServerManager) *MimoServer {
 	mimo := &MimoServer{ServerConf: conf, manager: manager}
 	mimo.ConfDir = fmt.Sprintf("%s/api_%d", filepath.Dir(manager.ConfPath), conf.Port)
-	mimo.Modules = make(map[string]*Module)
+	mimo.Apis = make(map[string]*Api)
 	mimo.routers = NewRouters()
 	mimo.web = NewWebAdmin(mimo)
 	return mimo
@@ -39,7 +37,7 @@ func NewMimoServer(conf *ServerConfItem, manager *MimoServerManager) *MimoServer
 func (mimo *MimoServer) Start() error {
 	addr := fmt.Sprintf(":%d", mimo.ServerConf.Port)
 
-	mimo.loadAllModules()
+	mimo.loadAllApis()
 	log.Println("start server:", addr)
 	err := http.ListenAndServe(addr, mimo)
 	return err
@@ -54,74 +52,76 @@ func (mimo *MimoServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	mimo.web.ServeHTTP(rw, req)
 }
 
-func (mimo *MimoServer) loadAllModules() {
+func (mimo *MimoServer) loadAllApis() {
 	fileNames, _ := filepath.Glob(mimo.ConfDir + "/*.json")
 	for _, fileName := range fileNames {
-		moduleName := strings.TrimRight(filepath.Base(fileName), ".json")
-		mimo.loadModule(moduleName)
+		apiName := strings.TrimRight(filepath.Base(fileName), ".json")
+		mimo.loadApi(apiName)
 	}
 }
-func (mimo *MimoServer) newModule(name string) *Module {
-	mod := NewModule()
-	mod.Name = name
-	mod.ConfPath = fmt.Sprintf("%s/%s.json", mimo.ConfDir, name)
-	return mod
+func (mimo *MimoServer) newApi(name string) *Api {
+	api := NewApi()
+	api.Name = name
+	api.ConfPath = fmt.Sprintf("%s/%s.json", mimo.ConfDir, name)
+	return api
 }
 
-func (mimo *MimoServer) deleteModule(moduleName string) {
+func (mimo *MimoServer) deleteApi(apiName string) {
 	mimo.Rw.Lock()
 	defer mimo.Rw.Unlock()
-	mod, has := mimo.Modules[moduleName]
+	api, has := mimo.Apis[apiName]
 	if !has {
 		return
 	}
-	mod.Delete()
-	delete(mimo.Modules, moduleName)
+	api.Delete()
+	delete(mimo.Apis, apiName)
 	//@todo
 }
 
-func (mimo *MimoServer) loadModule(moduleName string) error {
+func (mimo *MimoServer) loadApi(apiName string) error {
 	mimo.Rw.Lock()
 	defer mimo.Rw.Unlock()
 
-	mod := mimo.newModule(moduleName)
+	api := mimo.newApi(apiName)
 
-	relName, _ := filepath.Rel(filepath.Dir(mimo.ConfDir), mod.ConfPath)
-	logMsg := fmt.Sprint("load module [", relName, "]")
+	relName, _ := filepath.Rel(filepath.Dir(mimo.ConfDir), api.ConfPath)
+	logMsg := fmt.Sprint("load apiule [", relName, "]")
 
 	log.Println(logMsg, "start")
 
-	data, err := ioutil.ReadFile(mod.ConfPath)
+	data, err := ioutil.ReadFile(api.ConfPath)
 	if err != nil {
 		log.Println(logMsg, "failed,", err)
 		return err
 	}
-	err = json.Unmarshal(data, &mod)
+	err = json.Unmarshal(data, &api)
 	if err != nil {
 		log.Println(logMsg, "failed,", err)
 		return err
 	}
 	log.Println(logMsg, "success")
 
-	mod.init()
-	mod.Exists = true
-	mimo.Modules[moduleName] = mod
+	api.init()
+	api.Exists = true
+	mimo.Apis[apiName] = api
 
-	for path_name, back := range mod.Paths {
-		path_uri := filepath.ToSlash(fmt.Sprintf("/%s/%s", moduleName, strings.TrimLeft(path_name, "/")))
-
-		if len(back) < 1 {
-			log.Println("apiModule", moduleName, path_name, "no backend,skip")
+	for _, api_path := range api.Paths {
+		path_uri := filepath.ToSlash(filepath.Clean(fmt.Sprintf("/%s/%s", apiName, api_path.Path)))
+		if strings.HasSuffix(api_path.Path, "/") && !strings.HasSuffix(path_uri, "/") {
+			path_uri = path_uri + "/"
+		}
+		if !api_path.Enable {
+			log.Println("apiApi", apiName, path_uri, "no backend,skip")
 			continue
 		}
-		router := NewRouterItem(moduleName, path_uri, mimo.newHandler(path_uri, back, mod))
+		router := NewRouterItem(apiName, path_uri, mimo.newHandler(path_uri, api_path, api))
 		mimo.routers.BindRouter(path_uri, router)
 	}
 	return nil
 }
 
-func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module) func(http.ResponseWriter, *http.Request) {
-	log.Println(mimo.ServerConf.Port, mod.Name, "bind path [", path_uri, "]")
+func (mimo *MimoServer) newHandler(path_uri string, api_path *ApiPath, api *Api) func(http.ResponseWriter, *http.Request) {
+	log.Println(mimo.ServerConf.Port, api.Name, "bind path [", path_uri, "]")
 
 	return func(rw http.ResponseWriter, req *http.Request) {
 		log.Println(req.URL.String())
@@ -129,35 +129,40 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 		relPath := req.URL.Path[len(path_uri):]
 		req.Header.Del("Connection")
 		body, _ := ioutil.ReadAll(req.Body)
-		masterIndex := backs.GetMasterIndex()
 		logData := make(map[string]interface{})
-
+		masterHost := api_path.GetMasterHostName()
+		if masterHost == "" {
+			masterHost = api.Hosts.GetDefaultHostName()
+		}
 		defer (func() {
 			uri := req.URL.Path
 			if req.URL.RawQuery != "" {
 				uri += "?" + req.URL.RawQuery
 			}
-			log.Println(mimo.ServerConf.Port, req.RemoteAddr, req.Method, uri, "master:", masterIndex, logData)
+			log.Println(mimo.ServerConf.Port, req.RemoteAddr, req.Method, uri, "master:", masterHost, logData)
 		})()
 
 		var wg sync.WaitGroup
 
 		addrInfo := strings.Split(req.RemoteAddr, ":")
 
-		for n, back := range backs {
+		for host_name := range api.Hosts {
 			wg.Add(1)
-			log.Println("back is", back.Url)
-			go (func(index int, back *Backend, rw http.ResponseWriter, req *http.Request) {
+			log.Println("back is", host_name)
+			go (func(host_name string, api_path *ApiPath, rw http.ResponseWriter, req *http.Request) {
 				defer wg.Done()
 
 				start := time.Now()
-				isMaster := masterIndex == index
+				isMaster := masterHost == host_name
 				backLog := make(map[string]interface{})
-				logData[fmt.Sprintf("back_%d", index)] = backLog
+				logData[fmt.Sprintf("back_%s", host_name)] = backLog
 
 				backLog["isMaster"] = isMaster
-
-				urlNew := back.Url
+				host, has := api.Hosts[host_name]
+				if !has {
+					return
+				}
+				urlNew := host.Url
 				if strings.HasSuffix(urlNew, "/") {
 					urlNew += strings.TrimLeft(relPath, "/")
 				} else {
@@ -170,11 +175,14 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 
 				reqNew, _ := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 				reqNew.Header = req.Header
+				if req.Header.Get("Content-Length") != "" {
+					reqNew.ContentLength = int64(len(body))
+				}
 				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
 
 				httpClient := &http.Client{}
 
-				httpClient.Timeout = time.Duration(mod.TimeoutMs) * time.Millisecond
+				httpClient.Timeout = time.Duration(api.TimeoutMs) * time.Millisecond
 
 				resp, err := httpClient.Do(reqNew)
 
@@ -205,16 +213,16 @@ func (mimo *MimoServer) newHandler(path_uri string, backs Backends, mod *Module)
 
 				used := time.Now().Sub(start)
 				backLog["used"] = fmt.Sprintf("%.3f ms", float64(used.Nanoseconds())/1e6)
-			})(n, back, rw, req)
+			})(host_name, api_path, rw, req)
 		}
 		wg.Wait()
 
 	}
 }
 
-func (mimo *MimoServer) getModuleByName(name string) *Module {
-	if mod, has := mimo.Modules[name]; has {
-		return mod
+func (mimo *MimoServer) getApiByName(name string) *Api {
+	if api, has := mimo.Apis[name]; has {
+		return api
 	}
 	return nil
 }

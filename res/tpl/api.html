@@ -4,14 +4,14 @@
 <fieldset>
 <legend>api基础信息</legend>
 
-<input type="hidden" name="module_name_orig" value="{{.module.Name}}">
+<input type="hidden" name="api_name_orig" value="{{.api.Name}}">
 
 <div class="form-group">
     <label class="col-sm-2 control-label">目录:</label>
     <div class="col-sm-3">
-         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="module_name" value="{{.module.Name|html}}" placeholder="一级目录，需满足 [\w-]+"> 
+         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="api_name" value="{{.api.Name|html}}" placeholder="一级目录，需满足 [\w-]+"> 
     </div>
-    {{if .module.Exists}}
+    {{if .api.Exists}}
     <span><a href="{{.api_url}}/" target="_blank">{{.api_url}}/</a></span>
     {{end}}
 </div>
@@ -19,89 +19,110 @@
 <div class="form-group">
     <label class="col-sm-2 control-label">描述:</label>
     <div class="col-sm-3">
-     <input class="form-control" type="text" name="note" value="{{.module.Note}}">
+     <input class="form-control" type="text" name="note" value="{{.api.Note}}">
     </div>
 </div>
 
 <div class="form-group">
     <label class="col-sm-2 control-label">超时:</label>
     <div class="col-sm-3">
-        <input class="form-control" type="text" name="timeout" value="{{.module.TimeoutMs}}">
+        <input class="form-control" type="text" name="timeout" value="{{.api.TimeoutMs}}">
     </div>
     ms
 </div>
+</fieldset>
+
+
+<fieldset id="fieldset_hosts">
+<legend>后端服务  <a onclick="proxy_api_host_add();return false;" href="#">+</a></legend>
+{{range $name,$host:=.api.Hosts}}
+   <div class="{{if not $host.Enable}}hidden api_host_tpl{{end}}">
+      <div class="row form-group ">
+        <div class="col-lg-2">
+            <div class="input-group">
+                <label class="input-group-addon">别名:</label>
+                <input type="text" class="form-control" name="host_name" value="{{$name}}" required>
+                <input type="hidden" name="host_name_orig" value="{{$name}}">
+            </div>
+        </div>
+        
+       <div class="col-lg-6">
+        <div class="input-group" title="后端服务url地址,如: http://10.10.10.10/myapi/">
+            <label class="input-group-addon">网址:</label> 
+            <input type="text" class="form-control" name="host_url" value="{{$host.Url|html}}" required="required" pattern="^http(s?)://.+" >
+        </div>
+       </div>
+       <div class="col-lg-3">
+        <div class="input-group">
+            <label class="input-group-addon">备注:</label> 
+            <input type="text" class="form-control" name="host_note" value="{{$host.Note|html}}" >
+        </div>
+       </div>
+       
+       <div class="col-lg-1">
+           <div class="input-group">
+            <a href="#" onclick="proxy_api_host_delete(this);return false;">X</a>
+           </div>
+       </div>
+       
+     </div>
+  </div>
+{{end}}
+</fieldset>
 
 <div class="t_c"><input type="submit" value="保 存" class="btn btn-default"></div>
-</fieldset>
 </form>
 
 <!-- -------------------------------------------------- -->
 
-<script>
-function module_backend_li(url,note,master){
-	var opts=[{"label":"是","value":1},{"label":"否","value":0}]
-    var html=$("#module_list_tpl").text().replace("${url}",url).replace("${note}",note);
-	var c="";
-	for(var i=0;i<opts.length;i++){
-		var op=opts[i]
-		c+="<option value='"+op["value"]+"' "+(op["value"]==master?"selected=selected":"")+">"+op["label"]+"</option>";
-	}
-    html=html.replace("${master_options}",c);
-    return html;
-}
 
-function module_backend_li_del(obj){
-    var p=$(obj).parents('.back_url_div');
-    if(p.find("[name=url]").val()=="" ||confirm('确定删除?')){
-        p.remove();
-    };
-    return false;
-}
-</script>
+{{if $.api.Exists}}
 
-<script type="text/plain" id="module_list_tpl" target="ifr_form">
-<div class="back_url_div">{{.widget_backend}}</div>
-</script>
-
-{{range $name,$backends:=.module.Paths}}
+{{range $name,$path:=.api.Paths}}
 <form method="post" action="/_api" target="ifr_form" autocomplete="off">
 
 <input type="hidden" name="do" value="path">
 
 <fieldset>
 
-<legend>子目录</legend>
+<legend>子目录
+    <sub><span><a href="{{$.api_url}}{{$name}}" target="_blank">{{$.api_url}}{{$name}}</a></span></sub>
+</legend>
 <input type="hidden" name="path_orig" value="{{$name}}">
-<input type="hidden" name="module_name" value="{{$.module.Name}}">
+<input type="hidden" name="api_name" value="{{$.api.Name}}">
 
-<div class="form-horizontal">
-
-<div class="form-group">
-    <label class="col-sm-2 control-label">子目录:</label>
-    <div class="col-sm-3">
-        <input type="text" class="form-control" name="path" value="{{$name}}" required="required" pattern="^/[\w-/]*">
+<div>
+<div class="row form-group">
+    <div class="col-lg-3">
+        <div class="input-group">
+        <label class="input-group-addon">子目录:</label>
+            <input type="text" class="form-control" name="path" value="{{$name}}" required="required" pattern="^/[\w-/]*">
+        </div>
     </div>
-    {{if $.module.Exists}}
-    <span><a href="{{$.api_url}}{{$name}}" target="_blank">{{$.api_url}}{{$name}}</a></span>
-    {{end}}
-</div>
-
-<div class="form-group">
- <label class="col-sm-2 control-label">后端服务:</label>
-   <div class="col-sm-3">
-      <a href="#" class="btn btn-default" onclick="var h=module_backend_li('','',false);$(this).parents('form').find('div.backend_list').append(h);return false;">添加新后端</a>
+    <div class="col-lg-3">
+        <div class="input-group">
+        <label class="input-group-addon">备注:</label>
+            <input type="text" class="form-control" name="note" value="{{$path.Note}}" required="required">
+        </div>
     </div>
 </div>
 
+<div class="form-group">
+ <label class="control-label" title="是否将这个后端的结果（http response）返回，同时多个或一个没有时将随机选取一个！">返回结果:</label>
+   <div>
+    <div class="input-group">
+   {{range $host_name,$host:=$.api.Hosts}}
+        {{if $host.Enable}}
+             <label class="checkbox-inline" title="{{$host.Note|html}} {{$host.Url|html}}">
+                <input type="checkbox" name="host_names" {{if in_array $host_name $path.HostNames}}checked='checked'{{end}} value="{{$host_name|html}}">{{$host_name|html}}
+             </label> 
+         {{end}}
+   {{end}}
+    </div>
+   
+    </div>
 </div>
 
-<div class="c"></div>
-<div class="backend_list">
-{{range $i,$backend:=$backends}}
-  <script>
-  document.write(module_backend_li("{{$backend.Url}}","{{$backend.Note}}",{{$backend.Master}}));
-  </script>
-{{end}}
 </div>
 
 <div class="t_c"><input type="submit" value="保 存" class="btn btn-default"></div>
@@ -111,10 +132,23 @@ function module_backend_li_del(obj){
 
 {{end}}
 
-
-
+{{end}}
 
 <iframe name="ifr_form" style="display:none;"></iframe>  
 
+<script>
+function proxy_api_host_add(){
+	var tpl=$("#fieldset_hosts .api_host_tpl:eq(0)").clone();
+	var html=tpl.html().replace("tpl_api_proxy","").replace("http://127.0.0.1/","")
+	$("#fieldset_hosts").append(html)
+}
 
-
+function proxy_api_host_delete(obj){
+	var div=$(obj).parents("div.row")
+	if(div.find("input[name=host_url]").val()!="" && !confirm("确定要删除吗")){
+		return;
+	}
+	div.remove()
+	
+}
+</script>
