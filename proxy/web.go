@@ -2,22 +2,24 @@ package proxy
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"github.com/hidu/goutils"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
-	"github.com/hidu/goutils"
 )
 
 type WebAdmin struct {
-	mimoServer *MimoServer
+	apiServer *ApiServer
 }
 
-func NewWebAdmin(mimo *MimoServer) *WebAdmin {
+func NewWebAdmin(mimo *ApiServer) *WebAdmin {
 	ser := &WebAdmin{
-		mimoServer: mimo,
+		apiServer: mimo,
 	}
 	return ser
 }
@@ -46,9 +48,9 @@ type webReq struct {
 }
 
 func (wr *webReq) execute() {
-	wr.values["version"] = 0.1
+	wr.values["version"] = Assest.GetContent("/res/version")
 	wr.values["base_url"] = "http://" + wr.req.Host + "/"
-	wr.values["server_list"] = wr.web.mimoServer.manager.ServerConf.Server
+	wr.values["server_list"] = wr.web.apiServer.manager.ServerConf.Server
 	host_info := strings.Split(wr.req.Host, ":")
 	if host_info[1] == "" {
 		host_info[1] = "80"
@@ -56,7 +58,7 @@ func (wr *webReq) execute() {
 	wr.values["host_name"] = host_info[0]
 	port, _ := strconv.ParseInt(host_info[1], 10, 64)
 	wr.values["host_port"] = int(port)
-	wr.values["conf"] = wr.web.mimoServer.ServerConf
+	wr.values["conf"] = wr.web.apiServer.ServerConf
 
 	if wr.req.URL.Path == "/_api" {
 		wr.apiEdit()
@@ -70,12 +72,7 @@ func (wr *webReq) execute() {
 }
 
 func (wr *webReq) apisList() {
-	apiNames := make([]string, 0, 100)
-
-	for name := range wr.web.mimoServer.Apis {
-		apiNames = append(apiNames, name)
-	}
-	wr.values["apiNames"] = apiNames
+	wr.values["apis"] = wr.web.apiServer.Apis
 	wr.render("list.html", true)
 }
 
@@ -84,6 +81,19 @@ func (wr *webReq) alert(msg string) {
 }
 func (wr *webReq) alertAndGo(msg string, urlstr string) {
 	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s");top.location.href="%s";</script>`, msg, urlstr)))
+}
+
+type JsonResult struct {
+	Code int         `json:"code"`
+	Msg  string      `json:"msg"`
+	Data interface{} `json:"data"`
+}
+
+func (wr *webReq) json(code int, msg string, data interface{}) {
+	ret := &JsonResult{code, msg, data}
+	bs, _ := json.Marshal(ret)
+	wr.rw.Header().Set("Content-Type", "application/json;charset=utf-8")
+	wr.rw.Write(bs)
 }
 
 func (wr *webReq) render(tplName string, layout bool) {
@@ -99,7 +109,7 @@ func (wr *webReq) apiEdit() {
 	if req.Method != "POST" {
 		var api *Api
 		if name != "" {
-			apiOld := wr.web.mimoServer.getApiByName(name)
+			apiOld := wr.web.apiServer.getApiByName(name)
 			if apiOld == nil {
 				wr.values["error"] = "api not exists!  <a href='/_api'>add new</a>"
 				wr.render("error.html", true)
@@ -107,14 +117,12 @@ func (wr *webReq) apiEdit() {
 			}
 			api = apiOld.Clone()
 		} else {
-			api = NewApi()
+			api = NewApi(wr.web.apiServer.ConfDir, "")
 		}
 		api.Hosts.AddNewHost(NewHost(web_tmp_name, "http://127.0.0.1/", false))
-		if len(api.Paths) == 0 {
-			api.Paths.RegirestNewPath(NewApiPath("/", "default"))
-		} else {
-			api.Paths.RegirestNewPath(NewApiPath("/your_path_change", "your_path_change"))
-		}
+		citem, _ := NewCallerItem("")
+		api.Caller.AddNewCallerItem(citem)
+
 		wr.values["api"] = api
 		wr.values["api_url"] = "http://" + req.Host + "/" + api.Name
 		wr.render("api.html", true)
@@ -125,8 +133,8 @@ func (wr *webReq) apiEdit() {
 	switch do {
 	case "base":
 		wr.apiBaseSave()
-	case "path":
-		wr.apiPathSave()
+	case "caller":
+		wr.apiCallerSave()
 
 	}
 }
@@ -139,15 +147,16 @@ func (wr *webReq) apiBaseSave() {
 	}
 
 	apiName := req.FormValue("api_name")
-	api := wr.web.mimoServer.getApiByName(apiName)
+	api := wr.web.apiServer.getApiByName(apiName)
 	api_name_orig := req.FormValue("api_name_orig")
 	if api_name_orig == "" && api != nil {
 		wr.alert("失败：新创建的模块已经存在")
 		return
 	}
 	if api == nil {
-		api = wr.web.mimoServer.newApi(apiName)
+		api = wr.web.apiServer.newApi(apiName)
 	}
+
 	host_name := req.PostForm["host_name"]
 	host_name_orig := req.PostForm["host_name_orig"]
 	host_url := req.PostForm["host_url"]
@@ -168,7 +177,7 @@ func (wr *webReq) apiBaseSave() {
 		host := NewHost(name, host_url[i], true)
 		host.Note = host_note[i]
 
-		//		wr.web.mimoServer.
+		//		wr.web.apiServer.
 		api.Hosts.AddNewHost(host)
 		name_orig := host_name_orig[i]
 		api.HostRename(name_orig, name)
@@ -180,16 +189,16 @@ func (wr *webReq) apiBaseSave() {
 	}
 
 	if api == nil {
-		api = wr.web.mimoServer.newApi(apiName)
-		indexPath := NewApiPath("/", "default all")
-		api.Paths.RegirestNewPath(indexPath)
+		api = wr.web.apiServer.newApi(apiName)
 	}
 
 	api.Note = req.FormValue("note")
 	api.TimeoutMs = int(timeout)
+	api.Enable = req.FormValue("enable") == "1"
+	api.Path = req.FormValue("path")
 
 	if api_name_orig != apiName {
-		wr.web.mimoServer.deleteApi(api_name_orig)
+		wr.web.apiServer.deleteApi(api_name_orig)
 	}
 
 	err = api.Save()
@@ -197,54 +206,69 @@ func (wr *webReq) apiBaseSave() {
 		wr.alert("保存失败：" + err.Error())
 		return
 	}
-	wr.web.mimoServer.loadApi(apiName)
+	wr.web.apiServer.loadApi(apiName)
 	wr.alertAndGo("已经更新！", "/_api?name="+apiName)
 }
 
-func (wr *webReq) apiPathSave() {
+func (wr *webReq) apiCallerSave() {
 	req := wr.req
 	apiName := req.FormValue("api_name")
-	api := wr.web.mimoServer.getApiByName(apiName)
+	api := wr.web.apiServer.getApiByName(apiName)
 	if api == nil {
 		wr.alert("api模块不存在")
 		return
 	}
+	datas := req.Form["datas[]"]
+	callers := NewCaller()
+	for _, qs := range datas {
+		qv, _ := url.ParseQuery(qs)
+		item, _ := NewCallerItem(qv.Get("ip"))
+		item.Note = qv.Get("note")
+		item.Enable = qv.Get("enable") == "1"
+		if qv.Get("host_names") != "" {
+			item.Pref = qv["host_names"]
+		}
+		if qv.Get("host_ignore") != "" {
+			item.Ignore = qv["host_ignore"]
 
-	backend_path := strings.TrimSpace(req.FormValue("path"))
-	if !api.IsValidPath(backend_path) {
-		wr.alert("api绑定路径错误,正确的格式：/ 或者 /a")
-		return
+			for _, ignoreName := range item.Ignore {
+				if In_StringSlice(ignoreName, item.Pref) {
+					wr.json(1, "配置冲突("+item.Ip+")\n屏蔽:"+ignoreName, nil)
+					return
+				}
+			}
+		}
+		callers.AddNewCallerItem(item)
 	}
-	path_orig := strings.TrimSpace(req.FormValue("path_orig"))
-
-	note := req.FormValue("note")
-
-	if backend_path != path_orig && api.isPathRegistered(backend_path) {
-		wr.alert(backend_path + " 已经存在")
-		return
-	}
-	host_names := req.Form["host_names"]
-	if len(host_names) == 0 {
-		host_names = []string{}
-	}
-	api_path := NewApiPath(backend_path, note)
-	api_path.HostNames = host_names
-
-	api.Paths.RegirestNewPath(api_path)
-	api.Paths.PathRename(path_orig, backend_path)
+	api.Caller = callers
 
 	err := api.Save()
 	if err != nil {
-		wr.alert("保存配置失败:" + err.Error())
+		wr.json(1, "保存配置失败:"+err.Error(), nil)
 		return
 	}
-	wr.web.mimoServer.loadApi(apiName)
-	wr.alert("已经更新！")
+	wr.web.apiServer.loadApi(apiName)
+	wr.json(0, "已经更新！", nil)
+}
+
+func reader_html_include(fileName string) string {
+
+	html := Assest.GetContent("/res/tpl/" + fileName)
+	myfn := template.FuncMap{
+		"my_include": func(name string) string {
+			return reader_html_include(name)
+		},
+	}
+	tpl, _ := template.New("page_include").Delims("{%", "%}").Funcs(myfn).Parse(html)
+	var bf []byte
+	w := bytes.NewBuffer(bf)
+	tpl.Execute(w, make(map[string]string))
+	body := w.String()
+	return body
 }
 
 func render_html(fileName string, values map[string]interface{}, layout bool) string {
-
-	html := Assest.GetContent("/res/tpl/" + fileName)
+	html := reader_html_include(fileName)
 	myfn := template.FuncMap{
 		"shortTime": func(tu int64) string {
 			t := time.Unix(tu, 0)
@@ -266,14 +290,15 @@ func render_html(fileName string, values map[string]interface{}, layout bool) st
 			return false
 		},
 		"str_eq": func(x, y interface{}) bool {
-
 			ret := fmt.Sprintf("%x", x) == fmt.Sprintf("%x", y)
-			//			fmt.Println("str_eq:",x,y,ret)
 			return ret
+		},
+		"my_include": func(fileName string) string {
+			return "include (" + fileName + ") with Delims {%my_include %}"
 		},
 	}
 
-	tpl, _ := template.New("page").Funcs(myfn).Parse(string(html))
+	tpl, _ := template.New("page").Funcs(myfn).Parse(html)
 
 	var bf []byte
 	w := bytes.NewBuffer(bf)

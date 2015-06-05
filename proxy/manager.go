@@ -15,16 +15,16 @@ func init() {
 	randR = rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
-type MimoServerManager struct {
-	Servers    map[int]*MimoServer
+type ApiServerManager struct {
+	Servers    map[int]*ApiServer
 	ConfPath   string
 	LogFile    *os.File
-	ServerConf *mimoServerConf
+	ServerConf *apiServerConf
 }
 
-func NewMimoServerManager(conf_path string) *MimoServerManager {
-	manager := &MimoServerManager{}
-	manager.Servers = make(map[int]*MimoServer)
+func NewApiServerManager(conf_path string) *ApiServerManager {
+	manager := &ApiServerManager{}
+	manager.Servers = make(map[int]*ApiServer)
 	serConf := loadServerConf(conf_path)
 
 	manager.ServerConf = serConf
@@ -40,8 +40,8 @@ func NewMimoServerManager(conf_path string) *MimoServerManager {
 	return manager
 }
 
-func (manager *MimoServerManager) AddServer(conf *ServerConfItem) bool {
-	mimo := NewMimoServer(conf, manager)
+func (manager *ApiServerManager) AddServer(conf *ServerConfItem) bool {
+	mimo := NewApiServer(conf, manager)
 	if _, has := manager.Servers[conf.Port]; has {
 		log.Println("ignore add server port:", conf.Port)
 		return false
@@ -51,8 +51,7 @@ func (manager *MimoServerManager) AddServer(conf *ServerConfItem) bool {
 	return true
 }
 
-func (manager *MimoServerManager) Start() {
-
+func (manager *ApiServerManager) Start() {
 	logPath := filepath.Dir(filepath.Dir(manager.ConfPath)) + "/log/api-proxy.log"
 	manager.setupLog(logPath)
 	defer manager.LogFile.Close()
@@ -60,7 +59,7 @@ func (manager *MimoServerManager) Start() {
 	var wg sync.WaitGroup
 	for _, mimo := range manager.Servers {
 		wg.Add(1)
-		go (func(mimo *MimoServer) {
+		go (func(mimo *ApiServer) {
 			mimo.Start()
 			wg.Done()
 		})(mimo)
@@ -69,7 +68,7 @@ func (manager *MimoServerManager) Start() {
 	log.Println("all server shutdown")
 }
 
-func (manager *MimoServerManager) setupLog(logPath string) {
+func (manager *ApiServerManager) setupLog(logPath string) {
 	logPathDay := logPath + "." + time.Now().Format("20060102")
 	DirCheck(logPathDay)
 	var err error
@@ -78,6 +77,7 @@ func (manager *MimoServerManager) setupLog(logPath string) {
 		log.Fatalln("create log file failed [", logPathDay, "]", err)
 	}
 	log.SetOutput(manager.LogFile)
+
 	SetInterval(func() {
 		logPathDay := logPath + "." + time.Now().Format("20060102")
 		if !File_exists(logPathDay) {

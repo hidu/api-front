@@ -1,0 +1,58 @@
+
+<div class="form-group row">
+    <div class="col-lg-3">
+        <div class="input-group">
+            <label class="input-group-addon">&nbsp;&nbsp;IP :&nbsp;</label> 
+            <input type="text" class="form-control" name="ip" value="{{$caller.Ip}}" required="required"  pattern="^([\d\*]{1,3}\.){3}[\d\*]{1,3}$">
+        </div>
+    </div>
+
+    <div class="col-lg-1">
+        <label class="checkbox"> <input type="checkbox" name="enable" value="1" {{if $caller.Enable}}checked=checked{{end}}>
+            启用
+        </label>
+    </div>
+    <div class="col-lg-7">
+        <div class="form-group">
+            <div class="input-group">
+                <label class="input-group-addon">备注:</label> 
+                <input type="text" class="form-control" name="note" value="{{$caller.Note}}" required="required">
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="form-group">
+    <label class="control-label">返回以下后端服务的结果:</label> 
+    <span class="text-info">(多个或0个将随机选取一个)</span>
+    <div>
+        <div class="input-group">
+            {{range $host_name,$host:=$.api.Hosts}} 
+                {{if $host.Enable}} 
+                <label  class="checkbox-inline" title="{{$host.Note|html}} {{$host.Url|html}}">
+                 <input   type="checkbox" name="host_names" {{if  in_array $host_name $caller.Pref}}checked='checked' {{end}} value="{{$host_name|html}}"> {{$host_name|html}}
+                </label>
+                 {{end}}
+              {{end}}
+        </div>
+
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="control-label">屏蔽以下后端服务:</label>
+    <div>
+        <div class="input-group">
+            {{range $host_name,$host:=$.api.Hosts}} 
+            {{if $host.Enable}} 
+            <label   class="checkbox-inline" title="{{$host.Note|html}} {{$host.Url|html}}"> 
+             <input type="checkbox" name="host_ignore" {{if in_array $host_name $caller.Ignore}}checked='checked'   {{end}} value="{{$host_name|html}}">{{$host_name|html}}
+            </label>
+             {{end}} 
+            {{end}}
+        </div>
+
+    </div>
+</div>

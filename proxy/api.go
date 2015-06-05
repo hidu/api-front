@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,61 +13,51 @@ import (
 )
 
 type Api struct {
-	Name        string       `json:"-"`
-	ConfPath    string       `json:"-"`
-	Note        string       `json:"note"`
-	TimeoutMs   int          `json:"timeout_ms"`
-	Hosts       Hosts        `json:"hosts"`
-	Paths       ApiPathMap   `json:"paths"`
-	PathsEnable []string     `json:"-"`
-	rw          sync.RWMutex `json:"-"`
-	Exists      bool         `json:"-"`
+	Name      string       `json:"-"`
+	ConfPath  string       `json:"-"`
+	Path      string       `json:"path"`
+	Note      string       `json:"note"`
+	TimeoutMs int          `json:"timeout_ms"`
+	Hosts     Hosts        `json:"hosts"`
+	Enable    bool         `json:"enable"`
+	Caller    Caller       `json:"caller"`
+	rw        sync.RWMutex `json:"-"`
+	Exists    bool         `json:"-"`
 }
 
-func NewApi() *Api {
+func NewApi(confDir string, apiName string) *Api {
 	api := &Api{
-		Paths: NewApiPathMap(),
-		Hosts: NewHosts(),
+		Name:     apiName,
+		ConfPath: fmt.Sprintf("%s/%s.json", confDir, apiName),
+		Hosts:    NewHosts(),
 	}
 	return api
 }
 
-func (api *Api) init() {
+func (api *Api) init() (err error) {
 	log.Println("start load api [", api.Name, "] conf")
-	for path_uri, pathObj := range api.Paths {
-		pathObj.Path = path_uri
-		pathObj.init()
-	}
+
 	if api.TimeoutMs < 1 {
 		api.TimeoutMs = 5000
 	}
+	if api.Caller == nil {
+		api.Caller = NewCaller()
+		item, _ := NewCallerItem("*.*.*.*")
+		item.Enable = true
+		item.Note = "all"
+		api.Caller.AddNewCallerItem(item)
+	}
+	api.Caller.Sort()
+	err = api.Caller.Init()
+
 	api.Exists = true
+	return err
 }
 
-var pathReg *regexp.Regexp = regexp.MustCompile(`^/[\w-/]*$`)
+var pathReg *regexp.Regexp = regexp.MustCompile(`^/[\w-/]+/$`)
 
 func (api *Api) IsValidPath(myPath string) bool {
 	return pathReg.MatchString(myPath)
-}
-
-func (api *Api) UpdateApiPath(name string, apipath *ApiPath) {
-	api.rw.Lock()
-	defer api.rw.Unlock()
-	api.Paths[name] = apipath
-}
-
-func (api *Api) deletePath(name string) {
-	api.rw.Lock()
-	defer api.rw.Unlock()
-	if _, has := api.Paths[name]; has {
-		delete(api.Paths, name)
-	}
-	log.Println("deletePath", name)
-}
-
-func (api *Api) isPathRegistered(name string) bool {
-	_, has := api.Paths[name]
-	return has
 }
 
 func (api *Api) Save() error {
@@ -110,7 +101,6 @@ func (api *Api) HostRename(orig_name, new_name string) {
 	if _, has := api.Hosts[orig_name]; has {
 		delete(api.Hosts, orig_name)
 	}
-	api.Paths.HostRename(orig_name, new_name)
 }
 
 func (api *Api) HostCheckDelete(host_names []string) {
@@ -125,5 +115,43 @@ func (api *Api) HostCheckDelete(host_names []string) {
 		}
 	}
 
-	api.Paths.HostCheckDelete(tmpMap)
+}
+
+func (api *Api) GetMasterHostName(cpf *CallerPrefConf) string {
+	names := make([]string, 0, len(api.Hosts))
+	for name := range api.Hosts {
+		names = append(names, name)
+	}
+	return api.Caller.GetPrefHostName(names, cpf)
+}
+
+func LoadApiByConf(confDir string, apiName string) (*Api, error) {
+	api := NewApi(confDir, apiName)
+	relName, _ := filepath.Rel(filepath.Dir(confDir), api.ConfPath)
+	logMsg := fmt.Sprint("load api module [", relName, "]")
+
+	log.Println(logMsg, "start")
+
+	data, err := ioutil.ReadFile(api.ConfPath)
+	if err != nil {
+		log.Println(logMsg, "failed,", err)
+		return api, err
+	}
+	err = json.Unmarshal(data, &api)
+	if err != nil {
+		log.Println(logMsg, "failed,", err)
+		return api, err
+	}
+	api.Hosts.Init()
+	log.Println(logMsg, "success")
+	if api.Path == "" {
+		api.Path = fmt.Sprintf("/%s/", apiName)
+	}
+	if !api.IsValidPath(api.Path) {
+		return api, fmt.Errorf("path wrong:", api.Path)
+	}
+
+	err = api.init()
+	api.Exists = true
+	return api, err
 }

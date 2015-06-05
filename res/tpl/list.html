@@ -1,6 +1,6 @@
 <h2>api列表</h2>
 <ul>
-{{range $i,$name:=.apiNames}}
-    <li><a href="/_api?name={{$name}}">{{$name}}</a></li>
+{{range $name,$api:=.apis}}
+    <li><a href="/_api?name={{$name}}">{{$name}}&nbsp;{{$api.Note}} &nbsp;( {{$api.Path}} )</a></li>
 {{end}}
 </ul>

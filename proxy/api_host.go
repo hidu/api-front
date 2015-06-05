@@ -21,6 +21,12 @@ func (hs Hosts) AddNewHost(host *Host) {
 	hs[host.Name] = host
 }
 
+func (hs Hosts) Init() {
+	for name, host := range hs {
+		host.Name = name
+	}
+}
+
 func NewHost(name string, url string, enable bool) *Host {
 	return &Host{
 		Name:   name,

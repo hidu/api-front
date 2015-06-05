@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"time"
@@ -37,4 +38,39 @@ func DirCheck(file_path string) {
 		err := os.MkdirAll(dir, 0777)
 		log.Println("mkdir dir:", dir, err)
 	}
+}
+
+func In_StringSlice(str string, strSli []string) bool {
+	for _, v := range strSli {
+		if str == v {
+			return true
+		}
+	}
+	return false
+}
+
+func copyHeaders(dst, src http.Header) {
+	for k, vs := range src {
+		for _, v := range vs {
+			dst.Add(k, v)
+		}
+	}
+}
+
+func StrSliceRandItem(strsli []string) string {
+	if len(strsli) == 0 {
+		return ""
+	}
+	n := time.Now().UnixNano() % int64(len(strsli))
+	return strsli[n]
+}
+
+func StrSliceIntersectGetOne(a, b []string) string {
+	c := make([]string, 0, len(b))
+	for _, v := range a {
+		if In_StringSlice(v, b) {
+			c = append(c, v)
+		}
+	}
+	return StrSliceRandItem(c)
 }

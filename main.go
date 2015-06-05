@@ -9,6 +9,6 @@ var conf_path = flag.String("conf", "./conf/proxy.json", "server conf path")
 
 func main() {
 	flag.Parse()
-	manager := proxy.NewMimoServerManager(*conf_path)
+	manager := proxy.NewApiServerManager(*conf_path)
 	manager.Start()
 }

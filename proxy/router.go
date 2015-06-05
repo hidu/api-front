@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"sort"
@@ -49,7 +48,7 @@ func (bs BindPathsStruct) Swap(i, j int) {
 }
 
 func (rs *Routers) String() string {
-	return strings.Join(rs.BindPaths, "\n")
+	return strings.Join(rs.BindPaths, ",")
 }
 
 func (rs *Routers) GetRouterByReqPath(url_path string) *RouterItem {
@@ -68,7 +67,7 @@ func (rs *Routers) Sort() {
 	}
 	sort.Sort(bindPaths)
 	rs.BindPaths = bindPaths
-	fmt.Println(rs.String(), "----->\n")
+	log.Println("routers_bind_path:", rs.String())
 }
 
 func (rs *Routers) DeleteRouterByPath(bind_path string) {
