@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/hidu/goutils"
+	"html"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -12,6 +13,12 @@ import (
 	"text/template"
 	"time"
 )
+
+var API_PROXY_VERSION string
+
+func init() {
+	API_PROXY_VERSION = Assest.GetContent("/res/version")
+}
 
 type WebAdmin struct {
 	apiServer *ApiServer
@@ -48,8 +55,8 @@ type webReq struct {
 }
 
 func (wr *webReq) execute() {
-	wr.values["version"] = Assest.GetContent("/res/version")
-	wr.values["base_url"] = "http://" + wr.req.Host + "/"
+	wr.values["version"] = API_PROXY_VERSION
+	wr.values["base_url"] = "http://" + wr.req.Host
 	wr.values["server_list"] = wr.web.apiServer.manager.ServerConf.Server
 	host_info := strings.Split(wr.req.Host, ":")
 	if host_info[1] == "" {
@@ -119,12 +126,15 @@ func (wr *webReq) apiEdit() {
 		} else {
 			api = NewApi(wr.web.apiServer.ConfDir, "")
 		}
-		api.Hosts.AddNewHost(NewHost(web_tmp_name, "http://127.0.0.1/", false))
+		hostsTpl := NewHosts()
+		hostsTpl.AddNewHost(NewHost(web_tmp_name, "http://127.0.0.1/", false))
+
 		citem, _ := NewCallerItem("")
 		api.Caller.AddNewCallerItem(citem)
 
 		wr.values["api"] = api
-		wr.values["api_url"] = "http://" + req.Host + "/" + api.Name
+		wr.values["HostsTpl"] = hostsTpl
+		wr.values["api_url"] = "http://" + req.Host + api.Path
 		wr.render("api.html", true)
 		return
 	}
@@ -148,45 +158,58 @@ func (wr *webReq) apiBaseSave() {
 
 	apiName := req.FormValue("api_name")
 	api := wr.web.apiServer.getApiByName(apiName)
-	api_name_orig := req.FormValue("api_name_orig")
-	if api_name_orig == "" && api != nil {
+	apiNameOrig := req.FormValue("api_name_orig")
+	apiPath := UrlPathClean(req.FormValue("path"))
+	if apiNameOrig == "" && api != nil {
 		wr.alert("失败：新创建的模块已经存在")
 		return
+	}
+
+	apiByPath := wr.web.apiServer.getApiByPath(apiPath)
+
+	if apiByPath != nil {
+		if api == nil || (api != nil && api.Name != apiByPath.Name) {
+			wr.alert(fmt.Sprintf("绑定的路径(%s)和api(%s:%s)重复", apiPath, apiByPath.Name, apiByPath.Note))
+			return
+		}
 	}
 	if api == nil {
 		api = wr.web.apiServer.newApi(apiName)
 	}
 
-	host_name := req.PostForm["host_name"]
-	host_name_orig := req.PostForm["host_name_orig"]
-	host_url := req.PostForm["host_url"]
-	host_note := req.PostForm["host_note"]
+	hostNames := req.PostForm["host_name"]
+	hostNameOrigs := req.PostForm["host_name_orig"]
+	hostUrls := req.PostForm["host_url"]
+	hostNotes := req.PostForm["host_note"]
+	hostEnables := req.PostForm["host_enable"]
+
+	if len(hostNames) != len(hostUrls) || len(hostNames) != len(hostNotes) || len(hostNames) != len(hostEnables) {
+		wr.alert("保存失败：数据格式错误")
+		return
+	}
 
 	tmp := make(map[string]string)
-	for _, val := range host_name {
+	for _, val := range hostNames {
 		if _, has := tmp[val]; has {
 			wr.alert("别名:" + val + "，重复了")
 			return
 		}
 	}
 
-	for i, name := range host_name {
+	for i, name := range hostNames {
 		if name == "" || name == web_tmp_name {
 			continue
 		}
-		host := NewHost(name, host_url[i], true)
-		host.Note = host_note[i]
+		host := NewHost(name, hostUrls[i], true)
+		host.Note = hostNotes[i]
+		host.Enable = hostEnables[i] == "1"
 
 		//		wr.web.apiServer.
 		api.Hosts.AddNewHost(host)
-		name_orig := host_name_orig[i]
-		api.HostRename(name_orig, name)
+		nameOrig := hostNameOrigs[i]
+		api.HostRename(nameOrig, name)
 	}
-	api.HostCheckDelete(host_name)
-
-	if len(host_name) != len(host_url) || len(host_name) != len(host_note) {
-		wr.alert("保存失败：后端服务数据错误")
-	}
+	api.HostCheckDelete(hostNames)
 
 	if api == nil {
 		api = wr.web.apiServer.newApi(apiName)
@@ -195,10 +218,10 @@ func (wr *webReq) apiBaseSave() {
 	api.Note = req.FormValue("note")
 	api.TimeoutMs = int(timeout)
 	api.Enable = req.FormValue("enable") == "1"
-	api.Path = req.FormValue("path")
+	api.Path = apiPath
 
-	if api_name_orig != apiName {
-		wr.web.apiServer.deleteApi(api_name_orig)
+	if apiNameOrig != apiName {
+		wr.web.apiServer.deleteApi(apiNameOrig)
 	}
 
 	err = api.Save()
@@ -268,7 +291,7 @@ func reader_html_include(fileName string) string {
 }
 
 func render_html(fileName string, values map[string]interface{}, layout bool) string {
-	html := reader_html_include(fileName)
+	htmlStr := reader_html_include(fileName)
 	myfn := template.FuncMap{
 		"shortTime": func(tu int64) string {
 			t := time.Unix(tu, 0)
@@ -296,9 +319,12 @@ func render_html(fileName string, values map[string]interface{}, layout bool) st
 		"my_include": func(fileName string) string {
 			return "include (" + fileName + ") with Delims {%my_include %}"
 		},
+		"h": func(str string) string {
+			return html.EscapeString(str)
+		},
 	}
 
-	tpl, _ := template.New("page").Funcs(myfn).Parse(html)
+	tpl, _ := template.New("page").Funcs(myfn).Parse(htmlStr)
 
 	var bf []byte
 	w := bytes.NewBuffer(bf)

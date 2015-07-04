@@ -47,6 +47,9 @@ func (api *Api) init() (err error) {
 		item.Note = "all"
 		api.Caller.AddNewCallerItem(item)
 	}
+	if api.Path != "" {
+		api.Path = UrlPathClean(api.Path)
+	}
 	api.Caller.Sort()
 	err = api.Caller.Init()
 

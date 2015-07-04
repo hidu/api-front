@@ -1,10 +1,13 @@
 package proxy
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -73,4 +76,13 @@ func StrSliceIntersectGetOne(a, b []string) string {
 		}
 	}
 	return StrSliceRandItem(c)
+}
+
+func UrlPathClean(urlPath string) string {
+	str := path.Clean(fmt.Sprintf("/%s/", urlPath))
+	if strings.HasSuffix(str, "/") {
+		return str
+	} else {
+		return fmt.Sprintf("%s/", str)
+	}
 }

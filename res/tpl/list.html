@@ -1,6 +1,29 @@
 <h2>api列表</h2>
-<ul>
+<table class="table table-hover">
+<thead>
+<tr>
+<th>Name</th>
+<th>Path</th>
+<th>Note</th>
+<th>Timeout</th>
+<th>Enable</th>
+<th>Url</th>
+</tr>
+</thead>
+<tbody>
 {{range $name,$api:=.apis}}
-    <li><a href="/_api?name={{$name}}">{{$name}}&nbsp;{{$api.Note}} &nbsp;( {{$api.Path}} )</a></li>
+<tr>
+    <td><a href="/_api?name={{$name}}">{{$name}}</a></td>
+    <td><a href="/_api?name={{$name}}">{{$api.Path}}</a></td>   
+    <td>{{$api.Note|h}}</td>   
+    <td>{{$api.TimeoutMs}}</td>
+    <td>
+    {{if not $api.Enable}}<font color=red>{{end}}
+    {{$api.Enable}}
+    {{if not $api.Enable}}</font>{{end}}
+    </td>
+    <td><a href="{{$.base_url}}{{$api.Path}}" target="_blank">{{$.base_url}}{{$api.Path}}</a></td>   
+</tr>
 {{end}}
-</ul>
+</tbody>
+</table>

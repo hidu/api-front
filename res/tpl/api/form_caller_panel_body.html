@@ -8,9 +8,12 @@
     </div>
 
     <div class="col-lg-1">
-        <label class="checkbox"> <input type="checkbox" name="enable" value="1" {{if $caller.Enable}}checked=checked{{end}}>
-            启用
-        </label>
+        <div class="input-group checkbox">
+            <label> 
+                <input type="checkbox" name="enable" value="1" {{if $caller.Enable}}checked=checked{{end}}>
+                启用
+            </label>
+        </div>
     </div>
     <div class="col-lg-7">
         <div class="form-group">
@@ -43,6 +46,7 @@
 
 <div class="form-group">
     <label class="control-label">屏蔽以下后端服务:</label>
+    <span class="text-info">(不调用这个后端)</span>
     <div>
         <div class="input-group">
             {{range $host_name,$host:=$.api.Hosts}} 

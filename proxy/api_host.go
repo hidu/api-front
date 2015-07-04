@@ -45,3 +45,13 @@ func (hs Hosts) GetDefaultHostName() string {
 	}
 	return ""
 }
+
+func (hs Hosts) ActiveHostsNum() int {
+	num := 0
+	for _, host := range hs {
+		if host.Enable {
+			num = num + 1
+		}
+	}
+	return num
+}

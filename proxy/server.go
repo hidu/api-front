@@ -48,7 +48,12 @@ func (apiServer *ApiServer) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 		router.Hander.ServeHTTP(rw, req)
 		return
 	}
-	apiServer.web.ServeHTTP(rw, req)
+
+	if strings.HasPrefix(req.URL.Path, "/_") || req.URL.Path == "/" {
+		apiServer.web.ServeHTTP(rw, req)
+	} else {
+		http.Error(rw, "Api Not Found (api-proxy)", http.StatusNotFound)
+	}
 }
 
 func (apiServer *ApiServer) loadAllApis() {
@@ -91,6 +96,7 @@ func (apiServer *ApiServer) loadApi(apiName string) error {
 		router := NewRouterItem(apiName, api.Path, apiServer.newHandler(api))
 		apiServer.routers.BindRouter(api.Path, router)
 	} else {
+		apiServer.routers.DeleteRouterByPath(api.Path)
 		log.Printf("api [%s] is not enable,skip", apiName)
 	}
 
@@ -102,11 +108,13 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 	log.Println(apiServer.ServerConf.Port, api.Name, "bind path [", bindPath, "]")
 
 	return func(rw http.ResponseWriter, req *http.Request) {
+		rw.Header().Set("Api-Proxy-Version", API_PROXY_VERSION)
+
 		log.Println(req.URL.String())
 
 		relPath := req.URL.Path[len(bindPath):]
 		req.Header.Del("Connection")
-		body, _ := ioutil.ReadAll(req.Body)
+
 		logData := make(map[string]interface{})
 
 		cpf := NewCallerPrefConfByHttpRequest(req)
@@ -121,12 +129,27 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 			log.Println(apiServer.ServerConf.Port, req.RemoteAddr, req.Method, uri, "master:", masterHost, logData)
 		})()
 
-		var wg sync.WaitGroup
+		rw.Header().Set("Api-Proxy-Master", masterHost)
+
+		if api.Hosts.ActiveHostsNum() == 0 {
+			logData["hostTotal"] = 0
+			rw.WriteHeader(http.StatusBadGateway)
+			rw.Write([]byte("Api has No Backend Hosts"))
+			return
+		}
 
 		addrInfo := strings.Split(req.RemoteAddr, ":")
 		caller := api.Caller.getCallerItemByIp(cpf.Ip)
 
+		body, _ := ioutil.ReadAll(req.Body)
+
+		var wg sync.WaitGroup
 		for _, api_host := range api.Hosts {
+
+			if !api_host.Enable {
+				continue
+			}
+
 			wg.Add(1)
 			go (func(api_host *Host, rw http.ResponseWriter, req *http.Request) {
 				defer wg.Done()
@@ -154,6 +177,8 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				}
 				backLog["url"] = urlNew
 
+				rw.Header().Set("Api-Proxy-Raw-Url", urlNew)
+
 				reqNew, _ := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 				copyHeaders(reqNew.Header, req.Header)
 				//				if req.Header.Get("Content-Length") != "" {
@@ -165,13 +190,10 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				httpClient.Timeout = time.Duration(api.TimeoutMs) * time.Millisecond
 				resp, err := httpClient.Do(reqNew)
 
-				rw.Header().Set("Server", "api-proxy")
-
 				if err != nil {
 					log.Println("fetch "+urlNew, err)
 					if isMaster {
 						rw.WriteHeader(http.StatusBadGateway)
-						rw.Header().Set("api-url", urlNew)
 						rw.Write([]byte("apiServer error:" + err.Error()))
 					}
 					return
@@ -183,7 +205,8 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 							rw.Header().Add(k, v)
 						}
 					}
-					rw.Header().Set("api-url", urlNew)
+
+					rw.WriteHeader(resp.StatusCode)
 					n, err := io.Copy(rw, resp.Body)
 					if err != nil {
 						log.Println(urlNew, "io.copy:", n, err)
@@ -202,6 +225,16 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 func (apiServer *ApiServer) getApiByName(name string) *Api {
 	if api, has := apiServer.Apis[name]; has {
 		return api
+	}
+	return nil
+}
+
+func (apiServer *ApiServer) getApiByPath(bindPath string) *Api {
+	bindPath = UrlPathClean(bindPath)
+	for _, api := range apiServer.Apis {
+		if api.Path == bindPath {
+			return api
+		}
 	}
 	return nil
 }
