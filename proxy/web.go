@@ -72,15 +72,50 @@ func (wr *webReq) execute() {
 		return
 	}
 	if wr.req.URL.Path == "/_apis" {
-		wr.apisList()
+		wr.apiList()
+		return
+	}
+	if wr.req.URL.Path == "/_pref" {
+		wr.apiPref()
 		return
 	}
 	wr.render("index.html", true)
 }
 
-func (wr *webReq) apisList() {
+func (wr *webReq) apiList() {
 	wr.values["apis"] = wr.web.apiServer.Apis
 	wr.render("list.html", true)
+}
+func (wr *webReq) apiPref() {
+	apiName := strings.TrimSpace(wr.req.FormValue("name"))
+	prefHost := strings.TrimSpace(wr.req.FormValue("host"))
+
+	if apiName == "" {
+		wr.json(400, "param empty", nil)
+		return
+	}
+
+	cookieName := ApiCookieName(apiName)
+
+	if prefHost != "" {
+		api := wr.web.apiServer.getApiByName(apiName)
+		if api == nil {
+			wr.json(400, "api not exists", nil)
+			return
+		}
+	}
+
+	cookie := &http.Cookie{Name: cookieName, Value: prefHost, Path: "/"}
+	if prefHost != "" {
+		cookie.Expires = time.Now().AddDate(1, 0, 0)
+		cookie.MaxAge = 86400 * 365
+	} else {
+		cookie.MaxAge = -1
+	}
+
+	http.SetCookie(wr.rw, cookie)
+
+	wr.json(0, "success", prefHost)
 }
 
 func (wr *webReq) alert(msg string) {
@@ -135,6 +170,15 @@ func (wr *webReq) apiEdit() {
 		wr.values["api"] = api
 		wr.values["HostsTpl"] = hostsTpl
 		wr.values["api_url"] = "http://" + req.Host + api.Path
+
+		prefCookie, err := wr.req.Cookie(api.CookieName())
+		cookiePref := ""
+		if err == nil {
+			cookiePref = prefCookie.Value
+		}
+		wr.values["cookiePref"] = strings.Split(cookiePref, ",")
+		wr.values["cookiePrefStr"] = cookiePref
+
 		wr.render("api.html", true)
 		return
 	}
@@ -162,6 +206,11 @@ func (wr *webReq) apiBaseSave() {
 	apiPath := UrlPathClean(req.FormValue("path"))
 	if apiNameOrig == "" && api != nil {
 		wr.alert("失败：新创建的模块已经存在")
+		return
+	}
+
+	if !ApiNameReg.MatchString(apiName) {
+		wr.alert(`模块名称不满足规则：^[\w-]+$`)
 		return
 	}
 

@@ -2,7 +2,7 @@
     <div class="col-lg-2">
         <div class="input-group">
             <label class="input-group-addon">名称:</label>
-            <input type="text" class="form-control" name="host_name" value="{{$name}}" required>
+            <input type="text" class="form-control" name="host_name" value="{{$name}}" required pattern="[\w-]+">
             <input type="hidden" name="host_name_orig" value="{{$name}}">
         </div>
     </div>
@@ -26,7 +26,6 @@
             <input  type="checkbox" class="my-checkbox" data-name="host_enable" value="1" {{if $host.Enable}}checked=checked{{end}}>
             启用
         </label>
-        &nbsp;
        </div>
    </div>
    <div class="col-lg-1">

@@ -103,3 +103,5 @@ tr.redo{color:blue;}
 .error {background:#FBE3E4;color:#D12F19;border-color:#FBC2C4;}
 .notice {background:#FFF6BF;color:#817134;border-color:#FFD324;}
 .success {background:#E6EFC2;color:#529214;border-color:#C6D880;}
+
+.my-panel{border-radius:5px;padding: 5px;padding-bottom:1px; margin-bottom: 5px;margin-top: 5px}

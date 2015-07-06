@@ -19,7 +19,7 @@
         <div class="form-group">
             <div class="input-group">
                 <label class="input-group-addon">备注:</label> 
-                <input type="text" class="form-control" name="note" value="{{$caller.Note}}" required="required">
+                <input type="text" class="form-control" name="note" value="{{$caller.Note|html}}" required="required">
             </div>
         </div>
     </div>

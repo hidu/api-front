@@ -14,8 +14,8 @@
 {{range $name,$api:=.apis}}
 <tr>
     <td><a href="/_api?name={{$name}}">{{$name}}</a></td>
-    <td><a href="/_api?name={{$name}}">{{$api.Path}}</a></td>   
-    <td>{{$api.Note|h}}</td>   
+    <td><a href="/_api?name={{$name}}">{{$api.Path|html}}</a></td>   
+    <td>{{$api.Note|html}}</td>   
     <td>{{$api.TimeoutMs}}</td>
     <td>
     {{if not $api.Enable}}<font color=red>{{end}}

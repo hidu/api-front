@@ -68,6 +68,9 @@ func StrSliceRandItem(strsli []string) string {
 	return strsli[n]
 }
 
+/**
+*get one of a ,which a is in b
+ */
 func StrSliceIntersectGetOne(a, b []string) string {
 	c := make([]string, 0, len(b))
 	for _, v := range a {

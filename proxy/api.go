@@ -59,6 +59,8 @@ func (api *Api) init() (err error) {
 
 var pathReg *regexp.Regexp = regexp.MustCompile(`^/[\w-/]+/$`)
 
+var ApiNameReg *regexp.Regexp = regexp.MustCompile(`^[\w-]+$`)
+
 func (api *Api) IsValidPath(myPath string) bool {
 	return pathReg.MatchString(myPath)
 }
@@ -128,6 +130,10 @@ func (api *Api) GetMasterHostName(cpf *CallerPrefConf) string {
 	return api.Caller.GetPrefHostName(names, cpf)
 }
 
+func (api *Api) CookieName() string {
+	return ApiCookieName(api.Name)
+}
+
 func LoadApiByConf(confDir string, apiName string) (*Api, error) {
 	api := NewApi(confDir, apiName)
 	relName, _ := filepath.Rel(filepath.Dir(confDir), api.ConfPath)
@@ -157,4 +163,8 @@ func LoadApiByConf(confDir string, apiName string) (*Api, error) {
 	err = api.init()
 	api.Exists = true
 	return api, err
+}
+
+func ApiCookieName(apiName string) string {
+	return fmt.Sprintf("%s_%s", API_PREF, apiName)
 }

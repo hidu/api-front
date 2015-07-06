@@ -158,8 +158,8 @@ func (cpf *CallerPrefConf) AddNewPrefHost(hostName string) {
 	}
 }
 
-func (cpf *CallerPrefConf) AddNewPrefHostRaw(str string) {
-	strSlice := strings.Split(str, ",")
+func (cpf *CallerPrefConf) AddNewPrefHostRaw(str string, spitStr string) {
+	strSlice := strings.Split(str, spitStr)
 	for _, v := range strSlice {
 		cpf.AddNewPrefHost(v)
 	}
@@ -167,7 +167,7 @@ func (cpf *CallerPrefConf) AddNewPrefHostRaw(str string) {
 
 var API_PREF string = "api_pref"
 
-func NewCallerPrefConfByHttpRequest(req *http.Request) *CallerPrefConf {
+func NewCallerPrefConfByHttpRequest(req *http.Request, api *Api) *CallerPrefConf {
 	perfConf := &CallerPrefConf{}
 	perfConf.PrefHostName = make([]string, 0)
 
@@ -175,15 +175,15 @@ func NewCallerPrefConfByHttpRequest(req *http.Request) *CallerPrefConf {
 	perfConf.Ip = info[0]
 
 	//get from form data
-	perfConf.AddNewPrefHostRaw(req.FormValue(API_PREF))
+	perfConf.AddNewPrefHostRaw(req.FormValue(API_PREF), ",")
 
 	//get from http header
-	perfConf.AddNewPrefHostRaw(req.Header.Get(API_PREF))
+	perfConf.AddNewPrefHostRaw(req.Header.Get(API_PREF), ",")
 
 	//get from cookie
-	cookie, err := req.Cookie(API_PREF)
+	cookie, err := req.Cookie(api.CookieName())
 	if err == nil {
-		perfConf.AddNewPrefHostRaw(cookie.Value)
+		perfConf.AddNewPrefHostRaw(cookie.Value, ",")
 	}
 
 	return perfConf

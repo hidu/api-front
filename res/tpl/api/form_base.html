@@ -8,14 +8,14 @@
 <div class="form-group">
     <label class="col-sm-2 control-label">模块名称:</label>
     <div class="col-sm-3">
-         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="api_name" value="{{.api.Name|html}}" placeholder="模块，需满足 [\w-]+"> 
+         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="api_name" value="{{.api.Name|html}}" placeholder="需满足 [\w-]+"> 
     </div>
 </div>
 
 <div class="form-group">
     <label class="col-sm-2 control-label">绑定路径:</label>
     <div class="col-sm-3">
-     <input class="form-control" type="text" name="path" value="{{.api.Path}}" pattern="/([\w-]+/)*">
+     <input class="form-control" type="text" name="path" value="{{.api.Path}}" pattern="/([\w-]+/)*" placeholder="需满足/([\w-]+/)">
     </div>
      {{if .api.Exists}}
     <span><a href="{{.api_url}}" target="_blank">{{.api_url}}</a></span>
@@ -24,7 +24,7 @@
 <div class="form-group">
     <label class="col-sm-2 control-label">描述:</label>
     <div class="col-sm-3">
-     <input class="form-control" type="text" name="note" value="{{.api.Note}}">
+     <input class="form-control" type="text" name="note" value="{{.api.Note|html}}">
     </div>
 </div>
 
@@ -49,9 +49,21 @@
 
 
 <fieldset id="fieldset_hosts">
-<legend>后端服务  <a onclick="proxy_api_host_add();return false;" href="#">+</a></legend>
+<legend>后端服务  <a onclick="proxy_api_host_add();return false;" href="#">+</a>
+<div class="pull-right">
+<small>
+<a href="#" onclick="proxy_api_cookie_pref('{{.api.Name}}','{{.cookiePrefStr|html}}');return false;">Cookie Pref</a>
+</small>
+</div>
+</legend>
 {{range $name,$host:=.api.Hosts}}
-    {%my_include "api/form_base_host_row.html"%}
+    {{if in_array $name $.cookiePref}}
+     <div class="bg-success my-panel" title="该后端已经设置为cookie的默认优先后端了，直接浏览器访问优先返回该主机结果">
+    {{end}}
+     {%my_include "api/form_base_host_row.html"%}
+    {{if in_array $name $.cookiePref}}
+    </div>
+    {{end}}
 {{end}}
 </fieldset>
 
@@ -64,20 +76,3 @@
   {{end}}
 </div>
 
-<script>
-function proxy_api_host_add(){
-    var tpl=$("#api_host_tpl").clone();
-    var html=tpl.html().replace("tpl_api_proxy","").replace("http://127.0.0.1/","")
-    $("#fieldset_hosts").append(html)
-}
-
-function proxy_api_host_delete(obj){
-    var div=$(obj).parents("div.row");
-    var url=div.find("input[name=host_url]").val();
-    if(url!="" && !confirm("确定要删除(url="+url+")吗?")){
-        return false;
-    }
-    div.remove()
-    return false;
-}
-</script>

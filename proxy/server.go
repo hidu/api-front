@@ -117,7 +117,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 		logData := make(map[string]interface{})
 
-		cpf := NewCallerPrefConfByHttpRequest(req)
+		cpf := NewCallerPrefConfByHttpRequest(req, api)
 
 		masterHost := api.GetMasterHostName(cpf)
 
@@ -177,8 +177,6 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				}
 				backLog["url"] = urlNew
 
-				rw.Header().Set("Api-Proxy-Raw-Url", urlNew)
-
 				reqNew, _ := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 				copyHeaders(reqNew.Header, req.Header)
 				//				if req.Header.Get("Content-Length") != "" {
@@ -200,6 +198,9 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				}
 				defer resp.Body.Close()
 				if isMaster {
+
+					rw.Header().Set("Api-Proxy-Raw-Url", urlNew)
+
 					for k, vs := range resp.Header {
 						for _, v := range vs {
 							rw.Header().Add(k, v)
