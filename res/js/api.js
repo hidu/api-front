@@ -8,6 +8,23 @@ $().ready(function(){
 	}
 	$(".my-checkbox").each(my_checkbox);
 	$("body").delegate(".my-checkbox","click",my_checkbox)
+	
+	$("#form_cookie_pref").submit(function(){
+		var apiName=$(this).find("[name=api_name]").val()
+		
+		var hosts=[];
+		$(this).find("[name=host_names]:checked").each(function(){
+			hosts.push($(this).val())
+		});
+		
+		$.get("/_pref",{name:apiName,host:hosts.join(",")},function(data){
+			alert(data.msg)
+			if(data.code==0){
+				location.reload()
+			}
+		})
+		return false;
+	});
 });
 
 function proxy_api_host_add(){
@@ -26,15 +43,3 @@ function proxy_api_host_delete(obj){
     return false;
 }
 
-function proxy_api_cookie_pref(apiName,pref){
-	var v=prompt("请出入cookie优先主机名称：",pref+"")
-	if(v==null){
-		return false;
-	}
-	$.get("/_pref",{name:apiName,host:v},function(data){
-		alert(data.msg)
-		if(data.code==0){
-			location.reload()
-		}
-	})
-}

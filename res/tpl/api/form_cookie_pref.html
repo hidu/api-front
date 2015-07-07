@@ -1,0 +1,15 @@
+ <form method="post" target="ifr_form" autocomplete="off" id="form_cookie_pref">
+ <input type="hidden" name="api_name" value="{{.api.Name}}">
+ <fieldset>
+    <legend>Cookie标记 &nbsp;<sub class="text-muted">使用cookie来标记后端服务喜好</sub></legend>
+{{range $host_name,$host:=$.api.Hosts}} 
+    {{if $host.Enable}} 
+    <label  class="checkbox-inline" title="{{$host.Note|html}} {{$host.Url|html}}">
+        <input   type="checkbox" name="host_names" {{if  in_array $host_name $.cookiePref}}checked='checked' {{end}} value="{{$host_name|html}}"> 
+        {{$host_name|html}} &nbsp;<span class="text-info">{{$host.Note|html}}</span>
+    </label>
+     {{end}}
+{{end}}
+    <div class="t_c"><input type="submit" value="保 存" class="btn btn-default"></div>
+</fieldset>
+</form>

@@ -50,11 +50,6 @@
 
 <fieldset id="fieldset_hosts">
 <legend>后端服务  <a onclick="proxy_api_host_add();return false;" href="#">+</a>
-<div class="pull-right">
-<small>
-<a href="#" onclick="proxy_api_cookie_pref('{{.api.Name}}','{{.cookiePrefStr|html}}');return false;">Cookie Pref</a>
-</small>
-</div>
 </legend>
 {{range $name,$host:=.api.Hosts}}
     {{if in_array $name $.cookiePref}}

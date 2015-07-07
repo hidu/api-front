@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	//	"net/http/httputil"
 )
 
 type ApiServer struct {
@@ -108,6 +109,9 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 	log.Println(apiServer.ServerConf.Port, api.Name, "bind path [", bindPath, "]")
 
 	return func(rw http.ResponseWriter, req *http.Request) {
+		//			dump,err:=httputil.DumpRequest(req,true)
+		//		fmt.Println("dump_req:",string(dump),err)
+
 		rw.Header().Set("Api-Proxy-Version", API_PROXY_VERSION)
 
 		log.Println(req.URL.String())
@@ -116,6 +120,17 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		req.Header.Del("Connection")
 
 		logData := make(map[string]interface{})
+
+		body, err := ioutil.ReadAll(req.Body)
+		
+		logData["body_len"]=len(logData)
+		
+		if err != nil {
+			rw.WriteHeader(http.StatusBadGateway)
+			rw.Write([]byte("read body failed"))
+			return
+		}
+		//get body must by before  parse callerPref
 
 		cpf := NewCallerPrefConfByHttpRequest(req, api)
 
@@ -140,8 +155,6 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 		addrInfo := strings.Split(req.RemoteAddr, ":")
 		caller := api.Caller.getCallerItemByIp(cpf.Ip)
-
-		body, _ := ioutil.ReadAll(req.Body)
 
 		var wg sync.WaitGroup
 		for _, api_host := range api.Hosts {
@@ -179,9 +192,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 				reqNew, _ := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 				copyHeaders(reqNew.Header, req.Header)
-				//				if req.Header.Get("Content-Length") != "" {
-				//					reqNew.ContentLength = int64(len(body))
-				//				}
+				
 				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
 
 				httpClient := &http.Client{}
