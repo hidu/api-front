@@ -23,6 +23,7 @@ type Api struct {
 	Caller    Caller       `json:"caller"`
 	rw        sync.RWMutex `json:"-"`
 	Exists    bool         `json:"-"`
+	Replace   bool         `json:"replace"` //是否对文本中的url进行替换
 }
 
 func NewApi(confDir string, apiName string) *Api {

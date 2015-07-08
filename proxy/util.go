@@ -89,3 +89,14 @@ func UrlPathClean(urlPath string) string {
 		return fmt.Sprintf("%s/", str)
 	}
 }
+
+var textContentTypes []string = []string{"text/html", "text/css", "javascript"}
+
+func IsContentTypeText(contentType string) bool {
+	for _, v := range textContentTypes {
+		if strings.Contains(contentType, v) {
+			return true
+		}
+	}
+	return true
+}

@@ -6,12 +6,14 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
-		"net/http/httputil"
 )
 
 type ApiServer struct {
@@ -109,8 +111,8 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 	log.Println(apiServer.ServerConf.Port, api.Name, "bind path [", bindPath, "]")
 
 	return func(rw http.ResponseWriter, req *http.Request) {
-		dump,err:=httputil.DumpRequest(req,true)
-		log.Println("raw_dump_req:",string(dump),err)
+		dump, err := httputil.DumpRequest(req, true)
+		log.Println("raw_dump_req:", string(dump), err)
 
 		rw.Header().Set("Api-Proxy-Version", API_PROXY_VERSION)
 
@@ -122,9 +124,9 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		logData := make(map[string]interface{})
 
 		body, err := ioutil.ReadAll(req.Body)
-		
-		logData["body_len"]=len(logData)
-		
+
+		logData["body_len"] = len(logData)
+
 		if err != nil {
 			rw.WriteHeader(http.StatusBadGateway)
 			rw.Write([]byte("read body failed"))
@@ -156,7 +158,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		addrInfo := strings.Split(req.RemoteAddr, ":")
 		caller := api.Caller.getCallerItemByIp(cpf.Ip)
 
-		bodyLen:=int64(len(body))
+		bodyLen := int64(len(body))
 		var wg sync.WaitGroup
 		for _, api_host := range api.Hosts {
 
@@ -191,31 +193,45 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				}
 				backLog["url"] = urlNew
 
-				reqNew, err:= http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
-				if(err!=nil){
-					log.Println("build req failed:",err)
+				reqNew, err := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
+				if err != nil {
+					log.Println("build req failed:", err)
 					if isMaster {
 						rw.WriteHeader(http.StatusBadGateway)
 						rw.Write([]byte("apiServer error:" + err.Error()))
 					}
 					return
-					
+
 				}
 				copyHeaders(reqNew.Header, req.Header)
-				
-				if(bodyLen>0){
-					reqNew.ContentLength=bodyLen
-					reqNew.Header.Set("Content-Length",fmt.Sprintf("%d",bodyLen))
+
+				if bodyLen > 0 {
+					reqNew.ContentLength = bodyLen
+					reqNew.Header.Set("Content-Length", fmt.Sprintf("%d", bodyLen))
 				}
-				
+				if isMaster && api.Replace {
+					reqNew.Header.Del("Accept-Encoding")
+				}
+
 				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
-				
-				reqNewDump,dumpErr:=httputil.DumpRequest(reqNew,true)
-				log.Println("reqNewDump:",string(reqNewDump),dumpErr)
-				
-				httpClient := &http.Client{}
-				httpClient.Timeout = time.Duration(api.TimeoutMs) * time.Millisecond
-				resp, err := httpClient.Do(reqNew)
+
+				reqNewDump, dumpErr := httputil.DumpRequest(reqNew, true)
+				log.Println("reqNewDump:", string(reqNewDump), dumpErr)
+
+				//				httpClient := &http.Client{}
+				//				httpClient.Timeout = time.Duration(api.TimeoutMs) * time.Millisecond
+				//				resp, err := httpClient.Do(reqNew)
+
+				transport := &http.Transport{
+					Proxy: http.ProxyFromEnvironment,
+					Dial: (&net.Dialer{
+						Timeout:   time.Duration(api.TimeoutMs) * time.Millisecond,
+						KeepAlive: 30 * time.Second,
+					}).Dial,
+					TLSHandshakeTimeout: 10 * time.Second,
+				}
+
+				resp, err := transport.RoundTrip(reqNew)
 
 				if err != nil {
 					log.Println("fetch "+urlNew, err)
@@ -236,10 +252,39 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 						}
 					}
 
-					rw.WriteHeader(resp.StatusCode)
-					n, err := io.Copy(rw, resp.Body)
-					if err != nil {
-						log.Println(urlNew, "io.copy:", n, err)
+					contentType := resp.Header.Get("Content-Type")
+					if api.Replace && contentType != "" && IsContentTypeText(contentType) {
+						toReplace := "http://" + req.Host + api.Path
+
+						if resp.StatusCode == http.StatusMovedPermanently {
+							location := resp.Header.Get("Location")
+							if location != "" {
+								location = strings.Replace(location, api_host.Url, toReplace, -1)
+								location = strings.Replace(location, url.QueryEscape(api_host.Url), url.QueryEscape(toReplace), -1)
+								rw.Header().Set("Location", location)
+							}
+						}
+
+						rw.WriteHeader(resp.StatusCode)
+
+						respBody, err := ioutil.ReadAll(resp.Body)
+						if err != nil {
+							rw.Write([]byte("read resp failed,err:" + err.Error()))
+							log.Println(urlNew, "write resp err:", err)
+							return
+						}
+						respBodyNew := bytes.Replace(respBody, []byte(api_host.Url), []byte(toReplace), -1)
+						rw.Header().Set("Content-Length", fmt.Sprintf("%d", len(respBodyNew)))
+						n, err := rw.Write(respBodyNew)
+						if err != nil {
+							log.Println("write respBody failed:", n, err)
+						}
+					} else {
+						rw.WriteHeader(resp.StatusCode)
+						n, err := io.Copy(rw, resp.Body)
+						if err != nil {
+							log.Println(urlNew, "io.copy:", n, err)
+						}
 					}
 				}
 
