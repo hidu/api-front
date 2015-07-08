@@ -11,7 +11,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-	//	"net/http/httputil"
+		"net/http/httputil"
 )
 
 type ApiServer struct {
@@ -109,8 +109,8 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 	log.Println(apiServer.ServerConf.Port, api.Name, "bind path [", bindPath, "]")
 
 	return func(rw http.ResponseWriter, req *http.Request) {
-		//			dump,err:=httputil.DumpRequest(req,true)
-		//		fmt.Println("dump_req:",string(dump),err)
+		dump,err:=httputil.DumpRequest(req,true)
+		log.Println("raw_dump_req:",string(dump),err)
 
 		rw.Header().Set("Api-Proxy-Version", API_PROXY_VERSION)
 
@@ -156,6 +156,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		addrInfo := strings.Split(req.RemoteAddr, ":")
 		caller := api.Caller.getCallerItemByIp(cpf.Ip)
 
+		bodyLen:=int64(len(body))
 		var wg sync.WaitGroup
 		for _, api_host := range api.Hosts {
 
@@ -190,11 +191,28 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				}
 				backLog["url"] = urlNew
 
-				reqNew, _ := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
+				reqNew, err:= http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
+				if(err!=nil){
+					log.Println("build req failed:",err)
+					if isMaster {
+						rw.WriteHeader(http.StatusBadGateway)
+						rw.Write([]byte("apiServer error:" + err.Error()))
+					}
+					return
+					
+				}
 				copyHeaders(reqNew.Header, req.Header)
 				
+				if(bodyLen>0){
+					reqNew.ContentLength=bodyLen
+					reqNew.Header.Set("Content-Length",fmt.Sprintf("%d",bodyLen))
+				}
+				
 				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
-
+				
+				reqNewDump,dumpErr:=httputil.DumpRequest(reqNew,true)
+				log.Println("reqNewDump:",string(reqNewDump),dumpErr)
+				
 				httpClient := &http.Client{}
 				httpClient.Timeout = time.Duration(api.TimeoutMs) * time.Millisecond
 				resp, err := httpClient.Do(reqNew)
