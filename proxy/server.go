@@ -62,7 +62,11 @@ func (apiServer *ApiServer) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 func (apiServer *ApiServer) loadAllApis() {
 	fileNames, _ := filepath.Glob(apiServer.ConfDir + "/*.json")
 	for _, fileName := range fileNames {
-		apiName := strings.TrimRight(filepath.Base(fileName), ".json")
+		log.Println("start load conf file:", fileName)
+
+		baseName := filepath.Base(fileName)
+
+		apiName := baseName[:len(baseName)-5]
 		apiServer.loadApi(apiName)
 	}
 }
@@ -182,7 +186,12 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 					return
 				}
 
-				urlNew := api_host.Url
+				urlNew := ""
+
+				serverUrl := api_host.Url
+				if api.HostAsProxy {
+					serverUrl = "http://" + req.Host + api.Path
+				}
 				if strings.HasSuffix(urlNew, "/") {
 					urlNew += strings.TrimLeft(relPath, "/")
 				} else {
@@ -191,7 +200,12 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				if req.URL.RawQuery != "" {
 					urlNew += "?" + req.URL.RawQuery
 				}
-				backLog["url"] = urlNew
+
+				rawUrl := api_host.Url + urlNew
+
+				urlNew = serverUrl + urlNew
+
+				backLog["raw_url"] = rawUrl
 
 				reqNew, err := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 				if err != nil {
@@ -209,18 +223,11 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 					reqNew.ContentLength = bodyLen
 					reqNew.Header.Set("Content-Length", fmt.Sprintf("%d", bodyLen))
 				}
-				if isMaster && api.Replace {
-					reqNew.Header.Del("Accept-Encoding")
-				}
 
 				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
 
 				reqNewDump, dumpErr := httputil.DumpRequest(reqNew, true)
 				log.Println("reqNewDump:", string(reqNewDump), dumpErr)
-
-				//				httpClient := &http.Client{}
-				//				httpClient.Timeout = time.Duration(api.TimeoutMs) * time.Millisecond
-				//				resp, err := httpClient.Do(reqNew)
 
 				transport := &http.Transport{
 					Proxy: http.ProxyFromEnvironment,
@@ -229,6 +236,11 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 						KeepAlive: 30 * time.Second,
 					}).Dial,
 					TLSHandshakeTimeout: 10 * time.Second,
+				}
+				if api.HostAsProxy {
+					transport.Proxy = func(req *http.Request) (*url.URL, error) {
+						return url.Parse(api_host.Url)
+					}
 				}
 
 				resp, err := transport.RoundTrip(reqNew)
@@ -244,48 +256,19 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				defer resp.Body.Close()
 				if isMaster {
 
-					rw.Header().Set("Api-Proxy-Raw-Url", urlNew)
+					rw.Header().Set("Api-Proxy-Raw-Url", rawUrl)
 
 					for k, vs := range resp.Header {
 						for _, v := range vs {
 							rw.Header().Add(k, v)
 						}
 					}
-
-					contentType := resp.Header.Get("Content-Type")
-					if api.Replace && contentType != "" && IsContentTypeText(contentType) {
-						toReplace := "http://" + req.Host + api.Path
-
-						if resp.StatusCode == http.StatusMovedPermanently {
-							location := resp.Header.Get("Location")
-							if location != "" {
-								location = strings.Replace(location, api_host.Url, toReplace, -1)
-								location = strings.Replace(location, url.QueryEscape(api_host.Url), url.QueryEscape(toReplace), -1)
-								rw.Header().Set("Location", location)
-							}
-						}
-
-						rw.WriteHeader(resp.StatusCode)
-
-						respBody, err := ioutil.ReadAll(resp.Body)
-						if err != nil {
-							rw.Write([]byte("read resp failed,err:" + err.Error()))
-							log.Println(urlNew, "write resp err:", err)
-							return
-						}
-						respBodyNew := bytes.Replace(respBody, []byte(api_host.Url), []byte(toReplace), -1)
-						rw.Header().Set("Content-Length", fmt.Sprintf("%d", len(respBodyNew)))
-						n, err := rw.Write(respBodyNew)
-						if err != nil {
-							log.Println("write respBody failed:", n, err)
-						}
-					} else {
-						rw.WriteHeader(resp.StatusCode)
-						n, err := io.Copy(rw, resp.Body)
-						if err != nil {
-							log.Println(urlNew, "io.copy:", n, err)
-						}
+					rw.WriteHeader(resp.StatusCode)
+					n, err := io.Copy(rw, resp.Body)
+					if err != nil {
+						log.Println(urlNew, "io.copy:", n, err)
 					}
+
 				}
 
 				used := time.Now().Sub(start)

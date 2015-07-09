@@ -45,20 +45,19 @@
         </label>
     </div>
 </div>
-<div class="form-group">
-    <label class="col-sm-2 control-label">替换:</label>
-    <div class="col-sm-3 checkbox">
-        <label>
-        <input  type="checkbox" name="replace" value="1" {{if .api.Replace}}checked=checked{{end}}>
-        对html/css/js内容的url进行替换
-        </label>
-    </div>
-</div>
+
 </fieldset>
 
 
 <fieldset id="fieldset_hosts">
 <legend>后端服务  <a onclick="proxy_api_host_add();return false;" href="#">+</a>
+
+&nbsp;<span class="legend_note">
+ <label>
+        <input  type="checkbox" name="host_as_proxy" value="1" {{if .api.HostAsProxy}}checked=checked{{end}}>
+        代理模式<span class="text-muted"></span>
+ </label>
+ </span>
 </legend>
 {{range $name,$host:=.api.Hosts}}
     {{if in_array $name $.cookiePref}}

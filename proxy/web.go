@@ -268,7 +268,7 @@ func (wr *webReq) apiBaseSave() {
 	api.TimeoutMs = int(timeout)
 	api.Enable = req.FormValue("enable") == "1"
 	api.Path = apiPath
-	api.Replace = req.FormValue("replace") == "1"
+	api.HostAsProxy = req.FormValue("host_as_proxy") == "1"
 
 	if apiNameOrig != apiName {
 		wr.web.apiServer.deleteApi(apiNameOrig)

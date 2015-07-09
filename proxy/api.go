@@ -13,17 +13,17 @@ import (
 )
 
 type Api struct {
-	Name      string       `json:"-"`
-	ConfPath  string       `json:"-"`
-	Path      string       `json:"path"`
-	Note      string       `json:"note"`
-	TimeoutMs int          `json:"timeout_ms"`
-	Hosts     Hosts        `json:"hosts"`
-	Enable    bool         `json:"enable"`
-	Caller    Caller       `json:"caller"`
-	rw        sync.RWMutex `json:"-"`
-	Exists    bool         `json:"-"`
-	Replace   bool         `json:"replace"` //是否对文本中的url进行替换
+	Name        string       `json:"-"`
+	ConfPath    string       `json:"-"`
+	Path        string       `json:"path"`
+	Note        string       `json:"note"`
+	TimeoutMs   int          `json:"timeout_ms"`
+	Hosts       Hosts        `json:"hosts"`
+	Enable      bool         `json:"enable"`
+	Caller      Caller       `json:"caller"`
+	rw          sync.RWMutex `json:"-"`
+	Exists      bool         `json:"-"`
+	HostAsProxy bool         `json:"host_as_proxy"` //是否把后端当作代理
 }
 
 func NewApi(confDir string, apiName string) *Api {
@@ -138,7 +138,7 @@ func (api *Api) CookieName() string {
 func LoadApiByConf(confDir string, apiName string) (*Api, error) {
 	api := NewApi(confDir, apiName)
 	relName, _ := filepath.Rel(filepath.Dir(confDir), api.ConfPath)
-	logMsg := fmt.Sprint("load api module [", relName, "]")
+	logMsg := fmt.Sprint("load api [", apiName, "],[", relName, "]")
 
 	log.Println(logMsg, "start")
 

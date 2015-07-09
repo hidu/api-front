@@ -105,3 +105,6 @@ tr.redo{color:blue;}
 .success {background:#E6EFC2;color:#529214;border-color:#C6D880;}
 
 .my-panel{border-radius:5px;padding: 5px;padding-bottom:1px; margin-bottom: 5px;margin-top: 5px}
+
+.legend_note{font-size: 12px;margin-left: 20px;padding:2px}
+.legend_note label{font-weight: normal;
