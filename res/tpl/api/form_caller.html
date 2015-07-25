@@ -4,9 +4,9 @@
             
     <fieldset>
     <legend>
-    标记调用者 <a onclick="return proxy_api_caller_add();" href="#">+</a>
+    IP标记客户端 <a onclick="return proxy_api_caller_add();" href="#">+</a>
     </legend>
-    <p class="text-muted" style="font-size:-2">Ip标记的优先级低于GET/POST、Header、Cookie<a href="/#adv">参数</a></p>
+    <p class="text-muted" style="font-size:-2">IP的<a href="/#adv">优先级</a>低于GET/POST、Header、Cookie参数</p>
     {{range $i,$caller:=.api.Caller}}
     <div class="{{if eq $caller.Ip ""}}hidden api_caller_tpl{{end}}">
          {%my_include "api/form_caller_panel.html"%}

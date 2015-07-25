@@ -62,6 +62,7 @@ func (wr *webReq) execute() {
 	if host_info[1] == "" {
 		host_info[1] = "80"
 	}
+	wr.values["req_host"]=wr.req.Host
 	wr.values["host_name"] = host_info[0]
 	port, _ := strconv.ParseInt(host_info[1], 10, 64)
 	wr.values["host_port"] = int(port)

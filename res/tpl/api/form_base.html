@@ -51,14 +51,16 @@
 
 <fieldset id="fieldset_hosts">
 <legend>后端服务  <a onclick="proxy_api_host_add();return false;" href="#">+</a>
-
-&nbsp;<span class="legend_note">
- <label>
+&nbsp;
+<span class="legend_note">
+ <label title="后端当作代理服务器，程序读到的HTTP_HOST将是{{.req_host}}">
         <input  type="checkbox" name="host_as_proxy" value="1" {{if .api.HostAsProxy}}checked=checked{{end}}>
-        代理模式<span class="text-muted"></span>
+        代理模式
  </label>
+ &nbsp;
  </span>
 </legend>
+ <p class="text-muted">流量会复制到每个后端服务,然后随机选取其中一个Response返回。</p>
 {{range $name,$host:=.api.Hosts}}
     {{if in_array $name $.cookiePref}}
      <div class="bg-success my-panel" title="该后端已经设置为cookie的默认优先后端了，直接浏览器访问优先返回该主机结果">
