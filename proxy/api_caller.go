@@ -8,6 +8,17 @@ import (
 	"strings"
 )
 
+//var API_PREF string = "api_pref"
+
+const (
+	API_PREF_PARMA_NAME  string = "api_pref"
+	API_PREF_TYPE_REQ           = "req"
+	API_PREF_TYPE_COOKIE        = "cookie"
+	API_PREF_TYPE_HEADER        = "header"
+)
+
+var prefTypes = []string{API_PREF_TYPE_REQ, API_PREF_TYPE_COOKIE, API_PREF_TYPE_HEADER}
+
 type Caller []*CallerItem
 
 type CallerItem struct {
@@ -77,14 +88,16 @@ func (caller *Caller) GetPrefHostName(allowNames []string, cpf *CallerPrefConf) 
 	if len(allowNames) == 0 || len(*caller) == 0 {
 		return StrSliceRandItem(allowNames)
 	}
-	//若请求指定了
-	if len(cpf.PrefHostName) > 0 {
-		pref := StrSliceIntersectGetOne(cpf.PrefHostName, allowNames)
-		if pref != "" {
-			return pref
+
+	for _, prefType := range prefTypes {
+		if len(cpf.prefHostName[prefType]) > 0 {
+			pref := StrSliceIntersectGetOne(cpf.prefHostName[prefType], allowNames)
+			if pref != "" {
+				return pref
+			}
 		}
 	}
-	item := caller.getCallerItemByIp(cpf.Ip)
+	item := caller.getCallerItemByIp(cpf.ip)
 	if item != nil && len(item.Pref) > 0 {
 		pref := StrSliceIntersectGetOne(item.Pref, allowNames)
 		if pref != "" {
@@ -144,47 +157,52 @@ func (caller *Caller) AddNewCallerItem(item *CallerItem) {
 }
 
 type CallerPrefConf struct {
-	Ip           string
-	PrefHostName []string
+	ip           string
+	prefHostName map[string][]string
 }
 
-func (cpf *CallerPrefConf) AddNewPrefHost(hostName string) {
+func (cpf *CallerPrefConf) AddNewPrefHost(prefType string, hostName string) {
 	hostName = strings.TrimSpace(hostName)
 	if hostName == "" {
 		return
 	}
-	if !In_StringSlice(hostName, cpf.PrefHostName) {
-		cpf.PrefHostName = append(cpf.PrefHostName, hostName)
+	if _, has := cpf.prefHostName[prefType]; !has {
+		cpf.prefHostName[prefType] = make([]string, 0)
+	}
+	if !In_StringSlice(hostName, cpf.prefHostName[prefType]) {
+		cpf.prefHostName[prefType] = append(cpf.prefHostName[prefType], hostName)
 	}
 }
 
-func (cpf *CallerPrefConf) AddNewPrefHostRaw(str string, spitStr string) {
+func (cpf *CallerPrefConf) AddNewPrefHostRaw(prefType string, str string, spitStr string) {
 	strSlice := strings.Split(str, spitStr)
 	for _, v := range strSlice {
-		cpf.AddNewPrefHost(v)
+		cpf.AddNewPrefHost(prefType, v)
 	}
 }
 
-var API_PREF string = "api_pref"
+func (cpf *CallerPrefConf) GetIp() string {
+	return cpf.ip
+}
 
 func NewCallerPrefConfByHttpRequest(req *http.Request, api *Api) *CallerPrefConf {
-	perfConf := &CallerPrefConf{}
-	perfConf.PrefHostName = make([]string, 0)
+	prefConf := &CallerPrefConf{}
+	prefConf.prefHostName = make(map[string][]string)
 
 	info := strings.SplitN(req.RemoteAddr, ":", 2)
-	perfConf.Ip = info[0]
+	prefConf.ip = info[0]
 
 	//get from form data
-	perfConf.AddNewPrefHostRaw(req.FormValue(API_PREF), ",")
+	prefConf.AddNewPrefHostRaw(API_PREF_TYPE_REQ, req.FormValue(API_PREF_PARMA_NAME), ",")
 
 	//get from http header
-	perfConf.AddNewPrefHostRaw(req.Header.Get(API_PREF), ",")
+	prefConf.AddNewPrefHostRaw(API_PREF_TYPE_HEADER, req.Header.Get(API_PREF_PARMA_NAME), ",")
 
 	//get from cookie
 	cookie, err := req.Cookie(api.CookieName())
 	if err == nil {
-		perfConf.AddNewPrefHostRaw(cookie.Value, ",")
+		prefConf.AddNewPrefHostRaw(API_PREF_TYPE_COOKIE, cookie.Value, ",")
 	}
 
-	return perfConf
+	return prefConf
 }

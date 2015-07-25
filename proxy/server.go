@@ -123,7 +123,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		log.Println(req.URL.String())
 
 		relPath := req.URL.Path[len(bindPath):]
-		req.Header.Del("Connection")
+		req.Header.Set("Connection", "close")
 
 		logData := make(map[string]interface{})
 
@@ -160,7 +160,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		}
 
 		addrInfo := strings.Split(req.RemoteAddr, ":")
-		caller := api.Caller.getCallerItemByIp(cpf.Ip)
+		caller := api.Caller.getCallerItemByIp(cpf.GetIp())
 
 		bodyLen := int64(len(body))
 		var wg sync.WaitGroup
@@ -263,6 +263,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 							rw.Header().Add(k, v)
 						}
 					}
+					rw.Header().Set("Connection", "close")
 					rw.WriteHeader(resp.StatusCode)
 					n, err := io.Copy(rw, resp.Body)
 					if err != nil {

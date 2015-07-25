@@ -107,4 +107,5 @@ tr.redo{color:blue;}
 .my-panel{border-radius:5px;padding: 5px;padding-bottom:1px; margin-bottom: 5px;margin-top: 5px}
 
 .legend_note{font-size: 12px;margin-left: 20px;padding:2px}
-.legend_note label{font-weight: normal;
+.legend_note label{font-weight: normal;}
+.my_container{width: 80%}

@@ -13,5 +13,8 @@
 <p><img src="/_res/img/useage_2.png"></p>
 
 <h1 class="page-header">高级用法</h1>
-<p>若同时有多个后端（如 a,b,c 共3个），可以在http的 <code>GET、POST、Header、Cookie</code>中设置参数<code>api_pref=a,b</code>来指定后端。</p>
+<a name="adv"></a>
+<p>若同时有多个后端（如 a,b,c 共3个），可以在http的 <code>GET/POST、Header</code>中设置参数<code>api_pref=a,b</code>来指定后端。</p>
 <p>设置cookie格式为:<code>api_pref_{apiName}=a,b</code>，可使用接口<code>/_pref?name={apiName}&host={prefHost}</code>来设置/取消cookie。</p>
+<p>参数优先级：<code>1-GET/POST</code> &gt; <code>2-Cookie</code> &gt; <code>3-Header</code>。</p>
+<p>Ip的优先级低于上述参数后。</p>

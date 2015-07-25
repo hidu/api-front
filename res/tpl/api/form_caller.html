@@ -3,7 +3,10 @@
      <input type="hidden" name="api_name" value="{{$.api.Name}}">
             
     <fieldset>
-    <legend>标记调用者 <a onclick="return proxy_api_caller_add();" href="#">+</a></legend>
+    <legend>
+    标记调用者 <a onclick="return proxy_api_caller_add();" href="#">+</a>
+    </legend>
+    <p class="text-muted" style="font-size:-2">Ip标记的优先级低于GET/POST、Header、Cookie<a href="/#adv">参数</a></p>
     {{range $i,$caller:=.api.Caller}}
     <div class="{{if eq $caller.Ip ""}}hidden api_caller_tpl{{end}}">
          {%my_include "api/form_caller_panel.html"%}

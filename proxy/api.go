@@ -167,5 +167,5 @@ func LoadApiByConf(confDir string, apiName string) (*Api, error) {
 }
 
 func ApiCookieName(apiName string) string {
-	return fmt.Sprintf("%s_%s", API_PREF, apiName)
+	return fmt.Sprintf("%s_%s", API_PREF_PARMA_NAME, apiName)
 }
