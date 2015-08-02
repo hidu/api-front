@@ -1,7 +1,7 @@
-# api-proxy
+# api-manager
 
 <h1 class="page-header">概述</h1>
-<p>api proxy 是用来做api请求代理转发的，<code>每一个请求会同时发送到所有的后端</code>，然后选取其中一个后端的相应返回给client。</p>
+<p>api manager 是用来做api请求代理转发的，<code>每一个请求会同时发送到所有的后端</code>，然后选取其中一个后端的相应返回给client。</p>
 
 <p>也就是，每一个后端服务都可以接收到全量的数据。</p>
 

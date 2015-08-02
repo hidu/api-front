@@ -24,13 +24,18 @@ type Api struct {
 	rw          sync.RWMutex `json:"-"`
 	Exists      bool         `json:"-"`
 	HostAsProxy bool         `json:"host_as_proxy"` //是否把后端当作代理
+	Pv          uint64       `json:"-"`            
+	LastVisit   time.Time    `json:"-"`    //最后访问时间
+	Version     int64        `json:"version"`       //配置文件的版本号
+	apiServer	*ApiServer	
 }
 
-func NewApi(confDir string, apiName string) *Api {
+func NewApi(apiServer *ApiServer, apiName string) *Api {
 	api := &Api{
 		Name:     apiName,
-		ConfPath: fmt.Sprintf("%s/%s.json", confDir, apiName),
+		ConfPath: fmt.Sprintf("%s/%s.json", apiServer.GetConfDir(), apiName),
 		Hosts:    NewHosts(),
+		apiServer:apiServer,
 	}
 	return api
 }
@@ -67,6 +72,9 @@ func (api *Api) IsValidPath(myPath string) bool {
 }
 
 func (api *Api) Save() error {
+	api.rw.Lock()
+	defer api.rw.Unlock()
+
 	data, err := json.MarshalIndent(api, "", "    ")
 	if err != nil {
 		return err
@@ -83,13 +91,19 @@ func (api *Api) Save() error {
 }
 
 func (api *Api) Delete() {
+	api.rw.Lock()
+	defer api.rw.Unlock()
 	back_path := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(TIME_FORMAT_INT)
 	DirCheck(back_path)
 	err := os.Rename(api.ConfPath, back_path)
 	log.Println("backup ", back_path, err)
 }
 
+
+
 func (api *Api) Clone() *Api {
+	api.rw.RLock()
+	defer api.rw.RUnlock()
 	data, _ := json.Marshal(api)
 	var newApi *Api
 	json.Unmarshal(data, &newApi)
@@ -97,6 +111,7 @@ func (api *Api) Clone() *Api {
 	newApi.ConfPath = api.ConfPath
 	newApi.Exists = api.Exists
 	newApi.init()
+	newApi.apiServer=api.apiServer
 	return newApi
 }
 
@@ -104,12 +119,19 @@ func (api *Api) HostRename(orig_name, new_name string) {
 	if orig_name == "" || orig_name == new_name {
 		return
 	}
+	api.rw.Lock()
+	defer api.rw.Unlock()
+
 	if _, has := api.Hosts[orig_name]; has {
 		delete(api.Hosts, orig_name)
 	}
 }
 
 func (api *Api) HostCheckDelete(host_names []string) {
+
+	api.rw.Lock()
+	defer api.rw.Unlock()
+
 	tmpMap := make(map[string]int)
 	for _, v := range host_names {
 		tmpMap[v] = 1
@@ -124,6 +146,9 @@ func (api *Api) HostCheckDelete(host_names []string) {
 }
 
 func (api *Api) GetMasterHostName(cpf *CallerPrefConf) string {
+	api.rw.RLock()
+	defer api.rw.RUnlock()
+
 	names := make([]string, 0, len(api.Hosts))
 	for name := range api.Hosts {
 		names = append(names, name)
@@ -135,9 +160,9 @@ func (api *Api) CookieName() string {
 	return ApiCookieName(api.Name)
 }
 
-func LoadApiByConf(confDir string, apiName string) (*Api, error) {
-	api := NewApi(confDir, apiName)
-	relName, _ := filepath.Rel(filepath.Dir(confDir), api.ConfPath)
+func LoadApiByConf(apiServer *ApiServer, apiName string) (*Api, error) {
+	api := NewApi(apiServer, apiName)
+	relName, _ := filepath.Rel(filepath.Dir(apiServer.GetConfDir()), api.ConfPath)
 	logMsg := fmt.Sprint("load api [", apiName, "],[", relName, "]")
 
 	log.Println(logMsg, "start")
@@ -164,6 +189,14 @@ func LoadApiByConf(confDir string, apiName string) (*Api, error) {
 	err = api.init()
 	api.Exists = true
 	return api, err
+}
+
+func (api *Api)PvInc(){
+	 api.apiServer.GetCounter().PvInc(api.Name)
+}
+
+func (api *Api)GetPv()uint64{
+	return api.apiServer.GetCounter().GetPv(api.Name)
 }
 
 func ApiCookieName(apiName string) string {

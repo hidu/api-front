@@ -12,6 +12,8 @@ import (
 	"strings"
 	"text/template"
 	"time"
+	"github.com/googollee/go-socket.io"
+	"log"
 )
 
 var API_PROXY_VERSION string
@@ -22,19 +24,62 @@ func init() {
 
 type WebAdmin struct {
 	apiServer *ApiServer
+	wsServer *socketio.Server
+	wsSocket socketio.Socket
 }
 
 func NewWebAdmin(mimo *ApiServer) *WebAdmin {
 	ser := &WebAdmin{
 		apiServer: mimo,
 	}
+	ser.wsInit()
+	
 	return ser
+}
+func (web *WebAdmin)wsInit(){
+	server,err:=socketio.NewServer(nil)
+	if(err!=nil){
+		log.Fatalln("init ws server failed:",err.Error())
+	}
+	web.wsServer=server
+	
+	server.On("connection", func(so socketio.Socket) {
+		so.Emit("hello","hello,now:"+time.Now().String())
+        so.On("disconnection", func() {
+            log.Println("on disconnect")
+        })
+        web.wsSocket=so
+        so.On("api_pv",func(name string){
+        	web.emitApiPv(name)
+        })
+    })
+    server.On("error",func(so socketio.Socket){
+    	log.Println("ws error:", err)
+    })
+}
+
+func (web *WebAdmin)emitApiPv(name string){
+	api:=web.apiServer.getApiByName(name)
+	if(api==nil){
+		return
+	}
+	data:=make(map[string]interface{})
+	data["name"]=name
+	data["pv"]=api.GetPv()
+	err:=web.wsSocket.Emit("api_pv",data)
+	if(err!=nil){
+		log.Println("emitApiPv_err:",err,"data:",data)
+	}
 }
 
 func (web *WebAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if strings.HasPrefix(req.URL.Path, "/_res/") {
 		req.URL.Path = "/res/" + req.URL.Path[5:]
 		Assest.HttpHandler("/").ServeHTTP(rw, req)
+		return
+	}
+	if strings.HasPrefix(req.URL.Path, "/_socket.io/") {
+		web.wsServer.ServeHTTP(rw,req)
 		return
 	}
 
@@ -62,23 +107,26 @@ func (wr *webReq) execute() {
 	if host_info[1] == "" {
 		host_info[1] = "80"
 	}
-	wr.values["req_host"]=wr.req.Host
+	wr.values["req_host"] = wr.req.Host
 	wr.values["host_name"] = host_info[0]
 	port, _ := strconv.ParseInt(host_info[1], 10, 64)
 	wr.values["host_port"] = int(port)
 	wr.values["conf"] = wr.web.apiServer.ServerConf
 
-	if wr.req.URL.Path == "/_api" {
+	switch wr.req.URL.Path {
+	case "/_api":
 		wr.apiEdit()
 		return
-	}
-	if wr.req.URL.Path == "/_apis" {
+	case "/_apis":
 		wr.apiList()
 		return
-	}
-	if wr.req.URL.Path == "/_pref" {
+	case "/_pref":
 		wr.apiPref()
 		return
+	case "/_apipv":
+		wr.apiPv()
+		return
+
 	}
 	wr.render("index.html", true)
 }
@@ -117,6 +165,20 @@ func (wr *webReq) apiPref() {
 	http.SetCookie(wr.rw, cookie)
 
 	wr.json(0, "success", prefHost)
+}
+
+func (wr *webReq) apiPv() {
+	apiName := strings.TrimSpace(wr.req.FormValue("name"))
+	if apiName == "" {
+		wr.json(400, "param empty", nil)
+		return
+	}
+	api:=wr.web.apiServer.getApiByName(apiName)
+	if(api==nil){
+		wr.json(400, "api not exists", nil)
+		return
+	}
+	wr.json(0,"suc",api.GetPv())
 }
 
 func (wr *webReq) alert(msg string) {
@@ -160,7 +222,7 @@ func (wr *webReq) apiEdit() {
 			}
 			api = apiOld.Clone()
 		} else {
-			api = NewApi(wr.web.apiServer.ConfDir, "")
+			api = NewApi(wr.web.apiServer, "")
 		}
 		hostsTpl := NewHosts()
 		hostsTpl.AddNewHost(NewHost(web_tmp_name, "http://127.0.0.1/", false))
@@ -168,7 +230,7 @@ func (wr *webReq) apiEdit() {
 		citem, _ := NewCallerItem("")
 		api.Caller.AddNewCallerItem(citem)
 
-		wr.values["api"] = api
+		wr.values["api"] = &api
 		wr.values["HostsTpl"] = hostsTpl
 		wr.values["api_url"] = "http://" + req.Host + api.Path
 

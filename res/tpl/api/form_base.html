@@ -1,7 +1,12 @@
 <form method="post" action="/_api" class="form-horizontal" target="ifr_form" autocomplete="off">
 <input type="hidden" name="do" value="base">
 <fieldset>
-<legend>api基础信息</legend>
+<legend>api基础信息
+
+<span class="legend_note pull-right">
+pv: &nbsp;<span id="api_pv">{{.api.GetPv}}</span>&nbsp;
+</span>
+</legend>
 
 <input type="hidden" name="api_name_orig" value="{{.api.Name}}">
 
@@ -81,3 +86,11 @@
   {{end}}
 </div>
 
+
+<script>
+{{if .api.Exists}}
+$().ready(function(){
+	proxy_api_get_pv("{{.api.Name}}","#api_pv");
+});
+{{end}}
+</script>

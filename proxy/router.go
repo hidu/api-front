@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 )
 
 type RouterItem struct {
@@ -24,6 +25,7 @@ func NewRouterItem(apiName string, bindPath string, hander http.HandlerFunc) *Ro
 type Routers struct {
 	BindMap   map[string]*RouterItem
 	BindPaths BindPathsStruct
+	rw        sync.RWMutex
 }
 
 func NewRouters() *Routers {
@@ -52,6 +54,9 @@ func (rs *Routers) String() string {
 }
 
 func (rs *Routers) GetRouterByReqPath(url_path string) *RouterItem {
+	rs.rw.RLock()
+	defer rs.rw.RUnlock()
+
 	for _, bind_path := range rs.BindPaths {
 		if bind_path != "" && strings.HasPrefix(url_path, bind_path) {
 			return rs.BindMap[bind_path]
@@ -61,6 +66,9 @@ func (rs *Routers) GetRouterByReqPath(url_path string) *RouterItem {
 }
 
 func (rs *Routers) Sort() {
+	rs.rw.Lock()
+	defer rs.rw.Unlock()
+
 	bindPaths := make(BindPathsStruct, 0, len(rs.BindMap))
 	for bind_path := range rs.BindMap {
 		bindPaths = append(bindPaths, bind_path)
@@ -71,15 +79,23 @@ func (rs *Routers) Sort() {
 }
 
 func (rs *Routers) DeleteRouterByPath(bind_path string) {
-	if router, has := rs.BindMap[bind_path]; has {
-		log.Println("unbind router,apiName=", router.ApiName, "bindPath=", bind_path)
-		delete(rs.BindMap, bind_path)
-	}
+	func() {
+		rs.rw.Lock()
+		defer rs.rw.Unlock()
+		if router, has := rs.BindMap[bind_path]; has {
+			log.Println("unbind router,apiName=", router.ApiName, "bindPath=", bind_path)
+			delete(rs.BindMap, bind_path)
+		}
+	}()
 	rs.Sort()
 }
 
 func (rs *Routers) BindRouter(bind_path string, router *RouterItem) {
-	rs.BindMap[bind_path] = router
-	log.Println("bind router,apiName=", router.ApiName, "bindPath=", bind_path)
+	func() {
+		rs.rw.Lock()
+		defer rs.rw.Unlock()
+		rs.BindMap[bind_path] = router
+		log.Println("bind router,apiName=", router.ApiName, "bindPath=", bind_path)
+	}()
 	rs.Sort()
 }

@@ -27,6 +27,12 @@ $().ready(function(){
 	});
 });
 
+var socket = io("",{path:"/_socket.io/"});
+socket.on('hello', function(msg){
+	console && console.log(msg)
+});
+
+
 function proxy_api_host_add(){
     var tpl=$("#api_host_tpl").clone();
     var html=tpl.html().replace("tpl_api_proxy","").replace("http://127.0.0.1/","")
@@ -41,5 +47,15 @@ function proxy_api_host_delete(obj){
     }
     div.remove()
     return false;
+}
+
+function proxy_api_get_pv(name,target){
+	setInterval(function(){
+		socket.emit("api_pv",name)
+	},1000);
+	socket.on("api_pv",function(data){
+		$(target).html(""+data.pv);
+	})
+	
 }
 

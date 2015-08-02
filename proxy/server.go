@@ -25,6 +25,7 @@ type ApiServer struct {
 	routers    *Routers
 	web        *WebAdmin
 	ServerConf *ServerConfItem
+	counter *Counter
 }
 
 func NewApiServer(conf *ServerConfItem, manager *ApiServerManager) *ApiServer {
@@ -33,6 +34,7 @@ func NewApiServer(conf *ServerConfItem, manager *ApiServerManager) *ApiServer {
 	apiServer.Apis = make(map[string]*Api)
 	apiServer.routers = NewRouters()
 	apiServer.web = NewWebAdmin(apiServer)
+	apiServer.counter=NewCounter(apiServer)
 	return apiServer
 }
 
@@ -83,14 +85,18 @@ func (apiServer *ApiServer) deleteApi(apiName string) {
 }
 
 func (apiServer *ApiServer) newApi(apiName string) *Api {
-	return NewApi(apiServer.ConfDir, apiName)
+	return NewApi(apiServer, apiName)
+}
+
+func (apiServer *ApiServer)GetConfDir() string{
+	return apiServer.ConfDir
 }
 
 func (apiServer *ApiServer) loadApi(apiName string) error {
 	apiServer.Rw.Lock()
 	defer apiServer.Rw.Unlock()
 
-	api, err := LoadApiByConf(apiServer.ConfDir, apiName)
+	api, err := LoadApiByConf(apiServer, apiName)
 	if err != nil {
 		log.Println("load api failed,", apiName, err)
 		return err
@@ -113,13 +119,12 @@ func (apiServer *ApiServer) loadApi(apiName string) error {
 func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http.Request) {
 	bindPath := api.Path
 	log.Println(apiServer.ServerConf.Port, api.Name, "bind path [", bindPath, "]")
-
 	return func(rw http.ResponseWriter, req *http.Request) {
 		dump, err := httputil.DumpRequest(req, true)
 		log.Println("raw_dump_req:", string(dump), err)
 
 		rw.Header().Set("Api-Proxy-Version", API_PROXY_VERSION)
-
+		api.PvInc()
 		log.Println(req.URL.String())
 
 		relPath := req.URL.Path[len(bindPath):]
@@ -212,7 +217,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 					log.Println("build req failed:", err)
 					if isMaster {
 						rw.WriteHeader(http.StatusBadGateway)
-						rw.Write([]byte("apiServer error:" + err.Error()))
+						rw.Write([]byte("apiServer error:" + err.Error() + "\nraw_url:" + rawUrl))
 					}
 					return
 
@@ -245,18 +250,20 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 				resp, err := transport.RoundTrip(reqNew)
 
+				if isMaster {
+					rw.Header().Set("Api-Proxy-Raw-Url", rawUrl)
+				}
+
 				if err != nil {
 					log.Println("fetch "+urlNew, err)
 					if isMaster {
 						rw.WriteHeader(http.StatusBadGateway)
-						rw.Write([]byte("apiServer error:" + err.Error()))
+						rw.Write([]byte("apiServer error:" + err.Error() + "\nraw_url:" + rawUrl))
 					}
 					return
 				}
 				defer resp.Body.Close()
 				if isMaster {
-
-					rw.Header().Set("Api-Proxy-Raw-Url", rawUrl)
 
 					for k, vs := range resp.Header {
 						for _, v := range vs {
@@ -296,4 +303,8 @@ func (apiServer *ApiServer) getApiByPath(bindPath string) *Api {
 		}
 	}
 	return nil
+}
+
+func (apiServer *ApiServer)GetCounter()*Counter{
+	return apiServer.counter
 }

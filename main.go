@@ -3,18 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/hidu/api-proxy/proxy"
+	"github.com/hidu/api-man/proxy"
 )
 
-var conf_path = flag.String("conf", "./conf/proxy.json", "server conf path")
+var conf_path = flag.String("conf", "./conf/man.json", "server conf path")
 var conf_demo = flag.Bool("conf_demo", false, "show the demo conf")
 
 func init() {
 	ua := flag.Usage
 	flag.Usage = func() {
 		ua()
-		fmt.Println("\n site: https://github.com/hidu/api-proxy")
-		fmt.Println(" version:",proxy.API_PROXY_VERSION)
+		fmt.Println("\n site: https://github.com/hidu/api-man")
+		fmt.Println(" version:", proxy.API_PROXY_VERSION)
 	}
 }
 

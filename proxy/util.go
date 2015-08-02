@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"encoding/json"
+	"io/ioutil"
 )
 
 const TIME_FORMAT_STD string = "2006-01-02 15:04:05"
@@ -99,4 +101,13 @@ func IsContentTypeText(contentType string) bool {
 		}
 	}
 	return true
+}
+
+func LoadJsonFile(jsonPath string,obj interface{})error{
+	data, err := ioutil.ReadFile(jsonPath)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(data, &obj)
+	return err
 }
