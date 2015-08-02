@@ -58,4 +58,15 @@ function proxy_api_get_pv(name,target){
 	})
 	
 }
-
+function h(html) {
+	if(html==""){
+		return "&nbsp;";
+	}
+	html = (html+"").replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+			    .replace(/'/g, '&acute;')
+			    .replace(/"/g, '&quot;')
+	            .replace(/\|/g, '&brvbar;');
+    return html;
+}

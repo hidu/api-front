@@ -25,7 +25,7 @@ type ApiServer struct {
 	routers    *Routers
 	web        *WebAdmin
 	ServerConf *ServerConfItem
-	counter *Counter
+	counter    *Counter
 }
 
 func NewApiServer(conf *ServerConfItem, manager *ApiServerManager) *ApiServer {
@@ -34,7 +34,7 @@ func NewApiServer(conf *ServerConfItem, manager *ApiServerManager) *ApiServer {
 	apiServer.Apis = make(map[string]*Api)
 	apiServer.routers = NewRouters()
 	apiServer.web = NewWebAdmin(apiServer)
-	apiServer.counter=NewCounter(apiServer)
+	apiServer.counter = NewCounter(apiServer)
 	return apiServer
 }
 
@@ -69,6 +69,11 @@ func (apiServer *ApiServer) loadAllApis() {
 		baseName := filepath.Base(fileName)
 
 		apiName := baseName[:len(baseName)-5]
+
+		if strings.HasPrefix(apiName, "_") {
+			continue
+		}
+
 		apiServer.loadApi(apiName)
 	}
 }
@@ -88,7 +93,7 @@ func (apiServer *ApiServer) newApi(apiName string) *Api {
 	return NewApi(apiServer, apiName)
 }
 
-func (apiServer *ApiServer)GetConfDir() string{
+func (apiServer *ApiServer) GetConfDir() string {
 	return apiServer.ConfDir
 }
 
@@ -116,15 +121,25 @@ func (apiServer *ApiServer) loadApi(apiName string) error {
 	return nil
 }
 
+func (apiServer *ApiServer) GetUniqReqId(id uint64) string {
+	return fmt.Sprintf("%s_%d", time.Now().Format(TIME_FORMAT_INT), id)
+}
+
 func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http.Request) {
 	bindPath := api.Path
 	log.Println(apiServer.ServerConf.Port, api.Name, "bind path [", bindPath, "]")
 	return func(rw http.ResponseWriter, req *http.Request) {
-		dump, err := httputil.DumpRequest(req, true)
-		log.Println("raw_dump_req:", string(dump), err)
+		id := api.PvInc()
+		uniqId := apiServer.GetUniqReqId(id)
+
+		broadData := apiServer.initBroadCastData(req)
+		broadData.Id = uniqId
+
+		defer func() {
+			go apiServer.BroadcastApiReq(api, broadData)
+		}()
 
 		rw.Header().Set("Api-Proxy-Version", API_PROXY_VERSION)
-		api.PvInc()
 		log.Println(req.URL.String())
 
 		relPath := req.URL.Path[len(bindPath):]
@@ -134,11 +149,12 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 		body, err := ioutil.ReadAll(req.Body)
 
-		logData["body_len"] = len(logData)
+		logData["body_len"] = len(body)
 
 		if err != nil {
 			rw.WriteHeader(http.StatusBadGateway)
 			rw.Write([]byte("read body failed"))
+			broadData.SetError(err.Error())
 			return
 		}
 		//get body must by before  parse callerPref
@@ -146,6 +162,8 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		cpf := NewCallerPrefConfByHttpRequest(req, api)
 
 		masterHost := api.GetMasterHostName(cpf)
+
+		broadData.SetData("master", masterHost)
 
 		defer (func() {
 			uri := req.URL.Path
@@ -161,6 +179,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 			logData["hostTotal"] = 0
 			rw.WriteHeader(http.StatusBadGateway)
 			rw.Write([]byte("Api has No Backend Hosts"))
+			broadData.SetError("no backend hosts")
 			return
 		}
 
@@ -212,6 +231,8 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 				backLog["raw_url"] = rawUrl
 
+				broadData.SetData("raw_url", rawUrl)
+
 				reqNew, err := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 				if err != nil {
 					log.Println("build req failed:", err)
@@ -219,6 +240,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 						rw.WriteHeader(http.StatusBadGateway)
 						rw.Write([]byte("apiServer error:" + err.Error() + "\nraw_url:" + rawUrl))
 					}
+					broadData.SetError(err.Error())
 					return
 
 				}
@@ -230,9 +252,6 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				}
 
 				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
-
-				reqNewDump, dumpErr := httputil.DumpRequest(reqNew, true)
-				log.Println("reqNewDump:", string(reqNewDump), dumpErr)
 
 				transport := &http.Transport{
 					Proxy: http.ProxyFromEnvironment,
@@ -265,6 +284,8 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				defer resp.Body.Close()
 				if isMaster {
 
+					apiServer.addBroadCastDataResponse(broadData, resp)
+
 					for k, vs := range resp.Header {
 						for _, v := range vs {
 							rw.Header().Add(k, v)
@@ -287,6 +308,24 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 	}
 }
+func (apiServer *ApiServer) initBroadCastData(req *http.Request) *BroadCastData {
+	data := NewReqBroadCastData(req)
+	dumpBody := IsRequestDumpBody(req)
+
+	dump, _ := httputil.DumpRequest(req, dumpBody)
+	data.SetData("req_detail", string(dump))
+	return data
+}
+
+func (apiServer *ApiServer) addBroadCastDataResponse(broadData *BroadCastData, resp *http.Response) {
+	dumpBody := resp.ContentLength > 0 && resp.ContentLength < 1e6
+	dump, _ := httputil.DumpResponse(resp, dumpBody)
+	broadData.SetData("res_detail", string(dump))
+}
+
+func (apiServer *ApiServer) BroadcastApiReq(api *Api, data *BroadCastData) {
+	apiServer.web.BroadcastApi(api, "req", data)
+}
 
 func (apiServer *ApiServer) getApiByName(name string) *Api {
 	if api, has := apiServer.Apis[name]; has {
@@ -305,6 +344,6 @@ func (apiServer *ApiServer) getApiByPath(bindPath string) *Api {
 	return nil
 }
 
-func (apiServer *ApiServer)GetCounter()*Counter{
+func (apiServer *ApiServer) GetCounter() *Counter {
 	return apiServer.counter
 }

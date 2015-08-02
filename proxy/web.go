@@ -4,16 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/googollee/go-socket.io"
 	"github.com/hidu/goutils"
 	"html"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
-	"github.com/googollee/go-socket.io"
-	"log"
 )
 
 var API_PROXY_VERSION string
@@ -24,8 +24,8 @@ func init() {
 
 type WebAdmin struct {
 	apiServer *ApiServer
-	wsServer *socketio.Server
-	wsSocket socketio.Socket
+	wsServer  *socketio.Server
+	wsSocket  socketio.Socket
 }
 
 func NewWebAdmin(mimo *ApiServer) *WebAdmin {
@@ -33,42 +33,53 @@ func NewWebAdmin(mimo *ApiServer) *WebAdmin {
 		apiServer: mimo,
 	}
 	ser.wsInit()
-	
+
 	return ser
 }
-func (web *WebAdmin)wsInit(){
-	server,err:=socketio.NewServer(nil)
-	if(err!=nil){
-		log.Fatalln("init ws server failed:",err.Error())
+func (web *WebAdmin) wsInit() {
+	server, err := socketio.NewServer(nil)
+	if err != nil {
+		log.Fatalln("init ws server failed:", err.Error())
 	}
-	web.wsServer=server
-	
+	web.wsServer = server
+
 	server.On("connection", func(so socketio.Socket) {
-		so.Emit("hello","hello,now:"+time.Now().String())
-        so.On("disconnection", func() {
-            log.Println("on disconnect")
-        })
-        web.wsSocket=so
-        so.On("api_pv",func(name string){
-        	web.emitApiPv(name)
-        })
-    })
-    server.On("error",func(so socketio.Socket){
-    	log.Println("ws error:", err)
-    })
+		so.Emit("hello", "hello,now:"+time.Now().String())
+		so.On("disconnection", func() {
+			log.Println("on disconnect")
+		})
+		web.wsSocket = so
+		so.On("api_pv", func(name string) {
+			web.emitApiPv(name)
+		})
+		so.On("http_analysis", func(name string) {
+			api := web.apiServer.getApiByName(name)
+			if api != nil {
+				err := so.Join(api.GetRoomName())
+				log.Println("join_room", api.GetRoomName(), err)
+			}
+		})
+	})
+	server.On("error", func(so socketio.Socket) {
+		log.Println("ws error:", err)
+	})
 }
 
-func (web *WebAdmin)emitApiPv(name string){
-	api:=web.apiServer.getApiByName(name)
-	if(api==nil){
+func (web *WebAdmin) BroadcastApi(api *Api, broadType string, reqData *BroadCastData) {
+	web.wsServer.BroadcastTo(api.GetRoomName(), broadType, reqData)
+}
+
+func (web *WebAdmin) emitApiPv(name string) {
+	api := web.apiServer.getApiByName(name)
+	if api == nil {
 		return
 	}
-	data:=make(map[string]interface{})
-	data["name"]=name
-	data["pv"]=api.GetPv()
-	err:=web.wsSocket.Emit("api_pv",data)
-	if(err!=nil){
-		log.Println("emitApiPv_err:",err,"data:",data)
+	data := make(map[string]interface{})
+	data["name"] = name
+	data["pv"] = api.GetPv()
+	err := web.wsSocket.Emit("api_pv", data)
+	if err != nil {
+		log.Println("emitApiPv_err:", err, "data:", data)
 	}
 }
 
@@ -79,7 +90,7 @@ func (web *WebAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if strings.HasPrefix(req.URL.Path, "/_socket.io/") {
-		web.wsServer.ServeHTTP(rw,req)
+		web.wsServer.ServeHTTP(rw, req)
 		return
 	}
 
@@ -126,7 +137,9 @@ func (wr *webReq) execute() {
 	case "/_apipv":
 		wr.apiPv()
 		return
-
+	case "/_analysis":
+		wr.apiAnalysis()
+		return
 	}
 	wr.render("index.html", true)
 }
@@ -173,12 +186,28 @@ func (wr *webReq) apiPv() {
 		wr.json(400, "param empty", nil)
 		return
 	}
-	api:=wr.web.apiServer.getApiByName(apiName)
-	if(api==nil){
+	api := wr.web.apiServer.getApiByName(apiName)
+	if api == nil {
 		wr.json(400, "api not exists", nil)
 		return
 	}
-	wr.json(0,"suc",api.GetPv())
+	wr.json(0, "suc", api.GetPv())
+}
+func (wr *webReq) apiAnalysis() {
+	apiName := strings.TrimSpace(wr.req.FormValue("name"))
+	if apiName == "" {
+		wr.values["error"] = "param empty"
+		wr.render("error.html", true)
+		return
+	}
+	api := wr.web.apiServer.getApiByName(apiName)
+	if api == nil {
+		wr.values["error"] = "api not exists!  <a href='/_api'>add new</a>"
+		wr.render("error.html", true)
+		return
+	}
+	wr.values["api"] = api
+	wr.render("analysis.html", true)
 }
 
 func (wr *webReq) alert(msg string) {

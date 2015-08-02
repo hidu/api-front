@@ -4,6 +4,9 @@
 <legend>api基础信息
 
 <span class="legend_note pull-right">
+{{if .api.Exists}}
+<a href="/_analysis?name={{.api.Name}}">Http Analysis</a>&nbsp;
+{{end}}
 pv: &nbsp;<span id="api_pv">{{.api.GetPv}}</span>&nbsp;
 </span>
 </legend>

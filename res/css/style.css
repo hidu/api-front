@@ -109,3 +109,5 @@ tr.redo{color:blue;}
 .legend_note{font-size: 12px;margin-left: 20px;padding:2px}
 .legend_note label{font-weight: normal;}
 .my_container{width: 80%}
+
+.req_tr{cursor: pointer;}

@@ -1,0 +1,25 @@
+<h1>{{.api.Name}}</h1>
+<div>
+<table class="table table-condensed">
+<thead>
+<tr>
+    <th width="180px"># &nbsp;<a href="#" onclick="req_clean();return false;">clean</a></th>
+    <th>Method</th>
+    <th>Path</th>
+    <th>Remote</th>
+    <th>Master</th>
+</tr>
+</thead>
+<tbody id="req_list">
+
+</tbody>
+</table>
+</div>
+
+<script>
+
+var api_man_apiName="{{.api.Name}}";
+
+</script>
+
+<script type="text/javascript" src="/_res/js/analysis.js"></script>

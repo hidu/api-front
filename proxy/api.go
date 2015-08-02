@@ -24,18 +24,18 @@ type Api struct {
 	rw          sync.RWMutex `json:"-"`
 	Exists      bool         `json:"-"`
 	HostAsProxy bool         `json:"host_as_proxy"` //是否把后端当作代理
-	Pv          uint64       `json:"-"`            
-	LastVisit   time.Time    `json:"-"`    //最后访问时间
-	Version     int64        `json:"version"`       //配置文件的版本号
-	apiServer	*ApiServer	
+	Pv          uint64       `json:"-"`
+	LastVisit   time.Time    `json:"-"`       //最后访问时间
+	Version     int64        `json:"version"` //配置文件的版本号
+	apiServer   *ApiServer
 }
 
 func NewApi(apiServer *ApiServer, apiName string) *Api {
 	api := &Api{
-		Name:     apiName,
-		ConfPath: fmt.Sprintf("%s/%s.json", apiServer.GetConfDir(), apiName),
-		Hosts:    NewHosts(),
-		apiServer:apiServer,
+		Name:      apiName,
+		ConfPath:  fmt.Sprintf("%s/%s.json", apiServer.GetConfDir(), apiName),
+		Hosts:     NewHosts(),
+		apiServer: apiServer,
 	}
 	return api
 }
@@ -99,8 +99,6 @@ func (api *Api) Delete() {
 	log.Println("backup ", back_path, err)
 }
 
-
-
 func (api *Api) Clone() *Api {
 	api.rw.RLock()
 	defer api.rw.RUnlock()
@@ -111,7 +109,7 @@ func (api *Api) Clone() *Api {
 	newApi.ConfPath = api.ConfPath
 	newApi.Exists = api.Exists
 	newApi.init()
-	newApi.apiServer=api.apiServer
+	newApi.apiServer = api.apiServer
 	return newApi
 }
 
@@ -191,12 +189,16 @@ func LoadApiByConf(apiServer *ApiServer, apiName string) (*Api, error) {
 	return api, err
 }
 
-func (api *Api)PvInc(){
-	 api.apiServer.GetCounter().PvInc(api.Name)
+func (api *Api) PvInc() uint64 {
+	return api.apiServer.GetCounter().PvInc(api.Name)
 }
 
-func (api *Api)GetPv()uint64{
+func (api *Api) GetPv() uint64 {
 	return api.apiServer.GetCounter().GetPv(api.Name)
+}
+
+func (api *Api) GetRoomName() string {
+	return fmt.Sprintf("_room_%s", api.Name)
 }
 
 func ApiCookieName(apiName string) string {

@@ -1,7 +1,9 @@
 package proxy
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -9,8 +11,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"encoding/json"
-	"io/ioutil"
 )
 
 const TIME_FORMAT_STD string = "2006-01-02 15:04:05"
@@ -92,7 +92,7 @@ func UrlPathClean(urlPath string) string {
 	}
 }
 
-var textContentTypes []string = []string{"text/html", "text/css", "javascript"}
+var textContentTypes []string = []string{"text", "javascript", "json"}
 
 func IsContentTypeText(contentType string) bool {
 	for _, v := range textContentTypes {
@@ -103,11 +103,24 @@ func IsContentTypeText(contentType string) bool {
 	return true
 }
 
-func LoadJsonFile(jsonPath string,obj interface{})error{
+func LoadJsonFile(jsonPath string, obj interface{}) error {
 	data, err := ioutil.ReadFile(jsonPath)
 	if err != nil {
 		return err
 	}
 	err = json.Unmarshal(data, &obj)
 	return err
+}
+
+func IsRequestDumpBody(req *http.Request) bool {
+	switch req.Method {
+	case "GET":
+	case "DELETE":
+		return true
+	}
+	if req.ContentLength > 0 && req.ContentLength < 1e7 {
+		return true
+	}
+
+	return false
 }

@@ -4,12 +4,14 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hidu/api-man/proxy"
+	"log"
 )
 
 var conf_path = flag.String("conf", "./conf/man.json", "server conf path")
 var conf_demo = flag.Bool("conf_demo", false, "show the demo conf")
 
 func init() {
+	log.SetFlags(log.Lshortfile | log.LstdFlags | log.Ldate)
 	ua := flag.Usage
 	flag.Usage = func() {
 		ua()
