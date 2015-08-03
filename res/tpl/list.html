@@ -8,6 +8,7 @@
 <th>Timeout</th>
 <th>Enable</th>
 <th>Url</th>
+<th>Analysis</th>
 </tr>
 </thead>
 <tbody>
@@ -23,6 +24,7 @@
     {{if not $api.Enable}}</font>{{end}}
     </td>
     <td><a href="{{$.base_url}}{{$api.Path}}" target="_blank">{{$.base_url}}{{$api.Path}}</a></td>   
+    <td><a href="/_analysis?name={{$name}}" target="_blank">analysis</a></td>   
 </tr>
 {{end}}
 </tbody>

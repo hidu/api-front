@@ -7,10 +7,11 @@ import (
 )
 
 type ServerConfItem struct {
-	Port   int    `json:"port"`
-	Enable bool   `json:"enable"`
-	Name   string `json:"name"`
-	Note   string `json:"note"`
+	Port         int    `json:"port"`
+	Enable       bool   `json:"enable"`
+	Name         string `json:"name"`
+	Note         string `json:"note"`
+	HiddenCookie bool   `json:"hidden_cookie"`
 }
 
 type apiServerConf struct {

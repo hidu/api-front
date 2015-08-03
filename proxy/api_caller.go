@@ -85,6 +85,7 @@ func (caller *Caller) Init() (err error) {
 }
 
 func (caller *Caller) GetPrefHostName(allowNames []string, cpf *CallerPrefConf) string {
+
 	if len(allowNames) == 0 || len(*caller) == 0 {
 		return StrSliceRandItem(allowNames)
 	}

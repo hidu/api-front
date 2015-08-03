@@ -31,6 +31,15 @@ var socket = io("",{path:"/_socket.io/"});
 socket.on('hello', function(msg){
 	console && console.log(msg)
 });
+socket.on("error",function(msg){
+	console && console.log("socket.io error",msg)
+})
+socket.on("reconnect",function(msg){
+	console && console.log("socket.io reconnect",msg)
+})
+socket.on("disconnect",function(msg){
+	console && console.log("socket.io disconnect",msg)
+})
 
 
 function proxy_api_host_add(){
@@ -54,7 +63,9 @@ function proxy_api_get_pv(name,target){
 		socket.emit("api_pv",name)
 	},1000);
 	socket.on("api_pv",function(data){
-		$(target).html(""+data.pv);
+		if(data.name==name){
+			$(target).html(""+data.pv);
+		}
 	})
 	
 }

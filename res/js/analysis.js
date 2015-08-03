@@ -1,6 +1,9 @@
 
 
-socket.emit("http_analysis",api_man_apiName)
+socket.on("connect",function(msg){
+	console && console.log("socket.io connect",msg)
+	socket.emit("http_analysis",api_man_apiName)
+})
 
 socket.on("req",function(req){
 	console && console.log(req)
@@ -34,14 +37,16 @@ function showReqTr(req){
 			"<td>"+req.id+"</td>" +
 			"<td>"+req.data.method+"</td>" +
 			"<td>"+h(req.data.path)+"</td>" +
+			"<td>"+h(req.data.resp_status)+"</td>" +
 			"<td>"+req.data.remote+"</td>"+
 			"<td>"+h(req.data.master)+"</td>"+
 			"</tr>";
-	tr+="<tr class='hidden'><td colspan=5>" +
+	tr+="<tr class='hidden'><td colspan=6>" +
 			"<pre>"+h(req.data.req_detail)+"</pre>" +
-			"<pre>"+h(req.data.res_detail)+"</pre>" +
+			"<pre>"+h(showDumpData(req.data.res_detail))+"</pre>" +
 			"</td></tr>"
 	$("#req_list").prepend(tr)
+	showDumpData(req.data.res_detail)
 	
 	$("#req_list tr.req_tr").each(function(index,data){
 		if(index>=req_max_length){
@@ -49,6 +54,33 @@ function showReqTr(req){
 			data.remove();
 		}
 	})
+}
+
+function showDumpData(str){
+	var pos=str.indexOf("\r\n\r\n");
+	var hd=str.substr(0,pos+4)
+	var bd=str.substr(pos+4)
+	var jsonBd=parseAsjson(bd)
+	if(jsonBd!=false){
+		str+="\n\n------jsonBody---format-----\n"+jsonBd
+	}
+	return str
+}
+
+function parseAsjson(str) {
+    try {
+    	str=str+""
+    	if(str[0]!="{" && str[0]!="["){
+    		return false;
+    	}
+        var jsonObj = JSON.parse(str);
+        if (jsonObj) {
+           return JSON.stringify(jsonObj, null, 4);
+        }
+    } catch (e) {
+    	console.log("parseAsjson_error",e)
+    }
+    return false;
 }
 	
 function showReqDetail(req){

@@ -100,7 +100,7 @@ func IsContentTypeText(contentType string) bool {
 			return true
 		}
 	}
-	return true
+	return false
 }
 
 func LoadJsonFile(jsonPath string, obj interface{}) error {

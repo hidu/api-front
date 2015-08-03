@@ -52,7 +52,7 @@ func (manager *ApiServerManager) AddServer(conf *ServerConfItem) bool {
 }
 
 func (manager *ApiServerManager) Start() {
-	logPath := filepath.Dir(filepath.Dir(manager.ConfPath)) + "/log/api-proxy.log"
+	logPath := filepath.Dir(filepath.Dir(manager.ConfPath)) + "/log/api-man.log"
 	manager.setupLog(logPath)
 	defer manager.LogFile.Close()
 

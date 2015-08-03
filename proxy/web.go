@@ -78,6 +78,7 @@ func (web *WebAdmin) emitApiPv(name string) {
 	data["name"] = name
 	data["pv"] = api.GetPv()
 	err := web.wsSocket.Emit("api_pv", data)
+
 	if err != nil {
 		log.Println("emitApiPv_err:", err, "data:", data)
 	}
@@ -111,6 +112,7 @@ type webReq struct {
 }
 
 func (wr *webReq) execute() {
+	wr.values["Title"] = "Index"
 	wr.values["version"] = API_PROXY_VERSION
 	wr.values["base_url"] = "http://" + wr.req.Host
 	wr.values["server_list"] = wr.web.apiServer.manager.ServerConf.Server
@@ -126,9 +128,11 @@ func (wr *webReq) execute() {
 
 	switch wr.req.URL.Path {
 	case "/_api":
+		wr.values["Title"] = "Edit"
 		wr.apiEdit()
 		return
 	case "/_apis":
+		wr.values["Title"] = "List"
 		wr.apiList()
 		return
 	case "/_pref":
@@ -138,6 +142,7 @@ func (wr *webReq) execute() {
 		wr.apiPv()
 		return
 	case "/_analysis":
+		wr.values["Title"] = "Analysis"
 		wr.apiAnalysis()
 		return
 	}
@@ -361,7 +366,6 @@ func (wr *webReq) apiBaseSave() {
 	api.Enable = req.FormValue("enable") == "1"
 	api.Path = apiPath
 	api.HostAsProxy = req.FormValue("host_as_proxy") == "1"
-
 	if apiNameOrig != apiName {
 		wr.web.apiServer.deleteApi(apiNameOrig)
 	}

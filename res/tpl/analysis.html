@@ -1,4 +1,7 @@
-<h1>{{.api.Name}}</h1>
+<h1>{{.api.Name}}
+&nbsp;<sub><a href="/_api?name={{.api.Name}}">Edit</a></sub>
+</h1>
+
 <div>
 <table class="table table-condensed">
 <thead>
@@ -6,6 +9,7 @@
     <th width="180px"># &nbsp;<a href="#" onclick="req_clean();return false;">clean</a></th>
     <th>Method</th>
     <th>Path</th>
+    <th>Status</th>
     <th>Remote</th>
     <th>Master</th>
 </tr>

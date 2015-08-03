@@ -11,6 +11,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -308,19 +309,44 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 	}
 }
+
+var reqCookieDumpLine = regexp.MustCompile(`Cookie: .+\r\n`)
+
 func (apiServer *ApiServer) initBroadCastData(req *http.Request) *BroadCastData {
 	data := NewReqBroadCastData(req)
 	dumpBody := IsRequestDumpBody(req)
 
 	dump, _ := httputil.DumpRequest(req, dumpBody)
-	data.SetData("req_detail", string(dump))
+	req_detail := string(dump)
+	if apiServer.ServerConf.HiddenCookie {
+		req_detail = reqCookieDumpLine.ReplaceAllString(req_detail, "Cookie: ------hidden------\r\n")
+	}
+	data.SetData("req_detail", req_detail)
 	return data
 }
 
+var resCookieDumpLine = regexp.MustCompile(`Set-Cookie: .+\r\n`)
+
 func (apiServer *ApiServer) addBroadCastDataResponse(broadData *BroadCastData, resp *http.Response) {
-	dumpBody := resp.ContentLength > 0 && resp.ContentLength < 1e6
+	dumpBody := true
+	if resp.StatusCode == http.StatusOK {
+		dumpBody = IsContentTypeText(resp.Header.Get("Content-Type"))
+		if dumpBody && resp.ContentLength > 0 && resp.ContentLength > 1e6 {
+			dumpBody = false
+		}
+	}
+
 	dump, _ := httputil.DumpResponse(resp, dumpBody)
-	broadData.SetData("res_detail", string(dump))
+	broadData.SetData("resp_status", resp.StatusCode)
+
+	res_detail := string(dump)
+	if apiServer.ServerConf.HiddenCookie {
+		res_detail = resCookieDumpLine.ReplaceAllString(res_detail, "Set-Cookie: ------hidden------\r\n")
+	}
+	if !dumpBody {
+		res_detail += "---body skipped---"
+	}
+	broadData.SetData("res_detail", res_detail)
 }
 
 func (apiServer *ApiServer) BroadcastApiReq(api *Api, data *BroadCastData) {
