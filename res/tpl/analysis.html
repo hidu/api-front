@@ -12,6 +12,7 @@
     <th>Status</th>
     <th>Remote</th>
     <th>Master</th>
+    <th>Used</th>
 </tr>
 </thead>
 <tbody id="req_list">
@@ -27,3 +28,14 @@ var api_man_apiName="{{.api.Name}}";
 </script>
 
 <script type="text/javascript" src="/_res/js/analysis.js"></script>
+<script>
+(function(){
+	var w=$(window).width()*0.78;
+    document.write("<style>#req_list pre{max-width:"+w+"px}</style>");
+})()
+</script>
+
+<ul class="list-group" id="analysis_toggle_btn">
+  <li class="list-group-item" id="item_open_all"><a href="#">Open All</a></li>
+  <li class="list-group-item" id="item_close_all"><a href="#">Close All</a></li>
+</ul>

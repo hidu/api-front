@@ -3,7 +3,7 @@ package proxy
 import (
 	"encoding/json"
 	"net/http"
-	//	"fmt"
+	"strings"
 )
 
 type BroadCastData struct {
@@ -16,7 +16,8 @@ func NewReqBroadCastData(req *http.Request) *BroadCastData {
 		Data: make(map[string]interface{}),
 	}
 	data.Data["path"] = req.URL.RequestURI()
-	data.Data["remote"] = req.RemoteAddr
+	remote := strings.Split(req.RemoteAddr, ":")
+	data.Data["remote"] = remote[0]
 	data.Data["method"] = req.Method
 	return data
 }

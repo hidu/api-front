@@ -1,8 +1,10 @@
 package proxy
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -116,11 +118,43 @@ func IsRequestDumpBody(req *http.Request) bool {
 	switch req.Method {
 	case "GET":
 	case "DELETE":
+	case "HEAD":
 		return true
 	}
+	if IsContentTypeText(req.Header.Get("Content-Type")) {
+		return true
+	}
+
 	if req.ContentLength > 0 && req.ContentLength < 1e7 {
 		return true
 	}
 
 	return false
+}
+
+func forgetRead(reader *io.ReadCloser) *bytes.Buffer {
+	buf := bytes.NewBuffer([]byte{})
+	io.Copy(buf, *reader)
+	*reader = ioutil.NopCloser(buf).(io.ReadCloser)
+	return bytes.NewBuffer(buf.Bytes())
+}
+
+func ReqCookieHidden(str string) string {
+	cs := []string{}
+	arr := strings.Split(str[7:], "; ")
+	for _, v := range arr {
+		tmp := strings.SplitN(v, "=", 2)
+		cs = append(cs, fmt.Sprintf("%s=hidden", tmp[0]))
+	}
+	return str[:7] + strings.Join(cs, "; ") + "\r\n"
+}
+
+func ResCookieSetHidden(str string) string {
+	arr := strings.SplitN(strings.TrimSpace(str[11:]), ";", 2)
+	tmp := strings.SplitN(arr[0], "=", 2)
+	setCookie := str[:11] + tmp[0] + "=hidden"
+	if len(arr) > 1 {
+		setCookie += ";" + arr[1]
+	}
+	return setCookie + "\r\n"
 }

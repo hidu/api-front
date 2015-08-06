@@ -11,7 +11,7 @@ socket.on("req",function(req){
 		showReqDetail(req)
 	}
 })
-var req_max_length=100;
+var req_max_length=500;
 var req_list=[];
 var localStrName="reqs_"+api_man_apiName
 try{
@@ -40,11 +40,13 @@ function showReqTr(req){
 			"<td>"+h(req.data.resp_status)+"</td>" +
 			"<td>"+req.data.remote+"</td>"+
 			"<td>"+h(req.data.master)+"</td>"+
+			"<td title='ms'>"+req.data.used.toFixed(2)+"</td>"
 			"</tr>";
-	tr+="<tr class='hidden'><td colspan=6>" +
+	tr+="<tr class='hidden'><td colspan=7>" +
 			"<pre>"+h(req.data.req_detail)+"</pre>" +
 			"<pre>"+h(showDumpData(req.data.res_detail))+"</pre>" +
-			"</td></tr>"
+			"</td>" +
+			"</tr>"
 	$("#req_list").prepend(tr)
 	showDumpData(req.data.res_detail)
 	
@@ -75,7 +77,7 @@ function parseAsjson(str) {
     	}
         var jsonObj = JSON.parse(str);
         if (jsonObj) {
-           return JSON.stringify(jsonObj, null, 4);
+           return JSON.stringify(jsonObj, null, 2);
         }
     } catch (e) {
     	console.log("parseAsjson_error",e)
@@ -101,5 +103,13 @@ $().ready(function(){
 	$("#req_list").on("click","tr.req_tr",function(){
 		$(this).next("tr").toggleClass("hidden");
 	})
+	$("#item_open_all").click(function(){
+		$("#req_list tr").not(".req_tr").removeClass("hidden")
+		return false;
+	});
+	$("#item_close_all").click(function(){
+		$("#req_list tr").not(".req_tr").addClass("hidden")
+		return false;
+	});
 	
 });

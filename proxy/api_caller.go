@@ -186,12 +186,18 @@ func (cpf *CallerPrefConf) GetIp() string {
 	return cpf.ip
 }
 
+var ipReg = regexp.MustCompile(`^(\d+\.){3}\d+$`)
+
 func NewCallerPrefConfByHttpRequest(req *http.Request, api *Api) *CallerPrefConf {
 	prefConf := &CallerPrefConf{}
 	prefConf.prefHostName = make(map[string][]string)
 
 	info := strings.SplitN(req.RemoteAddr, ":", 2)
 	prefConf.ip = info[0]
+	x_real_ip := req.Header.Get("X-Real-Ip")
+	if x_real_ip != "" && ipReg.MatchString(x_real_ip) {
+		prefConf.ip = x_real_ip
+	}
 
 	//get from form data
 	prefConf.AddNewPrefHostRaw(API_PREF_TYPE_REQ, req.FormValue(API_PREF_PARMA_NAME), ",")

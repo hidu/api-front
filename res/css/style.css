@@ -111,3 +111,9 @@ tr.redo{color:blue;}
 .my_container{width: 80%}
 
 .req_tr{cursor: pointer;}
+
+#analysis_toggle_btn{
+	position: fixed;
+	right:2%;
+	top:160px;
+}

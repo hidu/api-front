@@ -123,7 +123,7 @@ func (apiServer *ApiServer) loadApi(apiName string) error {
 }
 
 func (apiServer *ApiServer) GetUniqReqId(id uint64) string {
-	return fmt.Sprintf("%s_%d", time.Now().Format(TIME_FORMAT_INT), id)
+	return fmt.Sprintf("%s_%d", time.Now().Format("20060102_150405"), id)
 }
 
 func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http.Request) {
@@ -135,8 +135,10 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 		broadData := apiServer.initBroadCastData(req)
 		broadData.Id = uniqId
-
+		start := time.Now()
 		defer func() {
+			used := float64(time.Now().Sub(start).Nanoseconds()) / 1e6
+			broadData.SetData("used", used)
 			go apiServer.BroadcastApiReq(api, broadData)
 		}()
 
@@ -246,6 +248,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 				}
 				copyHeaders(reqNew.Header, req.Header)
+				reqNew.Header.Del("Accept-Encoding")
 
 				if bodyLen > 0 {
 					reqNew.ContentLength = bodyLen
@@ -319,8 +322,9 @@ func (apiServer *ApiServer) initBroadCastData(req *http.Request) *BroadCastData 
 	dump, _ := httputil.DumpRequest(req, dumpBody)
 	req_detail := string(dump)
 	if apiServer.ServerConf.HiddenCookie {
-		req_detail = reqCookieDumpLine.ReplaceAllString(req_detail, "Cookie: ------hidden------\r\n")
+		req_detail = reqCookieDumpLine.ReplaceAllStringFunc(req_detail, ReqCookieHidden)
 	}
+
 	data.SetData("req_detail", req_detail)
 	return data
 }
@@ -335,17 +339,36 @@ func (apiServer *ApiServer) addBroadCastDataResponse(broadData *BroadCastData, r
 			dumpBody = false
 		}
 	}
+	switch resp.StatusCode {
+	case http.StatusBadRequest:
+	case http.StatusNotFound:
+	case http.StatusSeeOther:
+	case http.StatusForbidden:
+	case http.StatusGone:
+	case http.StatusBadGateway:
+	case http.StatusInternalServerError:
+	case http.StatusServiceUnavailable:
+	case http.StatusGatewayTimeout:
+		dumpBody = true
+		break
+	default:
+		break
+	}
 
-	dump, _ := httputil.DumpResponse(resp, dumpBody)
 	broadData.SetData("resp_status", resp.StatusCode)
+	dump, _ := httputil.DumpResponse(resp, false)
 
 	res_detail := string(dump)
 	if apiServer.ServerConf.HiddenCookie {
-		res_detail = resCookieDumpLine.ReplaceAllString(res_detail, "Set-Cookie: ------hidden------\r\n")
+		res_detail = resCookieDumpLine.ReplaceAllStringFunc(res_detail, ResCookieSetHidden)
+		//		res_detail = resCookieDumpLine.ReplaceAllString(res_detail, "Set-Cookie: ------hidden------\r\n")
 	}
 	if !dumpBody {
 		res_detail += "---body skipped---"
+	} else {
+		res_detail += forgetRead(&resp.Body).String()
 	}
+	//	fmt.Println(res_detail)
 	broadData.SetData("res_detail", res_detail)
 }
 
