@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"compress/gzip"
 )
 
 const TIME_FORMAT_STD string = "2006-01-02 15:04:05"
@@ -157,4 +158,19 @@ func ResCookieSetHidden(str string) string {
 		setCookie += ";" + arr[1]
 	}
 	return setCookie + "\r\n"
+}
+
+func gzipDocode(buf *bytes.Buffer) string {
+	if buf.Len() < 1 {
+		return ""
+	}
+	gr, err := gzip.NewReader(buf)
+	defer gr.Close()
+	if err == nil {
+		bd_bt, _ := ioutil.ReadAll(gr)
+		return string(bd_bt)
+	} else {
+		log.Println("unzip body failed", err)
+		return ""
+	}
 }

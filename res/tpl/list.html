@@ -6,6 +6,7 @@
 <th>Path</th>
 <th>Note</th>
 <th>Timeout</th>
+<th>Pv</th>
 <th>Enable</th>
 <th>Url</th>
 <th>Analysis</th>
@@ -18,6 +19,7 @@
     <td><a href="/_api?name={{$name}}">{{$api.Path|html}}</a></td>   
     <td>{{$api.Note|html}}</td>   
     <td>{{$api.TimeoutMs}}</td>
+    <td><span id="api_pv_{{$name}}">{{$api.GetPv}}</span></td>
     <td>
     {{if not $api.Enable}}<font color=red>{{end}}
     {{$api.Enable}}

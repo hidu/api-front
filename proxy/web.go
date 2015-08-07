@@ -49,9 +49,7 @@ func (web *WebAdmin) wsInit() {
 			log.Println("on disconnect")
 		})
 		web.wsSocket = so
-		so.On("api_pv", func(name string) {
-			web.emitApiPv(name)
-		})
+		so.Join("api_pv")
 		so.On("http_analysis", func(name string) {
 			api := web.apiServer.getApiByName(name)
 			if api != nil {
@@ -63,26 +61,35 @@ func (web *WebAdmin) wsInit() {
 	server.On("error", func(so socketio.Socket) {
 		log.Println("ws error:", err)
 	})
+	web.broadApiPvs()
+}
+func (web *WebAdmin)broadApiPvs(){
+	pvs:=make(map[string]uint64)
+	
+	utils.SetInterval(func(){
+		var pv uint64
+		for name,api:=range web.apiServer.Apis{
+			if _,has:=pvs[name];!has{
+				pvs[name]=0
+			}
+			pv=api.GetPv()
+			if(pvs[name]==pv){
+				continue
+			}
+			pvs[name]=pv
+			data := make(map[string]interface{})
+			data["name"] = name
+			data["pv"] = pv
+			web.wsServer.BroadcastTo("api_pv","api_pv",data)
+		}
+	},1)
 }
 
 func (web *WebAdmin) BroadcastApi(api *Api, broadType string, reqData *BroadCastData) {
 	web.wsServer.BroadcastTo(api.GetRoomName(), broadType, reqData)
 }
 
-func (web *WebAdmin) emitApiPv(name string) {
-	api := web.apiServer.getApiByName(name)
-	if api == nil {
-		return
-	}
-	data := make(map[string]interface{})
-	data["name"] = name
-	data["pv"] = api.GetPv()
-	err := web.wsSocket.Emit("api_pv", data)
 
-	if err != nil {
-		log.Println("emitApiPv_err:", err, "data:", data)
-	}
-}
 
 func (web *WebAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if strings.HasPrefix(req.URL.Path, "/_res/") {

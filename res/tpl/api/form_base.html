@@ -7,7 +7,7 @@
 {{if .api.Exists}}
 <a href="/_analysis?name={{.api.Name}}">Http Analysis</a>&nbsp;
 {{end}}
-pv: &nbsp;<span id="api_pv">{{.api.GetPv}}</span>&nbsp;
+pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
 </span>
 </legend>
 
@@ -89,11 +89,3 @@ pv: &nbsp;<span id="api_pv">{{.api.GetPv}}</span>&nbsp;
   {{end}}
 </div>
 
-
-<script>
-{{if .api.Exists}}
-$().ready(function(){
-	proxy_api_get_pv("{{.api.Name}}","#api_pv");
-});
-{{end}}
-</script>

@@ -41,6 +41,10 @@ socket.on("disconnect",function(msg){
 	console && console.log("socket.io disconnect",msg)
 })
 
+socket.on("api_pv",function(data){
+	console && console.log("on.api_pv",data)
+	$("#api_pv_"+data.name).html(""+data.pv);
+})
 
 function proxy_api_host_add(){
     var tpl=$("#api_host_tpl").clone();
@@ -58,17 +62,6 @@ function proxy_api_host_delete(obj){
     return false;
 }
 
-function proxy_api_get_pv(name,target){
-	setInterval(function(){
-		socket.emit("api_pv",name)
-	},1000);
-	socket.on("api_pv",function(data){
-		if(data.name==name){
-			$(target).html(""+data.pv);
-		}
-	})
-	
-}
 function h(html) {
 	if(html==""){
 		return "&nbsp;";

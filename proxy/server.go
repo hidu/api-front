@@ -248,7 +248,12 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 				}
 				copyHeaders(reqNew.Header, req.Header)
-				reqNew.Header.Del("Accept-Encoding")
+				
+				//only accept gzip encode
+				accept_encoding:=reqNew.Header.Get("Accept-Encoding")
+				if(accept_encoding!="" && (In_StringSlice("gzip",reqNew.Header["Accept-Encoding"]) || strings.Contains(accept_encoding,"gzip")) ){
+					reqNew.Header.Set("Accept-Encoding","gzip")
+				}
 
 				if bodyLen > 0 {
 					reqNew.ContentLength = bodyLen
@@ -366,7 +371,12 @@ func (apiServer *ApiServer) addBroadCastDataResponse(broadData *BroadCastData, r
 	if !dumpBody {
 		res_detail += "---body skipped---"
 	} else {
-		res_detail += forgetRead(&resp.Body).String()
+		bd:=forgetRead(&resp.Body)
+		if(resp.Header.Get("Content-Encoding")=="gzip"){
+			res_detail+=gzipDocode(bd)
+		}else{
+			res_detail +=bd.String()
+		}
 	}
 	//	fmt.Println(res_detail)
 	broadData.SetData("res_detail", res_detail)

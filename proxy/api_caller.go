@@ -76,7 +76,7 @@ func (caller *Caller) Init() (err error) {
 	}
 	if !has_all {
 		citem, _ := NewCallerItem(IP_ALL)
-		citem.Note = "all"
+		citem.Note = "default all"
 		citem.Enable = true
 		citem.Init()
 		caller.AddNewCallerItem(citem)
