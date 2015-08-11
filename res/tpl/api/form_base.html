@@ -69,7 +69,9 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
  </span>
 </legend>
  <p class="text-muted">流量会复制到每个后端服务,然后随机选取其中一个Response返回。</p>
+ <div id="div_hosts">
 {{range $name,$host:=.api.Hosts}}
+  <div>
     {{if in_array $name $.cookiePref}}
      <div class="bg-success my-panel" title="该后端已经设置为cookie的默认优先后端了，直接浏览器访问优先返回该主机结果">
     {{end}}
@@ -77,9 +79,22 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
     {{if in_array $name $.cookiePref}}
     </div>
     {{end}}
+  </div>
 {{end}}
+ </div>
 </fieldset>
-
+{{/*}}
+<script>
+$().ready(function(){
+    $("#div_hosts").sortable({
+    	update:function(e, ui){
+            var index = $(ui.element).children().index(ui.item);
+            $(ui.item).find("[name=sort_index]").val(index);
+        }    	
+    });
+});
+</script>
+{{*/}}
 <div class="t_c"><input type="submit" value="保 存" class="btn btn-default"></div>
 </form>
 

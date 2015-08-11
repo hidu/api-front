@@ -31,15 +31,15 @@
     <label class="control-label">返回以下后端服务的结果:</label> 
     <span class="text-muted">(多个或0个将随机选取一个)</span>
     <div>
-        <div class="input-group">
-            {{range $host_name,$host:=$.api.Hosts}} 
-                {{if $host.Enable}} 
-                <label  class="checkbox-inline" title="{{$host.Note|html}} {{$host.Url|html}}">
-                 <input   type="checkbox" name="host_names" {{if  in_array $host_name $caller.Pref}}checked='checked' {{end}} value="{{$host_name|html}}"> 
-                 {{$host_name|html}}&nbsp;<span class="text-info">{{$host.Note|html}} </span>
-                </label>
-                 {{end}}
-              {{end}}
+        <div class="input-group sortable">
+        {{with $x:=$.api.Hosts.GetHostsWithPref $caller.Pref}}
+            {{range $index,$host:=$x}}
+            <label  class="checkbox-inline" title="{{$host.Note|html}} {{$host.Url|html}}">
+             <input   type="checkbox" name="host_names" {{if $host.Checked}}checked='checked' {{end}} value="{{$host.Name|html}}"> 
+             {{$host.Name|html}}&nbsp;<span class="text-info">{{$host.Note|html}} </span>
+            </label>
+            {{end}}
+        {{end}}
         </div>
 
     </div>
@@ -50,12 +50,12 @@
     <div>
         <div class="input-group">
             {{range $host_name,$host:=$.api.Hosts}} 
-            {{if $host.Enable}} 
-            <label   class="checkbox-inline" title="{{$host.Note|html}} {{$host.Url|html}}"> 
-             <input type="checkbox" name="host_ignore" {{if in_array $host_name $caller.Ignore}}checked='checked'   {{end}} value="{{$host_name|html}}">
-             {{$host_name|html}}&nbsp;<span class="text-info">{{$host.Note|html}} </span>
-            </label>
-             {{end}} 
+               {{if $host.Enable}} 
+                <label   class="checkbox-inline" title="{{$host.Note|html}} {{$host.Url|html}}"> 
+                 <input type="checkbox" name="host_ignore" {{if in_array $host_name $caller.Ignore}}checked='checked'   {{end}} value="{{$host_name|html}}">
+                 {{$host_name|html}}&nbsp;<span class="text-info">{{$host.Note|html}} </span>
+                </label>
+               {{end}} 
             {{end}}
         </div>
 

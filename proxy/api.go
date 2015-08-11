@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -110,6 +111,7 @@ func (api *Api) Clone() *Api {
 	newApi.Exists = api.Exists
 	newApi.init()
 	newApi.apiServer = api.apiServer
+	newApi.Hosts.Init()
 	return newApi
 }
 
@@ -147,9 +149,11 @@ func (api *Api) GetMasterHostName(cpf *CallerPrefConf) string {
 	api.rw.RLock()
 	defer api.rw.RUnlock()
 
-	names := make([]string, 0, len(api.Hosts))
-	for name := range api.Hosts {
-		names = append(names, name)
+	names := make([]string, 0)
+	for name, host := range api.Hosts {
+		if host.Enable {
+			names = append(names, name)
+		}
 	}
 	return api.Caller.GetPrefHostName(names, cpf)
 }
@@ -203,4 +207,28 @@ func (api *Api) GetRoomName() string {
 
 func ApiCookieName(apiName string) string {
 	return fmt.Sprintf("%s_%s", API_PREF_PARMA_NAME, apiName)
+}
+
+/**
+* get sorted hosts,master is at first
+ */
+func (api *Api) getApiHostsByReq(req *http.Request) (hs []*Host, master string) {
+	cpf := NewCallerPrefConfByHttpRequest(req, api)
+	caller := api.Caller.getCallerItemByIp(cpf.GetIp())
+	masterHost := api.GetMasterHostName(cpf)
+
+	hs = make([]*Host, 0)
+	hsTmp := make([]*Host, 0)
+	for _, api_host := range api.Hosts {
+		if !api_host.Enable || caller.IsHostIgnore(api_host.Name) {
+			continue
+		}
+		if api_host.Name == masterHost {
+			hs = append(hs, api_host)
+		} else {
+			hsTmp = append(hsTmp, api_host)
+		}
+	}
+	hs = append(hs, hsTmp...)
+	return hs, masterHost
 }

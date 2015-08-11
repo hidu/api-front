@@ -162,10 +162,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		}
 		//get body must by before  parse callerPref
 
-		cpf := NewCallerPrefConfByHttpRequest(req, api)
-
-		masterHost := api.GetMasterHostName(cpf)
-
+		hosts, masterHost := api.getApiHostsByReq(req)
 		broadData.SetData("master", masterHost)
 
 		defer (func() {
@@ -178,7 +175,9 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 		rw.Header().Set("Api-Proxy-Master", masterHost)
 
-		if api.Hosts.ActiveHostsNum() == 0 {
+		addrInfo := strings.Split(req.RemoteAddr, ":")
+
+		if len(hosts) == 0 {
 			logData["hostTotal"] = 0
 			rw.WriteHeader(http.StatusBadGateway)
 			rw.Write([]byte("Api has No Backend Hosts"))
@@ -186,32 +185,20 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 			return
 		}
 
-		addrInfo := strings.Split(req.RemoteAddr, ":")
-		caller := api.Caller.getCallerItemByIp(cpf.GetIp())
-
 		bodyLen := int64(len(body))
 		var wg sync.WaitGroup
-		for _, api_host := range api.Hosts {
 
-			if !api_host.Enable {
-				continue
-			}
-
+		for index, api_host := range hosts {
 			wg.Add(1)
-			go (func(api_host *Host, rw http.ResponseWriter, req *http.Request) {
+			go (func(api_host *Host, rw http.ResponseWriter, req *http.Request, index int) {
 				defer wg.Done()
 
 				start := time.Now()
-				isMaster := masterHost == api_host.Name
+				isMaster := api_host.Name == masterHost
 				backLog := make(map[string]interface{})
-				logData[fmt.Sprintf("host_%s", api_host.Name)] = backLog
+				logData[fmt.Sprintf("host_%s_%d", api_host.Name, index)] = backLog
 
 				backLog["isMaster"] = isMaster
-
-				if caller.IsHostIgnore(api_host.Name) {
-					backLog["ignore"] = true
-					return
-				}
 
 				urlNew := ""
 
@@ -248,11 +235,11 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 				}
 				copyHeaders(reqNew.Header, req.Header)
-				
+
 				//only accept gzip encode
-				accept_encoding:=reqNew.Header.Get("Accept-Encoding")
-				if(accept_encoding!="" && (In_StringSlice("gzip",reqNew.Header["Accept-Encoding"]) || strings.Contains(accept_encoding,"gzip")) ){
-					reqNew.Header.Set("Accept-Encoding","gzip")
+				accept_encoding := reqNew.Header.Get("Accept-Encoding")
+				if accept_encoding != "" && (In_StringSlice("gzip", reqNew.Header["Accept-Encoding"]) || strings.Contains(accept_encoding, "gzip")) {
+					reqNew.Header.Set("Accept-Encoding", "gzip")
 				}
 
 				if bodyLen > 0 {
@@ -311,7 +298,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 				used := time.Now().Sub(start)
 				backLog["used"] = fmt.Sprintf("%.3f ms", float64(used.Nanoseconds())/1e6)
-			})(api_host, rw, req)
+			})(api_host, rw, req, index)
 		}
 		wg.Wait()
 
@@ -371,11 +358,11 @@ func (apiServer *ApiServer) addBroadCastDataResponse(broadData *BroadCastData, r
 	if !dumpBody {
 		res_detail += "---body skipped---"
 	} else {
-		bd:=forgetRead(&resp.Body)
-		if(resp.Header.Get("Content-Encoding")=="gzip"){
-			res_detail+=gzipDocode(bd)
-		}else{
-			res_detail +=bd.String()
+		bd := forgetRead(&resp.Body)
+		if resp.Header.Get("Content-Encoding") == "gzip" {
+			res_detail += gzipDocode(bd)
+		} else {
+			res_detail += bd.String()
 		}
 	}
 	//	fmt.Println(res_detail)

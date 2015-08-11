@@ -63,33 +63,31 @@ func (web *WebAdmin) wsInit() {
 	})
 	web.broadApiPvs()
 }
-func (web *WebAdmin)broadApiPvs(){
-	pvs:=make(map[string]uint64)
-	
-	utils.SetInterval(func(){
+func (web *WebAdmin) broadApiPvs() {
+	pvs := make(map[string]uint64)
+
+	utils.SetInterval(func() {
 		var pv uint64
-		for name,api:=range web.apiServer.Apis{
-			if _,has:=pvs[name];!has{
-				pvs[name]=0
+		for name, api := range web.apiServer.Apis {
+			if _, has := pvs[name]; !has {
+				pvs[name] = 0
 			}
-			pv=api.GetPv()
-			if(pvs[name]==pv){
+			pv = api.GetPv()
+			if pvs[name] == pv {
 				continue
 			}
-			pvs[name]=pv
+			pvs[name] = pv
 			data := make(map[string]interface{})
 			data["name"] = name
 			data["pv"] = pv
-			web.wsServer.BroadcastTo("api_pv","api_pv",data)
+			web.wsServer.BroadcastTo("api_pv", "api_pv", data)
 		}
-	},1)
+	}, 1)
 }
 
 func (web *WebAdmin) BroadcastApi(api *Api, broadType string, reqData *BroadCastData) {
 	web.wsServer.BroadcastTo(api.GetRoomName(), broadType, reqData)
 }
-
-
 
 func (web *WebAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if strings.HasPrefix(req.URL.Path, "/_res/") {
