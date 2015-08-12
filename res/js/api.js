@@ -43,7 +43,7 @@ socket.on("disconnect",function(msg){
 
 socket.on("api_pv",function(data){
 	console && console.log("on.api_pv",data)
-	$("#api_pv_"+data.name).html(""+data.pv);
+	$("#api_pv_"+data.name).html("<font color=blue>"+data.pv+"</font>");
 })
 
 function proxy_api_host_add(){
