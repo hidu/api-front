@@ -49,9 +49,9 @@ func (api *Api) init() (err error) {
 	}
 	if api.Caller == nil {
 		api.Caller = NewCaller()
-		item, _ := NewCallerItem("*.*.*.*")
+		item, _ := NewCallerItem(IP_ALL)
 		item.Enable = true
-		item.Note = "all"
+		item.Note = "default all"
 		api.Caller.AddNewCallerItem(item)
 	}
 	if api.Path != "" {
@@ -212,8 +212,8 @@ func ApiCookieName(apiName string) string {
 /**
 * get sorted hosts,master is at first
  */
-func (api *Api) getApiHostsByReq(req *http.Request) (hs []*Host, master string) {
-	cpf := NewCallerPrefConfByHttpRequest(req, api)
+func (api *Api) getApiHostsByReq(req *http.Request) (hs []*Host, master string, cpf *CallerPrefConf) {
+	cpf = NewCallerPrefConfByHttpRequest(req, api)
 	caller := api.Caller.getCallerItemByIp(cpf.GetIp())
 	masterHost := api.GetMasterHostName(cpf)
 
@@ -230,5 +230,5 @@ func (api *Api) getApiHostsByReq(req *http.Request) (hs []*Host, master string) 
 		}
 	}
 	hs = append(hs, hsTmp...)
-	return hs, masterHost
+	return hs, masterHost, cpf
 }

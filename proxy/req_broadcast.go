@@ -17,7 +17,7 @@ func NewReqBroadCastData(req *http.Request) *BroadCastData {
 	}
 	data.Data["path"] = req.URL.RequestURI()
 	remote := strings.Split(req.RemoteAddr, ":")
-	data.Data["remote"] = remote[0]
+	data.Data["remote_last"] = remote[0]
 	data.Data["method"] = req.Method
 	return data
 }

@@ -8,7 +8,11 @@ socket.on("connect",function(msg){
 socket.on("req",function(req){
 	console && console.log(req)
 	if(req && typeof req =="object"){
-		showReqDetail(req)
+		try{
+			showReqDetail(req)
+		}catch(e){
+			console && console.log("showReqDetail err:",e)
+		}
 	}
 })
 var req_max_length=500;
@@ -36,19 +40,18 @@ function showReqTr(req){
 	var tr="<tr class='req_tr'>" +
 			"<td>"+req.id+"</td>" +
 			"<td>"+req.data.method+"</td>" +
-			"<td>"+h(req.data.path)+"</td>" +
-			"<td>"+h(req.data.resp_status)+"</td>" +
+			"<td>"+h(req.data["path"]||"unknow")+"</td>" +
+			"<td>"+h(req.data["resp_status"]||502)+"</td>" +
 			"<td>"+req.data.remote+"</td>"+
 			"<td>"+h(req.data.master)+"</td>"+
 			"<td title='ms'>"+req.data.used.toFixed(2)+"</td>"
 			"</tr>";
 	tr+="<tr class='hidden'><td colspan=7>" +
-			"<pre>"+h(req.data.req_detail)+"</pre>" +
-			"<pre>"+h(showDumpData(req.data.res_detail))+"</pre>" +
+			"<pre>"+h(req.data["req_detail"]||"")+"</pre>" +
+			"<pre>"+h(showDumpData(req.data["res_detail"]||""))+"</pre>" +
 			"</td>" +
 			"</tr>"
 	$("#req_list").prepend(tr)
-	showDumpData(req.data.res_detail)
 	
 	$("#req_list tr.req_tr").each(function(index,data){
 		if(index>=req_max_length){
