@@ -5,6 +5,10 @@
 
 <p>每一个请求会同时复制到所有的后端，每一个后端服务都可以接收到全量的数据。</p>
 
+<h1 class="page-header">安装</h1>
+
+<code>go get -u github.com/hidu/api-man</code>
+
 <h1 class="page-header">用途</h1>
 <h3>多人多模块开发演示</h3>
 <p><code>1.一种情况：2个模块分别2个人开发，2个环境都能收到数据。</code></p>
