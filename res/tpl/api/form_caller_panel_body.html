@@ -9,7 +9,7 @@
 
     <div class="col-lg-1">
         <div class="input-group checkbox">
-            <label> 
+            <label {{if not $caller.Enable}}style='color:red'{{end}}> 
                 <input type="checkbox" name="enable" value="1" {{if $caller.Enable}}checked=checked{{end}}>
                 启用
             </label>
