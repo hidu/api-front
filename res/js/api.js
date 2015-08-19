@@ -74,3 +74,9 @@ function h(html) {
 	            .replace(/\|/g, '&brvbar;');
     return html;
 }
+
+function urldecode(str) {
+	 return decodeURIComponent((str + '').replace(/%(?![\da-f]{2})/gi, function() {
+		 return '%25';
+    }).replace(/\+/g, '%20'));
+}

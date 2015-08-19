@@ -47,7 +47,7 @@ function showReqTr(req){
 			"<td title='ms'>"+req.data.used.toFixed(2)+"</td>"
 			"</tr>";
 	tr+="<tr class='hidden'><td colspan=7>" +
-			"<pre>"+h(req.data["req_detail"]||"")+"</pre>" +
+			"<pre>"+h(formatReqData(req.data["req_detail"]||""))+"</pre>" +
 			"<pre>"+h(showDumpData(req.data["res_detail"]||""))+"</pre>" +
 			"</td>" +
 			"</tr>"
@@ -61,31 +61,94 @@ function showReqTr(req){
 	})
 }
 
+function formatReqData(str){
+	str+=""
+	if(str.length==0){
+		return str
+	}
+	var pos=str.indexOf("\r\n\r\n");
+	var hd=str.substr(0,pos+4)+""
+	var bd=str.substr(pos+4)+""
+	var result=str
+
+	var isForm=hd.indexOf("x-www-form-urlencoded")>0
+	
+	var jsonBd=parseAsjson(bd)
+	var bodyFormat=""
+	if(jsonBd!=false){
+		bodyFormat=jsonBd
+	}else if(isForm){
+		var arr=bd.split("&")
+		for(var i=0;i<arr.length;i++){
+			var item=arr[i].split("=")
+			var k=item[0],v=urldecode(item[1]||"")
+			bodyFormat+=(i+1)+" ) "+k+" : "+v+"\n";
+			var vjosn=parseAsjson(v)
+			if(false!=vjosn){
+				bodyFormat+="    "+k+"_json_indent : \n"+vjosn+"\n<----------------------------------\n";
+			}
+		}
+	}
+	if(bodyFormat.length>0){
+		result+="\n\n------body---format-----\n"
+		result+=bodyFormat
+	}
+	
+	
+	return result
+}
+
 function showDumpData(str){
 	var pos=str.indexOf("\r\n\r\n");
 	var hd=str.substr(0,pos+4)
 	var bd=str.substr(pos+4)
 	var jsonBd=parseAsjson(bd)
 	if(jsonBd!=false){
-		str+="\n\n------jsonBody---format-----\n"+jsonBd
+		str+="\n\n------body---format-----\n"+jsonBd
 	}
 	return str
 }
 
 function parseAsjson(str) {
+	if(typeof str!="string"){
+		return false
+	}
+	if(str.length<2){
+		return false
+	}
     try {
-    	str=str+""
     	if(str[0]!="{" && str[0]!="["){
     		return false;
     	}
         var jsonObj = JSON.parse(str);
         if (jsonObj) {
-           return JSON.stringify(jsonObj, null, 2);
+        	revParseJson(jsonObj)
+           return JSON.stringify(jsonObj, null, 4);
         }
     } catch (e) {
     	console.log("parseAsjson_error",e)
     }
     return false;
+}
+
+function revParseJson(obj){
+	var t=typeof obj
+	if(!$.isArray(obj) && t!="object"){
+		return obj
+	}
+	$.each(obj,function(k,v){
+		if(typeof v=="string" && v.length>2 && (v[0]=="["||v[0]=="{")){
+			try{
+				var tmp=JSON.parse(v);
+				if(tmp!=false){
+					obj[k+"_json_decode"]=tmp
+				}
+			}catch(e){
+				
+			}
+		}
+		obj[k]=revParseJson(v)
+	})
 }
 	
 function showReqDetail(req){
