@@ -2,6 +2,7 @@
 &nbsp;<sub><a href="/_api?name={{.api.Name}}">Edit</a></sub>
 </h1>
 
+
 <div>
 <table class="table table-condensed">
 <thead>
@@ -38,4 +39,9 @@ var api_man_apiName="{{.api.Name}}";
 <ul class="list-group" id="analysis_toggle_btn">
   <li class="list-group-item" id="item_open_all"><a href="#">Open All</a></li>
   <li class="list-group-item" id="item_close_all"><a href="#">Close All</a></li>
+  <li>
+  <div class="checkbox">
+    <label><input type="checkbox" id="item_checkbox_receive" checked=checked autocomplete="off">receive</label>
+  </div>
+  </li>
 </ul>

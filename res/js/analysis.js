@@ -1,4 +1,5 @@
 
+var allow_receive_req=true
 
 socket.on("connect",function(msg){
 	console && console.log("socket.io connect",msg)
@@ -6,6 +7,10 @@ socket.on("connect",function(msg){
 })
 
 socket.on("req",function(req){
+	if(!allow_receive_req){
+		console&&console.log("receive and skiped")
+		return
+	}
 	console && console.log(req)
 	if(req && typeof req =="object"){
 		try{
@@ -31,9 +36,11 @@ function req_clean(){
 	$("#req_list").empty()
 }
 
-for(var i=0;i<req_list.length;i++){
-	showReqTr(req_list[i])
-}
+$().ready(function(){
+	for(var i=0;i<req_list.length;i++){
+		showReqTr(req_list[i])
+	}
+})
 
 function showReqTr(req){
 	
@@ -72,6 +79,7 @@ function formatReqData(str){
 	var result=str
 
 	var isForm=hd.indexOf("x-www-form-urlencoded")>0
+	var line="<----------------------------------"
 	
 	var jsonBd=parseAsjson(bd)
 	var bodyFormat=""
@@ -85,7 +93,7 @@ function formatReqData(str){
 			bodyFormat+=(i+1)+" ) "+k+" : "+v+"\n";
 			var vjosn=parseAsjson(v)
 			if(false!=vjosn){
-				bodyFormat+="    "+k+"_json_indent : \n"+vjosn+"\n<----------------------------------\n";
+				bodyFormat+=line+"\n"+k+"_json_indent : \n"+vjosn+"\n"+line+"\n";
 			}
 		}
 	}
@@ -122,7 +130,7 @@ function parseAsjson(str) {
     	}
         var jsonObj = JSON.parse(str);
         if (jsonObj) {
-        	revParseJson(jsonObj)
+        	jsonObj=revParseJson(jsonObj)
            return JSON.stringify(jsonObj, null, 4);
         }
     } catch (e) {
@@ -136,19 +144,20 @@ function revParseJson(obj){
 	if(!$.isArray(obj) && t!="object"){
 		return obj
 	}
+	var objNew=$.isArray(obj)?[]:{}
 	$.each(obj,function(k,v){
+		objNew[k]=revParseJson(v)
 		if(typeof v=="string" && v.length>2 && (v[0]=="["||v[0]=="{")){
 			try{
 				var tmp=JSON.parse(v);
 				if(tmp!=false){
-					obj[k+"_json_decode"]=tmp
+					objNew[k+"_json_decode"]=tmp
 				}
 			}catch(e){
-				
 			}
 		}
-		obj[k]=revParseJson(v)
 	})
+	return objNew
 }
 	
 function showReqDetail(req){
@@ -177,5 +186,7 @@ $().ready(function(){
 		$("#req_list tr").not(".req_tr").addClass("hidden")
 		return false;
 	});
-	
+	$("#item_checkbox_receive").click(function(){
+		allow_receive_req=$(this).is(":checked")
+	});
 });
