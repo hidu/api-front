@@ -86,7 +86,9 @@ func (web *WebAdmin) broadApiPvs() {
 }
 
 func (web *WebAdmin) BroadcastApi(api *Api, broadType string, reqData *BroadCastData) {
-	web.wsServer.BroadcastTo(api.GetRoomName(), broadType, reqData)
+	roomName := api.GetRoomName()
+	log.Println("broad:", roomName, broadType)
+	web.wsServer.BroadcastTo(roomName, broadType, reqData)
 }
 
 func (web *WebAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {

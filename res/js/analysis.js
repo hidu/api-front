@@ -51,7 +51,7 @@ function showReqTr(req){
 			"<td>"+h(req.data["resp_status"]||502)+"</td>" +
 			"<td>"+req.data.remote+"</td>"+
 			"<td>"+h(req.data.master)+"</td>"+
-			"<td title='ms'>"+req.data.used.toFixed(2)+"</td>"
+			"<td title='ms'>"+(req.data.used && req.data.used.toFixed(2))+"</td>"
 			"</tr>";
 	tr+="<tr class='hidden'><td colspan=7>" +
 			"<pre>"+h(formatReqData(req.data["req_detail"]||""))+"</pre>" +

@@ -56,12 +56,18 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		broadData.SetData("master", masterHost)
 		broadData.SetData("remote", cpf.GetIp())
 
+		_uri := req.URL.Path
+		if req.URL.RawQuery != "" {
+			_uri += "?" + req.URL.RawQuery
+		}
+		mainLogStr := fmt.Sprintf("uniqid=%s port=%d remote=%s method=%s uri=%s master=%s hostsTotal=%d refer=%s", uniqId, apiServer.ServerConf.Port, req.RemoteAddr, req.Method, _uri, masterHost, len(hosts), req.Referer())
+
+		var printLog = func(logIndex int) {
+			totalUsed := fmt.Sprintf("%.3fms", float64(time.Now().Sub(start).Nanoseconds())/1e6)
+			log.Println(fmt.Sprintf("logindex=%d", logIndex), mainLogStr, fmt.Sprintf("totalUsed=%s", totalUsed), logData)
+		}
 		defer (func() {
-			uri := req.URL.Path
-			if req.URL.RawQuery != "" {
-				uri += "?" + req.URL.RawQuery
-			}
-			log.Println(apiServer.ServerConf.Port, req.RemoteAddr, req.Method, uri, "master:", masterHost, logData)
+			printLog(0)
 		})()
 
 		rw.Header().Set("Api-Proxy-Master", masterHost)
@@ -71,129 +77,178 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		if len(hosts) == 0 {
 			logData["hostTotal"] = 0
 			rw.WriteHeader(http.StatusBadGateway)
-			rw.Write([]byte("Api has No Backend Hosts"))
+			rw.Write([]byte("no backend hosts"))
 			broadData.SetError("no backend hosts")
 			return
 		}
 
 		bodyLen := int64(len(body))
-		var wg sync.WaitGroup
+		reqs := make([]*apiHostRequest, 0)
 
-		for index, api_host := range hosts {
-			wg.Add(1)
-			go (func(api_host *Host, rw http.ResponseWriter, req *http.Request, index int) {
-				defer wg.Done()
+		//build request
+		for _, api_host := range hosts {
+			isMaster := api_host.Name == masterHost
+			urlNew := ""
 
-				start := time.Now()
-				isMaster := api_host.Name == masterHost
-				backLog := make(map[string]interface{})
-				logData[fmt.Sprintf("host_%s_%d", api_host.Name, index)] = backLog
+			serverUrl := api_host.Url
+			if api.HostAsProxy {
+				serverUrl = "http://" + req.Host + api.Path
+			}
+			if strings.HasSuffix(urlNew, "/") {
+				urlNew += strings.TrimLeft(relPath, "/")
+			} else {
+				urlNew += relPath
+			}
+			if req.URL.RawQuery != "" {
+				urlNew += "?" + req.URL.RawQuery
+			}
 
-				backLog["isMaster"] = isMaster
+			rawUrl := api_host.Url + urlNew
 
-				urlNew := ""
+			if isMaster {
+				rw.Header().Set("Api-Proxy-Raw-Url", rawUrl)
+			}
 
-				serverUrl := api_host.Url
-				if api.HostAsProxy {
-					serverUrl = "http://" + req.Host + api.Path
-				}
-				if strings.HasSuffix(urlNew, "/") {
-					urlNew += strings.TrimLeft(relPath, "/")
-				} else {
-					urlNew += relPath
-				}
-				if req.URL.RawQuery != "" {
-					urlNew += "?" + req.URL.RawQuery
-				}
+			urlNew = serverUrl + urlNew
 
-				rawUrl := api_host.Url + urlNew
+			broadData.SetData("raw_url", rawUrl)
 
-				urlNew = serverUrl + urlNew
-
-				backLog["raw_url"] = rawUrl
-
-				broadData.SetData("raw_url", rawUrl)
-
-				reqNew, err := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
-				if err != nil {
-					log.Println("build req failed:", err)
-					if isMaster {
-						rw.WriteHeader(http.StatusBadGateway)
-						rw.Write([]byte("error:" + err.Error() + "\nraw_url:" + rawUrl))
-					}
-					broadData.SetError(err.Error())
-					return
-
-				}
-				copyHeaders(reqNew.Header, req.Header)
-
-				//only accept gzip encode
-				accept_encoding := reqNew.Header.Get("Accept-Encoding")
-				if accept_encoding != "" && (In_StringSlice("gzip", reqNew.Header["Accept-Encoding"]) || strings.Contains(accept_encoding, "gzip")) {
-					reqNew.Header.Set("Accept-Encoding", "gzip")
-				}
-
-				if bodyLen > 0 {
-					reqNew.ContentLength = bodyLen
-					reqNew.Header.Set("Content-Length", fmt.Sprintf("%d", bodyLen))
-				}
-
-				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
-
-				transport := &http.Transport{
-					Proxy: http.ProxyFromEnvironment,
-					Dial: (&net.Dialer{
-						Timeout:   time.Duration(api.TimeoutMs) * time.Millisecond,
-						KeepAlive: 30 * time.Second,
-					}).Dial,
-					TLSHandshakeTimeout: 10 * time.Second,
-				}
-				if api.HostAsProxy {
-					transport.Proxy = func(req *http.Request) (*url.URL, error) {
-						return url.Parse(api_host.Url)
-					}
-				}
-
-				resp, err := transport.RoundTrip(reqNew)
-
+			reqNew, err := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
+			if err != nil {
+				log.Println("build req failed:", err)
 				if isMaster {
-					rw.Header().Set("Api-Proxy-Raw-Url", rawUrl)
+					rw.WriteHeader(http.StatusBadGateway)
+					rw.Write([]byte("error:" + err.Error() + "\nraw_url:" + rawUrl))
 				}
+				broadData.SetError(err.Error())
+				return
 
-				if err != nil {
-					log.Println("fetch "+urlNew, err)
-					if isMaster {
-						rw.WriteHeader(http.StatusBadGateway)
-						rw.Write([]byte("error:" + err.Error() + "\nraw_url:" + rawUrl))
-					}
-					return
+			}
+			copyHeaders(reqNew.Header, req.Header)
+
+			//only accept gzip encode
+			accept_encoding := reqNew.Header.Get("Accept-Encoding")
+			if accept_encoding != "" && (In_StringSlice("gzip", reqNew.Header["Accept-Encoding"]) || strings.Contains(accept_encoding, "gzip")) {
+				reqNew.Header.Set("Accept-Encoding", "gzip")
+			}
+
+			if bodyLen > 0 {
+				reqNew.ContentLength = bodyLen
+				reqNew.Header.Set("Content-Length", fmt.Sprintf("%d", bodyLen))
+			}
+
+			reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
+
+			transport := &http.Transport{
+				Proxy: http.ProxyFromEnvironment,
+				Dial: (&net.Dialer{
+					Timeout:   time.Duration(api.TimeoutMs) * time.Millisecond,
+					KeepAlive: 30 * time.Second,
+				}).Dial,
+				TLSHandshakeTimeout: 10 * time.Second,
+			}
+			if api.HostAsProxy {
+				transport.Proxy = func(req *http.Request) (*url.URL, error) {
+					return url.Parse(api_host.Url)
 				}
-				defer resp.Body.Close()
-				if isMaster {
-
-					apiServer.addBroadCastDataResponse(broadData, resp)
-
-					for k, vs := range resp.Header {
-						for _, v := range vs {
-							rw.Header().Add(k, v)
-						}
-					}
-					rw.Header().Set("Connection", "close")
-					rw.WriteHeader(resp.StatusCode)
-					n, err := io.Copy(rw, resp.Body)
-					if err != nil {
-						log.Println(urlNew, "io.copy:", n, err)
-					}
-
-				}
-
-				used := time.Now().Sub(start)
-				backLog["used"] = fmt.Sprintf("%.3f ms", float64(used.Nanoseconds())/1e6)
-			})(api_host, rw, req, index)
+			}
+			apiReq := &apiHostRequest{
+				req:       reqNew,
+				transport: transport,
+				apiHost:   api_host,
+				isMaster:  isMaster,
+				urlNew:    urlNew,
+				urlRaw:    rawUrl,
+			}
+			reqs = append(reqs, apiReq)
 		}
-		wg.Wait()
 
+		//call master at first sync
+		for index, apiReq := range reqs {
+			if !apiReq.isMaster {
+				continue
+			}
+			backLog := make(map[string]interface{})
+			logData[fmt.Sprintf("host_%s_%d", apiReq.apiHost.Name, index)] = backLog
+			hostStart := time.Now()
+			backLog["isMaster"] = apiReq.isMaster
+			backLog["start"] = fmt.Sprintf("%.4f", float64(hostStart.UnixNano())/1e9)
+			resp, err := apiReq.transport.RoundTrip(apiReq.req)
+			if err != nil {
+				log.Println("fetch "+apiReq.urlNew, err)
+				rw.WriteHeader(http.StatusBadGateway)
+				rw.Write([]byte("fetch_error:" + err.Error() + "\nraw_url:" + apiReq.urlRaw + "\nnew_url:" + apiReq.urlNew))
+				return
+			}
+			defer resp.Body.Close()
+
+			apiServer.addBroadCastDataResponse(broadData, resp)
+
+			for k, vs := range resp.Header {
+				for _, v := range vs {
+					rw.Header().Add(k, v)
+				}
+			}
+			rw.Header().Set("Connection", "close")
+			rw.WriteHeader(resp.StatusCode)
+			backLog["status"] = resp.StatusCode
+			n, err := io.Copy(rw, resp.Body)
+			if err != nil {
+				log.Println(apiReq.urlNew, "io.copy:", n, err)
+			}
+			hostEnd := time.Now()
+			used := hostEnd.Sub(hostStart)
+			backLog["end"] = fmt.Sprintf("%.4f", float64(hostEnd.UnixNano())/1e9)
+			backLog["used"] = fmt.Sprintf("%.3fms", float64(used.Nanoseconds())/1e6)
+
+		}
+
+		//call other hosts async
+		go (func(reqs []*apiHostRequest) {
+			defer (func() {
+				printLog(1)
+			})()
+			var wgOther sync.WaitGroup
+			for index, apiReq := range reqs {
+				if apiReq.isMaster {
+					continue
+				}
+				wgOther.Add(1)
+				go (func(index int, apiReq *apiHostRequest) {
+					defer wgOther.Done()
+					backLog := make(map[string]interface{})
+					logData[fmt.Sprintf("host_%s_%d", apiReq.apiHost.Name, index)] = backLog
+					hostStart := time.Now()
+					backLog["isMaster"] = apiReq.isMaster
+					backLog["start"] = fmt.Sprintf("%.4f", float64(hostStart.UnixNano())/1e9)
+					backLog["isMaster"] = apiReq.isMaster
+					resp, err := apiReq.transport.RoundTrip(apiReq.req)
+					if err != nil {
+						log.Println("fetch "+apiReq.urlNew, err)
+						return
+					}
+					backLog["status"] = resp.StatusCode
+					defer resp.Body.Close()
+
+					hostEnd := time.Now()
+					used := hostEnd.Sub(hostStart)
+					backLog["end"] = fmt.Sprintf("%.4f", float64(hostEnd.UnixNano())/1e9)
+					backLog["used"] = fmt.Sprintf("%.3fms", float64(used.Nanoseconds())/1e6)
+				})(index, apiReq)
+			}
+			wgOther.Wait()
+
+		})(reqs)
 	}
+}
+
+type apiHostRequest struct {
+	req       *http.Request
+	urlRaw    string
+	urlNew    string
+	transport *http.Transport
+	apiHost   *Host
+	isMaster  bool
 }
 
 var reqCookieDumpLine = regexp.MustCompile(`Cookie: .+\r\n`)
