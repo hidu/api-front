@@ -1,8 +1,9 @@
+<p style="margin:10px">
 <span class="h1">{{.api.Name}}</span>
 &nbsp;
 <a href="/_api?name={{.api.Name}}">Edit</a>
 &nbsp;pv:<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>
-
+</p>
 
 <div>
 <table class="table table-condensed">
@@ -29,7 +30,7 @@ var api_man_apiName="{{.api.Name}}";
 
 </script>
 
-<script type="text/javascript" src="/_res/js/analysis.js"></script>
+<script type="text/javascript" src="/_res/js/analysis.js?_v={{.version}}"></script>
 <script>
 (function(){
 	var w=$(window).width()*0.78;
