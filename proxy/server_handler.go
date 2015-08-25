@@ -149,9 +149,11 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				TLSHandshakeTimeout: 10 * time.Second,
 			}
 			if api.HostAsProxy {
-				transport.Proxy = func(req *http.Request) (*url.URL, error) {
-					return url.Parse(api_host.Url)
-				}
+				transport.Proxy = (func(u string) func(*http.Request) (*url.URL, error) {
+					return func(req *http.Request) (*url.URL, error) {
+						return url.Parse(u)
+					}
+				})(api_host.Url)
 			}
 			apiReq := &apiHostRequest{
 				req:       reqNew,
