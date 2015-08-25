@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -263,7 +264,7 @@ func (apiServer *ApiServer) initBroadCastData(req *http.Request) *BroadCastData 
 		req_detail = reqCookieDumpLine.ReplaceAllStringFunc(req_detail, ReqCookieHidden)
 	}
 
-	data.SetData("req_detail", req_detail)
+	data.SetData("req_detail", base64.StdEncoding.EncodeToString([]byte(req_detail)))
 	return data
 }
 
@@ -312,7 +313,7 @@ func (apiServer *ApiServer) addBroadCastDataResponse(broadData *BroadCastData, r
 		}
 	}
 	//	fmt.Println(res_detail)
-	broadData.SetData("res_detail", res_detail)
+	broadData.SetData("res_detail", base64.StdEncoding.EncodeToString([]byte(res_detail)))
 }
 
 func (apiServer *ApiServer) BroadcastApiReq(api *Api, data *BroadCastData) {

@@ -1,6 +1,7 @@
-<h1>{{.api.Name}}
-&nbsp;<sub><a href="/_api?name={{.api.Name}}">Edit</a></sub>
-</h1>
+<span class="h1">{{.api.Name}}</span>
+&nbsp;
+<a href="/_api?name={{.api.Name}}">Edit</a>
+&nbsp;pv:<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>
 
 
 <div>

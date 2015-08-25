@@ -54,7 +54,7 @@ function showReqTr(req){
 			"<td title='ms'>"+(req.data.used && req.data.used.toFixed(2))+"</td>"
 			"</tr>";
 	tr+="<tr class='hidden'><td colspan=7>" +
-			"<pre>"+h(formatReqData(req.data["req_detail"]||""))+"</pre>" +
+			"<pre>"+h(formatReqData(req.data["req_detail"]||"",req.data["path"]||""))+"</pre>" +
 			"<pre>"+h(showDumpData(req.data["res_detail"]||""))+"</pre>" +
 			"</td>" +
 			"</tr>"
@@ -68,7 +68,7 @@ function showReqTr(req){
 	})
 }
 
-function formatReqData(str){
+function formatReqData(str,path){
 	str+=""
 	if(str.length==0){
 		return str
@@ -79,9 +79,22 @@ function formatReqData(str){
 	var result=str
 
 	var isForm=hd.indexOf("x-www-form-urlencoded")>0
-	var line="<----------------------------------"
-	
+	var line="<----------------------------------\n"
 	var jsonBd=parseAsjson(bd)
+	var pos_query=path.indexOf("?")
+	if(pos_query && pos_query>0){
+		var query=path.substr(pos_query+1)+""
+		if(query!=""){
+			result+="\n<--------GET-Params---format-------\n"
+			var arr=query.split("&")
+			for(var i=0;i<arr.length;i++){
+				result+=urldecode(arr[i])+"\n"
+			}
+		}
+		
+		
+	}
+	
 	var bodyFormat=""
 	if(jsonBd!=false){
 		bodyFormat=jsonBd
@@ -93,12 +106,12 @@ function formatReqData(str){
 			bodyFormat+=(i+1)+" ) "+k+" : "+v+"\n";
 			var vjosn=parseAsjson(v)
 			if(false!=vjosn){
-				bodyFormat+=line+"\n"+k+"_json_indent : \n"+vjosn+"\n"+line+"\n";
+				bodyFormat+=line+k+"_json_indent : \n"+vjosn+"\n"+line;
 			}
 		}
 	}
 	if(bodyFormat.length>0){
-		result+="\n\n------body---format-----\n"
+		result+="<--------body---format------------------\n"
 		result+=bodyFormat
 	}
 	
@@ -112,7 +125,7 @@ function showDumpData(str){
 	var bd=str.substr(pos+4)
 	var jsonBd=parseAsjson(bd)
 	if(jsonBd!=false){
-		str+="\n\n------body---format-----\n"+jsonBd
+		str+="\n<---------body---format------------------\n"+jsonBd
 	}
 	return str
 }
@@ -161,9 +174,13 @@ function revParseJson(obj){
 }
 	
 function showReqDetail(req){
+	if(req && req.data){
+	   req.data.req_detail=base64_decode(req.data.req_detail)
+	   req.data.res_detail=base64_decode(req.data.res_detail)
+	}
 	showReqTr(req)
 	req_list.push(req)
-	while(req_max_length>0 && req_list.length>req_max_length){ b
+	while(req_max_length>0 && req_list.length>req_max_length){
 		req_list.shift();
 	}
 }
