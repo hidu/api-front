@@ -7,7 +7,7 @@ import (
 )
 
 type BroadCastData struct {
-	Id   string                 `json:"id"`
+	ID   string                 `json:"id"`
 	Data map[string]interface{} `json:"data"`
 }
 

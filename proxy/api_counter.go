@@ -17,10 +17,10 @@ type Counter struct {
 	lastWrite time.Time
 }
 
-func NewCounter(apiServer *ApiServer) *Counter {
-	jsonPath := apiServer.GetConfDir() + "/_counter.json"
+func newCounter(apiServer *ApiServer) *Counter {
+	jsonPath := apiServer.getConfDir() + "/_counter.json"
 	var counter *Counter
-	err := LoadJsonFile(jsonPath, &counter)
+	err := LoadJSONFile(jsonPath, &counter)
 	if err != nil {
 		log.Println("load counter failed:", jsonPath, ",err:", err)
 		counter = new(Counter)
@@ -36,7 +36,7 @@ func NewCounter(apiServer *ApiServer) *Counter {
 	return counter
 }
 
-func (c *Counter) PvInc(name string) uint64 {
+func (c *Counter) pvInc(name string) uint64 {
 	c.rw.Lock()
 	defer c.rw.Unlock()
 	if _, has := c.Pv[name]; !has {

@@ -33,11 +33,11 @@ type Api struct {
 }
 
 // init new api for server
-func NewApi(apiServer *ApiServer, apiName string) *Api {
+func newAPI(apiServer *ApiServer, apiName string) *Api {
 	api := &Api{
 		Name:      apiName,
-		ConfPath:  fmt.Sprintf("%s/%s.json", apiServer.GetConfDir(), apiName),
-		Hosts:     NewHosts(),
+		ConfPath:  fmt.Sprintf("%s/%s.json", apiServer.getConfDir(), apiName),
+		Hosts:     newHosts(),
 		apiServer: apiServer,
 	}
 	return api
@@ -50,31 +50,31 @@ func (api *Api) init() (err error) {
 		api.TimeoutMs = 5000
 	}
 	if api.Caller == nil {
-		api.Caller = NewCaller()
-		item, _ := NewCallerItem(IP_ALL)
+		api.Caller = newCaller()
+		item, _ := newCallerItem(ipAll)
 		item.Enable = true
 		item.Note = "default all"
-		api.Caller.AddNewCallerItem(item)
+		api.Caller.addNewCallerItem(item)
 	}
 	if api.Path != "" {
-		api.Path = UrlPathClean(api.Path)
+		api.Path = URLPathClean(api.Path)
 	}
 	api.Caller.Sort()
-	err = api.Caller.Init()
+	err = api.Caller.init()
 
 	api.Exists = true
 	return err
 }
 
-var pathReg= regexp.MustCompile(`^/[\w-/]+/$`)
+var pathReg = regexp.MustCompile(`^/[\w-/]+/$`)
 
-var ApiNameReg= regexp.MustCompile(`^[\w-]+$`)
+var apiNameReg = regexp.MustCompile(`^[\w-]+$`)
 
-func (api *Api) IsValidPath(myPath string) bool {
+func (api *Api) isValidPath(myPath string) bool {
 	return pathReg.MatchString(myPath)
 }
 
-func (api *Api) Save() error {
+func (api *Api) save() error {
 	api.rw.Lock()
 	defer api.rw.Unlock()
 
@@ -84,7 +84,7 @@ func (api *Api) Save() error {
 	}
 	oldData, _ := ioutil.ReadFile(api.ConfPath)
 	if string(oldData) != string(data) {
-		backPath := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(TIME_FORMAT_INT)
+		backPath := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(timeFormatInt)
 		DirCheck(backPath)
 		err = ioutil.WriteFile(backPath, oldData, 0644)
 		log.Println("backup ", backPath, err)
@@ -93,31 +93,31 @@ func (api *Api) Save() error {
 	return err
 }
 
-func (api *Api) Delete() {
+func (api *Api) delete() {
 	api.rw.Lock()
 	defer api.rw.Unlock()
-	backPath := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(TIME_FORMAT_INT)
+	backPath := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(timeFormatInt)
 	DirCheck(backPath)
 	err := os.Rename(api.ConfPath, backPath)
 	log.Println("backup ", backPath, err)
 }
 
-func (api *Api) Clone() *Api {
+func (api *Api) clone() *Api {
 	api.rw.RLock()
 	defer api.rw.RUnlock()
 	data, _ := json.Marshal(api)
-	var newApi *Api
-	json.Unmarshal(data, &newApi)
-	newApi.Name = api.Name
-	newApi.ConfPath = api.ConfPath
-	newApi.Exists = api.Exists
-	newApi.init()
-	newApi.apiServer = api.apiServer
-	newApi.Hosts.Init()
-	return newApi
+	var newAPI *Api
+	json.Unmarshal(data, &newAPI)
+	newAPI.Name = api.Name
+	newAPI.ConfPath = api.ConfPath
+	newAPI.Exists = api.Exists
+	newAPI.init()
+	newAPI.apiServer = api.apiServer
+	newAPI.Hosts.init()
+	return newAPI
 }
 
-func (api *Api) HostRename(origName, newName string) {
+func (api *Api) hostRename(origName, newName string) {
 	if origName == "" || origName == newName {
 		return
 	}
@@ -129,7 +129,7 @@ func (api *Api) HostRename(origName, newName string) {
 	}
 }
 
-func (api *Api) HostCheckDelete(hostNames []string) {
+func (api *Api) hostCheckDelete(hostNames []string) {
 
 	api.rw.Lock()
 	defer api.rw.Unlock()
@@ -147,26 +147,26 @@ func (api *Api) HostCheckDelete(hostNames []string) {
 
 }
 
-func (api *Api) GetMasterHostName(cpf *CallerPrefConf) string {
+func (api *Api) getMasterHostName(cpf *CallerPrefConf) string {
 	api.rw.RLock()
 	defer api.rw.RUnlock()
 
-	names := make([]string, 0)
+	var names []string
 	for name, host := range api.Hosts {
 		if host.Enable {
 			names = append(names, name)
 		}
 	}
-	return api.Caller.GetPrefHostName(names, cpf)
+	return api.Caller.getPrefHostName(names, cpf)
 }
 
-func (api *Api) CookieName() string {
-	return ApiCookieName(api.Name)
+func (api *Api) cookieName() string {
+	return apiCookieName(api.Name)
 }
 
-func LoadApiByConf(apiServer *ApiServer, apiName string) (*Api, error) {
-	api := NewApi(apiServer, apiName)
-	relName, _ := filepath.Rel(filepath.Dir(apiServer.GetConfDir()), api.ConfPath)
+func loadAPIByConf(apiServer *ApiServer, apiName string) (*Api, error) {
+	api := newAPI(apiServer, apiName)
+	relName, _ := filepath.Rel(filepath.Dir(apiServer.getConfDir()), api.ConfPath)
 	logMsg := fmt.Sprint("load api [", apiName, "],[", relName, "]")
 
 	log.Println(logMsg, "start")
@@ -181,12 +181,12 @@ func LoadApiByConf(apiServer *ApiServer, apiName string) (*Api, error) {
 		log.Println(logMsg, "failed,", err)
 		return api, err
 	}
-	api.Hosts.Init()
+	api.Hosts.init()
 	log.Println(logMsg, "success")
 	if api.Path == "" {
 		api.Path = fmt.Sprintf("/%s/", apiName)
 	}
-	if !api.IsValidPath(api.Path) {
+	if !api.isValidPath(api.Path) {
 		return api, fmt.Errorf("path wrong:", api.Path)
 	}
 
@@ -195,34 +195,34 @@ func LoadApiByConf(apiServer *ApiServer, apiName string) (*Api, error) {
 	return api, err
 }
 
-func (api *Api) PvInc() uint64 {
-	return api.apiServer.GetCounter().PvInc(api.Name)
+func (api *Api) pvInc() uint64 {
+	return api.apiServer.GetCounter().pvInc(api.Name)
 }
 
 func (api *Api) GetPv() uint64 {
 	return api.apiServer.GetCounter().GetPv(api.Name)
 }
 
-func (api *Api) GetRoomName() string {
+func (api *Api) roomName() string {
 	return fmt.Sprintf("_room_%s", api.Name)
 }
 
-func ApiCookieName(apiName string) string {
-	return fmt.Sprintf("%s_%s", API_PREF_PARMA_NAME, apiName)
+func apiCookieName(apiName string) string {
+	return fmt.Sprintf("%s_%s", apiPrefParamName, apiName)
 }
 
 /**
 * get sorted hosts,master is at first
  */
-func (api *Api) getApiHostsByReq(req *http.Request) (hs []*Host, master string, cpf *CallerPrefConf) {
-	cpf = NewCallerPrefConfByHttpRequest(req, api)
-	caller := api.Caller.getCallerItemByIp(cpf.GetIp())
-	masterHost := api.GetMasterHostName(cpf)
+func (api *Api) getAPIHostsByReq(req *http.Request) (hs []*Host, master string, cpf *CallerPrefConf) {
+	cpf = NewCallerPrefConfByHTTPRequest(req, api)
+	caller := api.Caller.getCallerItemByIP(cpf.GetIP())
+	masterHost := api.getMasterHostName(cpf)
 
 	hs = make([]*Host, 0)
-	hsTmp := make([]*Host, 0)
+	var hsTmp []*Host
 	for _, apiHost := range api.Hosts {
-		if !apiHost.Enable || caller.IsHostIgnore(apiHost.Name) {
+		if !apiHost.Enable || caller.isHostIgnore(apiHost.Name) {
 			continue
 		}
 		if apiHost.Name == masterHost {

@@ -10,51 +10,51 @@ import (
 //var API_PREF string = "api_pref"
 
 const (
-	API_PREF_PARMA_NAME  string = "api_pref"
-	API_PREF_TYPE_REQ           = "req"
-	API_PREF_TYPE_COOKIE        = "cookie"
-	API_PREF_TYPE_HEADER        = "header"
+	apiPrefParamName  string = "api_pref"
+	apiPrefTypeReq           = "req"
+	apiPrefTypeCookie        = "cookie"
+	apiPrefTypeHeader        = "header"
 )
 
-var prefTypes = []string{API_PREF_TYPE_REQ, API_PREF_TYPE_COOKIE, API_PREF_TYPE_HEADER}
+var prefTypes = []string{apiPrefTypeReq, apiPrefTypeCookie, apiPrefTypeHeader}
 
 type Caller []*CallerItem
 
 type CallerItem struct {
 	Note   string         `json:"note"`
-	Ip     string         `json:"ip"`
-	IpReg  *regexp.Regexp `json:"-"`
+	IP     string         `json:"ip"`
+	IPReg  *regexp.Regexp `json:"-"`
 	Enable bool           `json:"enable"`
 	Pref   []string       `json:"pref"`
 	Ignore []string       `json:"ignore"`
 }
 
-func NewCaller() Caller {
+func newCaller() Caller {
 	return make([]*CallerItem, 0)
 }
 
-func NewCallerItem(ip string) (*CallerItem, error) {
+func newCallerItem(ip string) (*CallerItem, error) {
 	item := &CallerItem{
-		Ip:     ip,
+		IP:     ip,
 		Pref:   make([]string, 0),
 		Ignore: make([]string, 0),
 	}
 	var err error
-	err = item.Init()
+	err = item.init()
 
 	return item, err
 }
 
-func NewCallerItemMust(ip string) *CallerItem {
-	item, _ := NewCallerItem(ip)
+func newCallerItemMust(ip string) *CallerItem {
+	item, _ := newCallerItem(ip)
 	item.Enable = true
 	return item
 }
 
-func (citem *CallerItem) Init() (err error) {
-	citem.IpReg, err = regexp.Compile(strings.Replace(strings.Replace(citem.Ip, ".", `\.`, -1), "*", `\d+`, -1))
+func (citem *CallerItem) init() (err error) {
+	citem.IPReg, err = regexp.Compile(strings.Replace(strings.Replace(citem.IP, ".", `\.`, -1), "*", `\d+`, -1))
 	if err != nil {
-		log.Println("ip wrong:", citem.Ip)
+		log.Println("ip wrong:", citem.IP)
 	}
 	if citem.Ignore == nil {
 		citem.Ignore = make([]string, 0)
@@ -62,34 +62,34 @@ func (citem *CallerItem) Init() (err error) {
 	return err
 }
 
-func (citem *CallerItem) IsHostIgnore(host_name string) bool {
-	return In_StringSlice(host_name, citem.Ignore)
+func (citem *CallerItem) isHostIgnore(hostHame string) bool {
+	return InStringSlice(hostHame, citem.Ignore)
 }
 
-const IP_ALL string = "*.*.*.*"
+const ipAll string = "*.*.*.*"
 
-func (caller *Caller) Init() (err error) {
+func (caller *Caller) init() (err error) {
 	has_all := false
 	for _, citem := range *caller {
-		err := citem.Init()
+		err := citem.init()
 		if err != nil {
 			return err
 		}
-		if citem.Ip == IP_ALL {
+		if citem.IP == ipAll {
 			has_all = true
 		}
 	}
 	if !has_all {
-		citem := NewCallerItemMust(IP_ALL)
+		citem := newCallerItemMust(ipAll)
 		citem.Note = "default all"
 		citem.Enable = true
-		citem.Init()
-		caller.AddNewCallerItem(citem)
+		citem.init()
+		caller.addNewCallerItem(citem)
 	}
 	return nil
 }
 
-func (caller *Caller) GetPrefHostName(allowNames []string, cpf *CallerPrefConf) string {
+func (caller *Caller) getPrefHostName(allowNames []string, cpf *CallerPrefConf) string {
 
 	if len(allowNames) == 0 || len(*caller) == 0 {
 		return StrSliceRandItem(allowNames)
@@ -103,7 +103,7 @@ func (caller *Caller) GetPrefHostName(allowNames []string, cpf *CallerPrefConf) 
 			}
 		}
 	}
-	item := caller.getCallerItemByIp(cpf.ip)
+	item := caller.getCallerItemByIP(cpf.ip)
 	if item != nil && len(item.Pref) > 0 {
 		pref := StrSliceIntersectGetOne(item.Pref, allowNames)
 		if pref != "" {
@@ -124,11 +124,11 @@ func (caller Caller) Len() int {
 *让 127.0.0.1 排在127.0.0.* 前面
  */
 func (caller Caller) Less(i, j int) bool {
-	aPos := strings.Index(caller[i].Ip, "*")
+	aPos := strings.Index(caller[i].IP, "*")
 	if aPos == -1 {
 		return true
 	}
-	bPos := strings.Index(caller[j].Ip, "*")
+	bPos := strings.Index(caller[j].IP, "*")
 	if bPos == -1 {
 		return false
 	}
@@ -140,25 +140,25 @@ func (caller Caller) Swap(i, j int) {
 	caller[i], caller[j] = caller[j], caller[i]
 }
 
-var Default_Caller= &CallerItem{Ip: IP_ALL, Enable: true, Note: "default"}
+var defaultCaller = &CallerItem{IP: ipAll, Enable: true, Note: "default"}
 
 func init() {
-	Default_Caller.Init()
+	defaultCaller.init()
 }
 
-func (caller Caller) getCallerItemByIp(ip string) *CallerItem {
+func (caller Caller) getCallerItemByIP(ip string) *CallerItem {
 	for _, item := range caller {
 		if !item.Enable {
 			continue
 		}
-		if item.Ip == ip || item.IpReg.MatchString(ip) {
+		if item.IP == ip || item.IPReg.MatchString(ip) {
 			return item
 		}
 	}
-	return Default_Caller
+	return defaultCaller
 }
 
-func (caller *Caller) AddNewCallerItem(item *CallerItem) {
+func (caller *Caller) addNewCallerItem(item *CallerItem) {
 	*caller = append(*caller, item)
 	caller.Sort()
 }

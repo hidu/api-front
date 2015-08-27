@@ -51,10 +51,10 @@ func (web *WebAdmin) wsInit() {
 		web.wsSocket = so
 		so.Join("api_pv")
 		so.On("http_analysis", func(name string) {
-			api := web.apiServer.getApiByName(name)
+			api := web.apiServer.getAPIByName(name)
 			if api != nil {
-				err := so.Join(api.GetRoomName())
-				log.Println("join_room", api.GetRoomName(), err)
+				err := so.Join(api.roomName())
+				log.Println("join_room", api.roomName(), err)
 			}
 		})
 	})
@@ -86,7 +86,7 @@ func (web *WebAdmin) broadApiPvs() {
 }
 
 func (web *WebAdmin) BroadcastApi(api *Api, broadType string, reqData *BroadCastData) {
-	roomName := api.GetRoomName()
+	roomName := api.roomName()
 	log.Println("broad:", roomName, broadType)
 	web.wsServer.BroadcastTo(roomName, broadType, reqData)
 }
@@ -123,13 +123,13 @@ func (wr *webReq) execute() {
 	wr.values["version"] = API_PROXY_VERSION
 	wr.values["base_url"] = "http://" + wr.req.Host
 	wr.values["server_list"] = wr.web.apiServer.manager.ServerConf.Server
-	host_info := strings.Split(wr.req.Host, ":")
-	if host_info[1] == "" {
-		host_info[1] = "80"
+	hostInfo := strings.Split(wr.req.Host, ":")
+	if hostInfo[1] == "" {
+		hostInfo[1] = "80"
 	}
 	wr.values["req_host"] = wr.req.Host
-	wr.values["host_name"] = host_info[0]
-	port, _ := strconv.ParseInt(host_info[1], 10, 64)
+	wr.values["host_name"] = hostInfo[0]
+	port, _ := strconv.ParseInt(hostInfo[1], 10, 64)
 	wr.values["host_port"] = int(port)
 	wr.values["conf"] = wr.web.apiServer.ServerConf
 
@@ -169,10 +169,10 @@ func (wr *webReq) apiPref() {
 		return
 	}
 
-	cookieName := ApiCookieName(apiName)
+	cookieName := apiCookieName(apiName)
 
 	if prefHost != "" {
-		api := wr.web.apiServer.getApiByName(apiName)
+		api := wr.web.apiServer.getAPIByName(apiName)
 		if api == nil {
 			wr.json(400, "api not exists", nil)
 			return
@@ -198,7 +198,7 @@ func (wr *webReq) apiPv() {
 		wr.json(400, "param empty", nil)
 		return
 	}
-	api := wr.web.apiServer.getApiByName(apiName)
+	api := wr.web.apiServer.getAPIByName(apiName)
 	if api == nil {
 		wr.json(400, "api not exists", nil)
 		return
@@ -212,7 +212,7 @@ func (wr *webReq) apiAnalysis() {
 		wr.render("error.html", true)
 		return
 	}
-	api := wr.web.apiServer.getApiByName(apiName)
+	api := wr.web.apiServer.getAPIByName(apiName)
 	if api == nil {
 		wr.values["error"] = "api not exists!  <a href='/_api'>add new</a>"
 		wr.render("error.html", true)
@@ -229,25 +229,25 @@ func (wr *webReq) alertAndGo(msg string, urlstr string) {
 	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s");top.location.href="%s";</script>`, msg, urlstr)))
 }
 
-type JsonResult struct {
+type JSONResult struct {
 	Code int         `json:"code"`
 	Msg  string      `json:"msg"`
 	Data interface{} `json:"data"`
 }
 
 func (wr *webReq) json(code int, msg string, data interface{}) {
-	ret := &JsonResult{code, msg, data}
+	ret := &JSONResult{code, msg, data}
 	bs, _ := json.Marshal(ret)
 	wr.rw.Header().Set("Content-Type", "application/json;charset=utf-8")
 	wr.rw.Write(bs)
 }
 
 func (wr *webReq) render(tplName string, layout bool) {
-	html := render_html(tplName, wr.values, true)
+	html := renderHTML(tplName, wr.values, true)
 	wr.rw.Write([]byte(html))
 }
 
-var web_tmp_name = "tpl_api_proxy"
+var webTmpName = "tpl_api_proxy"
 
 func (wr *webReq) apiEdit() {
 	req := wr.req
@@ -255,27 +255,27 @@ func (wr *webReq) apiEdit() {
 	if req.Method != "POST" {
 		var api *Api
 		if name != "" {
-			apiOld := wr.web.apiServer.getApiByName(name)
+			apiOld := wr.web.apiServer.getAPIByName(name)
 			if apiOld == nil {
 				wr.values["error"] = "api not exists!  <a href='/_api'>add new</a>"
 				wr.render("error.html", true)
 				return
 			}
-			api = apiOld.Clone()
+			api = apiOld.clone()
 		} else {
-			api = NewApi(wr.web.apiServer, "")
+			api = newAPI(wr.web.apiServer, "")
 		}
-		hostsTpl := NewHosts()
-		hostsTpl.AddNewHost(NewHost(web_tmp_name, "http://127.0.0.1/", false))
+		hostsTpl := newHosts()
+		hostsTpl.addNewHost(newHost(webTmpName, "http://127.0.0.1/", false))
 
-		citem, _ := NewCallerItem("")
-		api.Caller.AddNewCallerItem(citem)
+		citem, _ := newCallerItem("")
+		api.Caller.addNewCallerItem(citem)
 
 		wr.values["api"] = &api
 		wr.values["HostsTpl"] = hostsTpl
 		wr.values["api_url"] = "http://" + req.Host + api.Path
 
-		prefCookie, err := wr.req.Cookie(api.CookieName())
+		prefCookie, err := wr.req.Cookie(api.cookieName())
 		cookiePref := ""
 		if err == nil {
 			cookiePref = prefCookie.Value
@@ -305,20 +305,20 @@ func (wr *webReq) apiBaseSave() {
 	}
 
 	apiName := req.FormValue("api_name")
-	api := wr.web.apiServer.getApiByName(apiName)
+	api := wr.web.apiServer.getAPIByName(apiName)
 	apiNameOrig := req.FormValue("api_name_orig")
-	apiPath := UrlPathClean(req.FormValue("path"))
+	apiPath := URLPathClean(req.FormValue("path"))
 	if apiNameOrig == "" && api != nil {
 		wr.alert("失败：新创建的模块已经存在")
 		return
 	}
 
-	if !ApiNameReg.MatchString(apiName) {
+	if !apiNameReg.MatchString(apiName) {
 		wr.alert(`模块名称不满足规则：^[\w-]+$`)
 		return
 	}
 
-	apiByPath := wr.web.apiServer.getApiByPath(apiPath)
+	apiByPath := wr.web.apiServer.getAPIByPath(apiPath)
 
 	if apiByPath != nil {
 		if api == nil || (api != nil && api.Name != apiByPath.Name) {
@@ -327,7 +327,7 @@ func (wr *webReq) apiBaseSave() {
 		}
 	}
 	if api == nil {
-		api = wr.web.apiServer.newApi(apiName)
+		api = wr.web.apiServer.newAPI(apiName)
 	}
 
 	hostNames := req.PostForm["host_name"]
@@ -350,22 +350,22 @@ func (wr *webReq) apiBaseSave() {
 	}
 
 	for i, name := range hostNames {
-		if name == "" || name == web_tmp_name {
+		if name == "" || name == webTmpName {
 			continue
 		}
-		host := NewHost(name, hostUrls[i], true)
+		host := newHost(name, hostUrls[i], true)
 		host.Note = hostNotes[i]
 		host.Enable = hostEnables[i] == "1"
 
 		//		wr.web.apiServer.
-		api.Hosts.AddNewHost(host)
+		api.Hosts.addNewHost(host)
 		nameOrig := hostNameOrigs[i]
-		api.HostRename(nameOrig, name)
+		api.hostRename(nameOrig, name)
 	}
-	api.HostCheckDelete(hostNames)
+	api.hostCheckDelete(hostNames)
 
 	if api == nil {
-		api = wr.web.apiServer.newApi(apiName)
+		api = wr.web.apiServer.newAPI(apiName)
 	}
 
 	api.Note = req.FormValue("note")
@@ -374,31 +374,31 @@ func (wr *webReq) apiBaseSave() {
 	api.Path = apiPath
 	api.HostAsProxy = req.FormValue("host_as_proxy") == "1"
 	if apiNameOrig != apiName {
-		wr.web.apiServer.deleteApi(apiNameOrig)
+		wr.web.apiServer.deleteAPI(apiNameOrig)
 	}
 
-	err = api.Save()
+	err = api.save()
 	if err != nil {
 		wr.alert("保存失败：" + err.Error())
 		return
 	}
-	wr.web.apiServer.loadApi(apiName)
+	wr.web.apiServer.loadAPI(apiName)
 	wr.alertAndGo("已经更新！", "/_api?name="+apiName)
 }
 
 func (wr *webReq) apiCallerSave() {
 	req := wr.req
 	apiName := req.FormValue("api_name")
-	api := wr.web.apiServer.getApiByName(apiName)
+	api := wr.web.apiServer.getAPIByName(apiName)
 	if api == nil {
 		wr.alert("api模块不存在")
 		return
 	}
 	datas := req.Form["datas[]"]
-	callers := NewCaller()
+	callers := newCaller()
 	for _, qs := range datas {
 		qv, _ := url.ParseQuery(qs)
-		item, _ := NewCallerItem(qv.Get("ip"))
+		item, _ := newCallerItem(qv.Get("ip"))
 		item.Note = qv.Get("note")
 		item.Enable = qv.Get("enable") == "1"
 		if qv.Get("host_names") != "" {
@@ -408,31 +408,31 @@ func (wr *webReq) apiCallerSave() {
 			item.Ignore = qv["host_ignore"]
 
 			for _, ignoreName := range item.Ignore {
-				if In_StringSlice(ignoreName, item.Pref) {
-					wr.json(1, "配置冲突("+item.Ip+")\n屏蔽:"+ignoreName, nil)
+				if InStringSlice(ignoreName, item.Pref) {
+					wr.json(1, "配置冲突("+item.IP+")\n屏蔽:"+ignoreName, nil)
 					return
 				}
 			}
 		}
-		callers.AddNewCallerItem(item)
+		callers.addNewCallerItem(item)
 	}
 	api.Caller = callers
 
-	err := api.Save()
+	err := api.save()
 	if err != nil {
 		wr.json(1, "保存配置失败:"+err.Error(), nil)
 		return
 	}
-	wr.web.apiServer.loadApi(apiName)
+	wr.web.apiServer.loadAPI(apiName)
 	wr.json(0, "已经更新！", nil)
 }
 
-func reader_html_include(fileName string) string {
+func readerHTMLInclude(fileName string) string {
 
 	html := Assest.GetContent("/res/tpl/" + fileName)
 	myfn := template.FuncMap{
 		"my_include": func(name string) string {
-			return reader_html_include(name)
+			return readerHTMLInclude(name)
 		},
 	}
 	tpl, _ := template.New("page_include").Delims("{%", "%}").Funcs(myfn).Parse(html)
@@ -443,19 +443,18 @@ func reader_html_include(fileName string) string {
 	return body
 }
 
-func render_html(fileName string, values map[string]interface{}, layout bool) string {
-	htmlStr := reader_html_include(fileName)
+func renderHTML(fileName string, values map[string]interface{}, layout bool) string {
+	htmlStr := readerHTMLInclude(fileName)
 	myfn := template.FuncMap{
 		"shortTime": func(tu int64) string {
 			t := time.Unix(tu, 0)
-			return t.Format(TIME_FORMAT_STD)
+			return t.Format(timeFormatStd)
 		},
 		"myNum": func(n int64) string {
 			if n == 0 {
 				return ""
-			} else {
-				return fmt.Sprintf("%d", n)
 			}
+			return fmt.Sprintf("%d", n)
 		},
 		"in_array": func(name string, names []string) bool {
 			for _, v := range names {
@@ -485,7 +484,7 @@ func render_html(fileName string, values map[string]interface{}, layout bool) st
 	body := w.String()
 	if layout {
 		values["body"] = body
-		return render_html("layout.html", values, false)
+		return renderHTML("layout.html", values, false)
 	}
 	return utils.Html_reduceSpace(body)
 }

@@ -15,11 +15,11 @@ type Host struct {
 
 type Hosts map[string]*Host
 
-func NewHosts() Hosts {
+func newHosts() Hosts {
 	return make(Hosts)
 }
 
-func (h *Host) Copy() *Host {
+func (h *Host) copy() *Host {
 	return &Host{
 		Name:      h.Name,
 		Url:       h.Url,
@@ -29,17 +29,17 @@ func (h *Host) Copy() *Host {
 	}
 }
 
-func (hs Hosts) AddNewHost(host *Host) {
+func (hs Hosts) addNewHost(host *Host) {
 	hs[host.Name] = host
 }
 
-func (hs Hosts) Init() {
+func (hs Hosts) init() {
 	for name, host := range hs {
 		host.Name = name
 	}
 }
 
-func NewHost(name string, url string, enable bool) *Host {
+func newHost(name string, url string, enable bool) *Host {
 	return &Host{
 		Name:   name,
 		Url:    url,
@@ -47,7 +47,7 @@ func NewHost(name string, url string, enable bool) *Host {
 	}
 }
 
-func (hs Hosts) GetDefaultHostName() string {
+func (hs Hosts) getDefaultHostName() string {
 	n := time.Now().UnixNano() % int64(len(hs))
 	for name := range hs {
 		if n == 0 {
@@ -58,7 +58,7 @@ func (hs Hosts) GetDefaultHostName() string {
 	return ""
 }
 
-func (hs Hosts) ActiveHostsNum() int {
+func (hs Hosts) activeHostsNum() int {
 	num := 0
 	for _, host := range hs {
 		if host.Enable {
@@ -68,7 +68,7 @@ func (hs Hosts) ActiveHostsNum() int {
 	return num
 }
 
-func (hs Hosts) GetHostsWithPref(pref []string) []*Host {
+func (hs Hosts) getHostsWithPref(pref []string) []*Host {
 
 	enableNames := []string{}
 	for name, host := range hs {
@@ -76,16 +76,16 @@ func (hs Hosts) GetHostsWithPref(pref []string) []*Host {
 			enableNames = append(enableNames, name)
 		}
 	}
-	arr := make([]*Host, 0)
+	var arr []*Host
 	for _, name := range pref {
-		if In_StringSlice(name, enableNames) {
-			h := hs[name].Copy()
+		if InStringSlice(name, enableNames) {
+			h := hs[name].copy()
 			h.Checked = true
 			arr = append(arr, h)
 		}
 	}
 	for name, host := range hs {
-		if host.Enable && !In_StringSlice(name, pref) {
+		if host.Enable && !InStringSlice(name, pref) {
 			arr = append(arr, host)
 		}
 	}

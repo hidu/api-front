@@ -18,8 +18,8 @@ type apiServerConf struct {
 	Server []*ServerConfItem `json:"server"`
 }
 
-func loadServerConf(conf_path string) *apiServerConf {
-	data, err := ioutil.ReadFile(conf_path)
+func loadServerConf(confPath string) *apiServerConf {
+	data, err := ioutil.ReadFile(confPath)
 	if err != nil {
 		log.Fatalln(err)
 	}

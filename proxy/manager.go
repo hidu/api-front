@@ -80,7 +80,7 @@ func (manager *ApiServerManager) setupLog(logPath string) {
 
 	SetInterval(func() {
 		logPathDay := logPath + "." + time.Now().Format("20060102")
-		if !File_exists(logPathDay) {
+		if !FileExists(logPathDay) {
 			manager.LogFile.Close()
 			DirCheck(logPathDay)
 			manager.LogFile, err = os.OpenFile(logPathDay, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)

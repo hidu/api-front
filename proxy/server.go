@@ -26,9 +26,9 @@ func NewApiServer(conf *ServerConfItem, manager *ApiServerManager) *ApiServer {
 	apiServer := &ApiServer{ServerConf: conf, manager: manager}
 	apiServer.ConfDir = fmt.Sprintf("%s/api_%d", filepath.Dir(manager.ConfPath), conf.Port)
 	apiServer.Apis = make(map[string]*Api)
-	apiServer.routers = NewRouters()
+	apiServer.routers = newRouters()
 	apiServer.web = NewWebAdmin(apiServer)
-	apiServer.counter = NewCounter(apiServer)
+	apiServer.counter = newCounter(apiServer)
 	return apiServer
 }
 
@@ -42,7 +42,7 @@ func (apiServer *ApiServer) Start() error {
 }
 
 func (apiServer *ApiServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	router := apiServer.routers.GetRouterByReqPath(req.URL.Path)
+	router := apiServer.routers.getRouterByReqPath(req.URL.Path)
 	if router != nil {
 		router.Hander.ServeHTTP(rw, req)
 		return
@@ -68,34 +68,34 @@ func (apiServer *ApiServer) loadAllApis() {
 			continue
 		}
 
-		apiServer.loadApi(apiName)
+		apiServer.loadAPI(apiName)
 	}
 }
 
-func (apiServer *ApiServer) deleteApi(apiName string) {
+func (apiServer *ApiServer) deleteAPI(apiName string) {
 	apiServer.Rw.Lock()
 	defer apiServer.Rw.Unlock()
 	api, has := apiServer.Apis[apiName]
 	if !has {
 		return
 	}
-	api.Delete()
+	api.delete()
 	delete(apiServer.Apis, apiName)
 }
 
-func (apiServer *ApiServer) newApi(apiName string) *Api {
-	return NewApi(apiServer, apiName)
+func (apiServer *ApiServer) newAPI(apiName string) *Api {
+	return newAPI(apiServer, apiName)
 }
 
-func (apiServer *ApiServer) GetConfDir() string {
+func (apiServer *ApiServer) getConfDir() string {
 	return apiServer.ConfDir
 }
 
-func (apiServer *ApiServer) loadApi(apiName string) error {
+func (apiServer *ApiServer) loadAPI(apiName string) error {
 	apiServer.Rw.Lock()
 	defer apiServer.Rw.Unlock()
 
-	api, err := LoadApiByConf(apiServer, apiName)
+	api, err := loadAPIByConf(apiServer, apiName)
 	if err != nil {
 		log.Println("load api failed,", apiName, err)
 		return err
@@ -105,29 +105,29 @@ func (apiServer *ApiServer) loadApi(apiName string) error {
 
 	apiServer.Apis[apiName] = api
 	if api.Enable {
-		router := NewRouterItem(apiName, api.Path, apiServer.newHandler(api))
-		apiServer.routers.BindRouter(api.Path, router)
+		router := newRouterItem(apiName, api.Path, apiServer.newHandler(api))
+		apiServer.routers.bindRouter(api.Path, router)
 	} else {
-		apiServer.routers.DeleteRouterByPath(api.Path)
+		apiServer.routers.deleteRouterByPath(api.Path)
 		log.Printf("api [%s] is not enable,skip", apiName)
 	}
 
 	return nil
 }
 
-func (apiServer *ApiServer) GetUniqReqId(id uint64) string {
+func (apiServer *ApiServer) uniqReqID(id uint64) string {
 	return fmt.Sprintf("%s_%d", time.Now().Format("20060102_150405"), id)
 }
 
-func (apiServer *ApiServer) getApiByName(name string) *Api {
+func (apiServer *ApiServer) getAPIByName(name string) *Api {
 	if api, has := apiServer.Apis[name]; has {
 		return api
 	}
 	return nil
 }
 
-func (apiServer *ApiServer) getApiByPath(bindPath string) *Api {
-	bindPath = UrlPathClean(bindPath)
+func (apiServer *ApiServer) getAPIByPath(bindPath string) *Api {
+	bindPath = URLPathClean(bindPath)
 	for _, api := range apiServer.Apis {
 		if api.Path == bindPath {
 			return api

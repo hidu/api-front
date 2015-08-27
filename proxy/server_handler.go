@@ -21,16 +21,16 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 	bindPath := api.Path
 	log.Println(apiServer.ServerConf.Port, api.Name, "bind path [", bindPath, "]")
 	return func(rw http.ResponseWriter, req *http.Request) {
-		id := api.PvInc()
-		uniqId := apiServer.GetUniqReqId(id)
+		id := api.pvInc()
+		uniqID := apiServer.uniqReqID(id)
 
 		broadData := apiServer.initBroadCastData(req)
-		broadData.Id = uniqId
+		broadData.ID = uniqID
 		start := time.Now()
 		defer func() {
 			used := float64(time.Now().Sub(start).Nanoseconds()) / 1e6
 			broadData.SetData("used", used)
-			go apiServer.BroadcastApiReq(api, broadData)
+			go apiServer.broadcastApiReq(api, broadData)
 		}()
 
 		rw.Header().Set("Api-Proxy-Version", API_PROXY_VERSION)
@@ -53,15 +53,15 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		}
 		//get body must by before  parse callerPref
 
-		hosts, masterHost, cpf := api.getApiHostsByReq(req)
+		hosts, masterHost, cpf := api.getAPIHostsByReq(req)
 		broadData.SetData("master", masterHost)
-		broadData.SetData("remote", cpf.GetIp())
+		broadData.SetData("remote", cpf.GetIP())
 
 		_uri := req.URL.Path
 		if req.URL.RawQuery != "" {
 			_uri += "?" + req.URL.RawQuery
 		}
-		mainLogStr := fmt.Sprintf("uniqid=%s port=%d remote=%s method=%s uri=%s master=%s hostsTotal=%d refer=%s", uniqId, apiServer.ServerConf.Port, req.RemoteAddr, req.Method, _uri, masterHost, len(hosts), req.Referer())
+		mainLogStr := fmt.Sprintf("uniqid=%s port=%d remote=%s method=%s uri=%s master=%s hostsTotal=%d refer=%s", uniqID, apiServer.ServerConf.Port, req.RemoteAddr, req.Method, _uri, masterHost, len(hosts), req.Referer())
 
 		var printLog = func(logIndex int) {
 			totalUsed := fmt.Sprintf("%.3fms", float64(time.Now().Sub(start).Nanoseconds())/1e6)
@@ -84,16 +84,16 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		}
 
 		bodyLen := int64(len(body))
-		reqs := make([]*apiHostRequest, 0)
+		var reqs []*apiHostRequest
 
 		//build request
-		for _, api_host := range hosts {
-			isMaster := api_host.Name == masterHost
+		for _, apiHost := range hosts {
+			isMaster := apiHost.Name == masterHost
 			urlNew := ""
 
-			serverUrl := api_host.Url
+			serverURL := apiHost.Url
 			if api.HostAsProxy {
-				serverUrl = "http://" + req.Host + api.Path
+				serverURL = "http://" + req.Host + api.Path
 			}
 			if strings.HasSuffix(urlNew, "/") {
 				urlNew += strings.TrimLeft(relPath, "/")
@@ -104,22 +104,22 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				urlNew += "?" + req.URL.RawQuery
 			}
 
-			rawUrl := api_host.Url + urlNew
+			rawURL := apiHost.Url + urlNew
 
 			if isMaster {
-				rw.Header().Set("Api-Proxy-Raw-Url", rawUrl)
+				rw.Header().Set("Api-Proxy-Raw-Url", rawURL)
 			}
 
-			urlNew = serverUrl + urlNew
+			urlNew = serverURL + urlNew
 
-			broadData.SetData("raw_url", rawUrl)
+			broadData.SetData("raw_url", rawURL)
 
 			reqNew, err := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 			if err != nil {
 				log.Println("build req failed:", err)
 				if isMaster {
 					rw.WriteHeader(http.StatusBadGateway)
-					rw.Write([]byte("error:" + err.Error() + "\nraw_url:" + rawUrl))
+					rw.Write([]byte("error:" + err.Error() + "\nraw_url:" + rawURL))
 				}
 				broadData.SetError(err.Error())
 				return
@@ -128,8 +128,8 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 			copyHeaders(reqNew.Header, req.Header)
 
 			//only accept gzip encode
-			accept_encoding := reqNew.Header.Get("Accept-Encoding")
-			if accept_encoding != "" && (In_StringSlice("gzip", reqNew.Header["Accept-Encoding"]) || strings.Contains(accept_encoding, "gzip")) {
+			acceptEncoding := reqNew.Header.Get("Accept-Encoding")
+			if acceptEncoding != "" && (InStringSlice("gzip", reqNew.Header["Accept-Encoding"]) || strings.Contains(acceptEncoding, "gzip")) {
 				reqNew.Header.Set("Accept-Encoding", "gzip")
 			}
 
@@ -153,15 +153,15 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 					return func(req *http.Request) (*url.URL, error) {
 						return url.Parse(u)
 					}
-				})(api_host.Url)
+				})(apiHost.Url)
 			}
 			apiReq := &apiHostRequest{
 				req:       reqNew,
 				transport: transport,
-				apiHost:   api_host,
+				apiHost:   apiHost,
 				isMaster:  isMaster,
 				urlNew:    urlNew,
-				urlRaw:    rawUrl,
+				urlRaw:    rawURL,
 			}
 			reqs = append(reqs, apiReq)
 		}
@@ -261,12 +261,12 @@ func (apiServer *ApiServer) initBroadCastData(req *http.Request) *BroadCastData 
 	dumpBody := IsRequestDumpBody(req)
 
 	dump, _ := httputil.DumpRequest(req, dumpBody)
-	req_detail := string(dump)
+	reqDetail := string(dump)
 	if apiServer.ServerConf.HiddenCookie {
-		req_detail = reqCookieDumpLine.ReplaceAllStringFunc(req_detail, ReqCookieHidden)
+		reqDetail = reqCookieDumpLine.ReplaceAllStringFunc(reqDetail, ReqCookieHidden)
 	}
 
-	data.SetData("req_detail", base64.StdEncoding.EncodeToString([]byte(req_detail)))
+	data.SetData("req_detail", base64.StdEncoding.EncodeToString([]byte(reqDetail)))
 	return data
 }
 
@@ -299,25 +299,24 @@ func (apiServer *ApiServer) addBroadCastDataResponse(broadData *BroadCastData, r
 	broadData.SetData("resp_status", resp.StatusCode)
 	dump, _ := httputil.DumpResponse(resp, false)
 
-	res_detail := string(dump)
+	resDetail := string(dump)
 	if apiServer.ServerConf.HiddenCookie {
-		res_detail = resCookieDumpLine.ReplaceAllStringFunc(res_detail, ResCookieSetHidden)
-		//		res_detail = resCookieDumpLine.ReplaceAllString(res_detail, "Set-Cookie: ------hidden------\r\n")
+		resDetail = resCookieDumpLine.ReplaceAllStringFunc(resDetail, ResCookieSetHidden)
 	}
 	if !dumpBody {
-		res_detail += "---body skipped---"
+		resDetail += "---body skipped---"
 	} else {
 		bd := forgetRead(&resp.Body)
 		if resp.Header.Get("Content-Encoding") == "gzip" {
-			res_detail += gzipDocode(bd)
+			resDetail += gzipDocode(bd)
 		} else {
-			res_detail += bd.String()
+			resDetail += bd.String()
 		}
 	}
 	//	fmt.Println(res_detail)
-	broadData.SetData("res_detail", base64.StdEncoding.EncodeToString([]byte(res_detail)))
+	broadData.SetData("res_detail", base64.StdEncoding.EncodeToString([]byte(resDetail)))
 }
 
-func (apiServer *ApiServer) BroadcastApiReq(api *Api, data *BroadCastData) {
+func (apiServer *ApiServer) broadcastApiReq(api *Api, data *BroadCastData) {
 	apiServer.web.BroadcastApi(api, "req", data)
 }

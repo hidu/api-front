@@ -19,7 +19,7 @@ func (cpf *CallerPrefConf) AddNewPrefHost(prefType string, hostName string) {
 	if _, has := cpf.prefHostName[prefType]; !has {
 		cpf.prefHostName[prefType] = make([]string, 0)
 	}
-	if !In_StringSlice(hostName, cpf.prefHostName[prefType]) {
+	if !InStringSlice(hostName, cpf.prefHostName[prefType]) {
 		cpf.prefHostName[prefType] = append(cpf.prefHostName[prefType], hostName)
 	}
 }
@@ -31,33 +31,33 @@ func (cpf *CallerPrefConf) AddNewPrefHostRaw(prefType string, str string, spitSt
 	}
 }
 
-func (cpf *CallerPrefConf) GetIp() string {
+func (cpf *CallerPrefConf) GetIP() string {
 	return cpf.ip
 }
 
 var ipReg = regexp.MustCompile(`^(\d+\.){3}\d+$`)
 
-func NewCallerPrefConfByHttpRequest(req *http.Request, api *Api) *CallerPrefConf {
+func NewCallerPrefConfByHTTPRequest(req *http.Request, api *Api) *CallerPrefConf {
 	prefConf := &CallerPrefConf{}
 	prefConf.prefHostName = make(map[string][]string)
 
 	info := strings.SplitN(req.RemoteAddr, ":", 2)
 	prefConf.ip = info[0]
-	x_real_ip := strings.TrimSpace(req.Header.Get("X-Real-Ip"))
-	if x_real_ip != "" && ipReg.MatchString(x_real_ip) {
-		prefConf.ip = x_real_ip
+	xRealIP := strings.TrimSpace(req.Header.Get("X-Real-Ip"))
+	if xRealIP != "" && ipReg.MatchString(xRealIP) {
+		prefConf.ip = xRealIP
 	}
 
 	//get from form data
-	prefConf.AddNewPrefHostRaw(API_PREF_TYPE_REQ, req.FormValue(API_PREF_PARMA_NAME), ",")
+	prefConf.AddNewPrefHostRaw(apiPrefTypeReq, req.FormValue(apiPrefParamName), ",")
 
 	//get from http header
-	prefConf.AddNewPrefHostRaw(API_PREF_TYPE_HEADER, req.Header.Get(API_PREF_PARMA_NAME), ",")
+	prefConf.AddNewPrefHostRaw(apiPrefTypeHeader, req.Header.Get(apiPrefParamName), ",")
 
 	//get from cookie
-	cookie, err := req.Cookie(api.CookieName())
+	cookie, err := req.Cookie(api.cookieName())
 	if err == nil {
-		prefConf.AddNewPrefHostRaw(API_PREF_TYPE_COOKIE, cookie.Value, ",")
+		prefConf.AddNewPrefHostRaw(apiPrefTypeCookie, cookie.Value, ",")
 	}
 
 	return prefConf

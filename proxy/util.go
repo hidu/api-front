@@ -16,8 +16,8 @@ import (
 	"time"
 )
 
-const TIME_FORMAT_STD string = "2006-01-02 15:04:05"
-const TIME_FORMAT_INT string = "20060102150405"
+const timeFormatStd string = "2006-01-02 15:04:05"
+const timeFormatInt string = "20060102150405"
 
 func SetInterval(call func(), sec int64) *time.Ticker {
 	ticker := time.NewTicker(time.Duration(sec) * time.Second)
@@ -32,23 +32,23 @@ func SetInterval(call func(), sec int64) *time.Ticker {
 	return ticker
 }
 
-func File_exists(file_path string) bool {
-	_, err := os.Stat(file_path)
+func FileExists(filePath string) bool {
+	_, err := os.Stat(filePath)
 	if err == nil {
 		return true
 	}
 	return os.IsExist(err)
 }
 
-func DirCheck(file_path string) {
-	dir := filepath.Dir(file_path)
-	if !File_exists(dir) {
+func DirCheck(filePath string) {
+	dir := filepath.Dir(filePath)
+	if !FileExists(dir) {
 		err := os.MkdirAll(dir, 0777)
 		log.Println("mkdir dir:", dir, err)
 	}
 }
 
-func In_StringSlice(str string, strSli []string) bool {
+func InStringSlice(str string, strSli []string) bool {
 	for _, v := range strSli {
 		if str == v {
 			return true
@@ -79,23 +79,22 @@ func StrSliceRandItem(strsli []string) string {
 func StrSliceIntersectGetOne(a, b []string) string {
 	c := make([]string, 0, len(b))
 	for _, v := range a {
-		if In_StringSlice(v, b) {
+		if InStringSlice(v, b) {
 			c = append(c, v)
 		}
 	}
 	return StrSliceRandItem(c)
 }
 
-func UrlPathClean(urlPath string) string {
+func URLPathClean(urlPath string) string {
 	str := path.Clean(fmt.Sprintf("/%s/", urlPath))
 	if strings.HasSuffix(str, "/") {
 		return str
-	} else {
-		return fmt.Sprintf("%s/", str)
 	}
+	return fmt.Sprintf("%s/", str)
 }
 
-var textContentTypes []string = []string{"text", "javascript", "json"}
+var textContentTypes = []string{"text", "javascript", "json"}
 
 func IsContentTypeText(contentType string) bool {
 	for _, v := range textContentTypes {
@@ -106,7 +105,7 @@ func IsContentTypeText(contentType string) bool {
 	return false
 }
 
-func LoadJsonFile(jsonPath string, obj interface{}) error {
+func LoadJSONFile(jsonPath string, obj interface{}) error {
 	data, err := ioutil.ReadFile(jsonPath)
 	if err != nil {
 		return err
@@ -167,10 +166,9 @@ func gzipDocode(buf *bytes.Buffer) string {
 	gr, err := gzip.NewReader(buf)
 	defer gr.Close()
 	if err == nil {
-		bd_bt, _ := ioutil.ReadAll(gr)
-		return string(bd_bt)
-	} else {
-		log.Println("unzip body failed", err)
-		return ""
+		bdBt, _ := ioutil.ReadAll(gr)
+		return string(bdBt)
 	}
+	log.Println("unzip body failed", err)
+	return ""
 }
