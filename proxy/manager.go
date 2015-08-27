@@ -22,13 +22,13 @@ type ApiServerManager struct {
 	ServerConf *apiServerConf
 }
 
-func NewApiServerManager(conf_path string) *ApiServerManager {
+func NewApiServerManager(confPath string) *ApiServerManager {
 	manager := &ApiServerManager{}
 	manager.Servers = make(map[int]*ApiServer)
-	serConf := loadServerConf(conf_path)
+	serConf := loadServerConf(confPath)
 
 	manager.ServerConf = serConf
-	manager.ConfPath, _ = filepath.Abs(conf_path)
+	manager.ConfPath, _ = filepath.Abs(confPath)
 
 	for _, signConf := range serConf.Server {
 		if !signConf.Enable {

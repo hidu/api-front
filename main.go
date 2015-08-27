@@ -7,8 +7,8 @@ import (
 	"log"
 )
 
-var conf_path = flag.String("conf", "./conf/man.json", "server conf path")
-var conf_demo = flag.Bool("conf_demo", false, "show the demo conf")
+var confPath = flag.String("conf", "./conf/man.json", "server conf path")
+var confDemo = flag.Bool("conf_demo", false, "show the demo conf")
 
 func init() {
 	log.SetFlags(log.Lshortfile | log.LstdFlags | log.Ldate)
@@ -22,11 +22,11 @@ func init() {
 
 func main() {
 	flag.Parse()
-	if *conf_demo {
+	if *confDemo {
 		showConfDemo()
 		return
 	}
-	manager := proxy.NewApiServerManager(*conf_path)
+	manager := proxy.NewApiServerManager(*confPath)
 	manager.Start()
 }
 

@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+//Api   一般是一个模块
 type Api struct {
 	Name        string       `json:"-"`
 	ConfPath    string       `json:"-"`
@@ -31,6 +32,7 @@ type Api struct {
 	apiServer   *ApiServer
 }
 
+// init new api for server
 func NewApi(apiServer *ApiServer, apiName string) *Api {
 	api := &Api{
 		Name:      apiName,
@@ -64,9 +66,9 @@ func (api *Api) init() (err error) {
 	return err
 }
 
-var pathReg *regexp.Regexp = regexp.MustCompile(`^/[\w-/]+/$`)
+var pathReg= regexp.MustCompile(`^/[\w-/]+/$`)
 
-var ApiNameReg *regexp.Regexp = regexp.MustCompile(`^[\w-]+$`)
+var ApiNameReg= regexp.MustCompile(`^[\w-]+$`)
 
 func (api *Api) IsValidPath(myPath string) bool {
 	return pathReg.MatchString(myPath)
@@ -82,10 +84,10 @@ func (api *Api) Save() error {
 	}
 	oldData, _ := ioutil.ReadFile(api.ConfPath)
 	if string(oldData) != string(data) {
-		back_path := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(TIME_FORMAT_INT)
-		DirCheck(back_path)
-		err = ioutil.WriteFile(back_path, oldData, 0644)
-		log.Println("backup ", back_path, err)
+		backPath := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(TIME_FORMAT_INT)
+		DirCheck(backPath)
+		err = ioutil.WriteFile(backPath, oldData, 0644)
+		log.Println("backup ", backPath, err)
 	}
 	err = ioutil.WriteFile(api.ConfPath, data, 0644)
 	return err
@@ -94,10 +96,10 @@ func (api *Api) Save() error {
 func (api *Api) Delete() {
 	api.rw.Lock()
 	defer api.rw.Unlock()
-	back_path := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(TIME_FORMAT_INT)
-	DirCheck(back_path)
-	err := os.Rename(api.ConfPath, back_path)
-	log.Println("backup ", back_path, err)
+	backPath := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(TIME_FORMAT_INT)
+	DirCheck(backPath)
+	err := os.Rename(api.ConfPath, backPath)
+	log.Println("backup ", backPath, err)
 }
 
 func (api *Api) Clone() *Api {
@@ -115,25 +117,25 @@ func (api *Api) Clone() *Api {
 	return newApi
 }
 
-func (api *Api) HostRename(orig_name, new_name string) {
-	if orig_name == "" || orig_name == new_name {
+func (api *Api) HostRename(origName, newName string) {
+	if origName == "" || origName == newName {
 		return
 	}
 	api.rw.Lock()
 	defer api.rw.Unlock()
 
-	if _, has := api.Hosts[orig_name]; has {
-		delete(api.Hosts, orig_name)
+	if _, has := api.Hosts[origName]; has {
+		delete(api.Hosts, origName)
 	}
 }
 
-func (api *Api) HostCheckDelete(host_names []string) {
+func (api *Api) HostCheckDelete(hostNames []string) {
 
 	api.rw.Lock()
 	defer api.rw.Unlock()
 
 	tmpMap := make(map[string]int)
-	for _, v := range host_names {
+	for _, v := range hostNames {
 		tmpMap[v] = 1
 	}
 
@@ -219,14 +221,14 @@ func (api *Api) getApiHostsByReq(req *http.Request) (hs []*Host, master string, 
 
 	hs = make([]*Host, 0)
 	hsTmp := make([]*Host, 0)
-	for _, api_host := range api.Hosts {
-		if !api_host.Enable || caller.IsHostIgnore(api_host.Name) {
+	for _, apiHost := range api.Hosts {
+		if !apiHost.Enable || caller.IsHostIgnore(apiHost.Name) {
 			continue
 		}
-		if api_host.Name == masterHost {
-			hs = append(hs, api_host)
+		if apiHost.Name == masterHost {
+			hs = append(hs, apiHost)
 		} else {
-			hsTmp = append(hsTmp, api_host)
+			hsTmp = append(hsTmp, apiHost)
 		}
 	}
 	hs = append(hs, hsTmp...)

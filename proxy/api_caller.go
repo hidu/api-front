@@ -124,23 +124,23 @@ func (caller Caller) Len() int {
 *让 127.0.0.1 排在127.0.0.* 前面
  */
 func (caller Caller) Less(i, j int) bool {
-	a_pos := strings.Index(caller[i].Ip, "*")
-	if a_pos == -1 {
+	aPos := strings.Index(caller[i].Ip, "*")
+	if aPos == -1 {
 		return true
 	}
-	b_pos := strings.Index(caller[j].Ip, "*")
-	if b_pos == -1 {
+	bPos := strings.Index(caller[j].Ip, "*")
+	if bPos == -1 {
 		return false
 	}
 
-	return a_pos > b_pos
+	return aPos > bPos
 }
 
 func (caller Caller) Swap(i, j int) {
 	caller[i], caller[j] = caller[j], caller[i]
 }
 
-var Default_Caller *CallerItem = &CallerItem{Ip: IP_ALL, Enable: true, Note: "default"}
+var Default_Caller= &CallerItem{Ip: IP_ALL, Enable: true, Note: "default"}
 
 func init() {
 	Default_Caller.Init()
