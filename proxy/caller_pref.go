@@ -24,6 +24,16 @@ func (cpf *CallerPrefConf) AddNewPrefHost(prefType string, hostName string) {
 	}
 }
 
+func (cpf *CallerPrefConf) allPrefHosts() []string {
+	var hs []string
+	for _, phs := range cpf.prefHostName {
+		if len(phs) > 0 {
+			hs = append(hs, phs...)
+		}
+	}
+	return hs
+}
+
 func (cpf *CallerPrefConf) AddNewPrefHostRaw(prefType string, str string, spitStr string) {
 	strSlice := strings.Split(str, spitStr)
 	for _, v := range strSlice {

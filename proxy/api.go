@@ -222,7 +222,7 @@ func (api *Api) getAPIHostsByReq(req *http.Request) (hs []*Host, master string, 
 	hs = make([]*Host, 0)
 	var hsTmp []*Host
 	for _, apiHost := range api.Hosts {
-		if !apiHost.Enable || caller.isHostIgnore(apiHost.Name) {
+		if !apiHost.Enable || caller.isHostIgnore(apiHost.Name, cpf) {
 			continue
 		}
 		if apiHost.Name == masterHost {

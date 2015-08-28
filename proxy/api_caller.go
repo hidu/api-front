@@ -62,8 +62,16 @@ func (citem *CallerItem) init() (err error) {
 	return err
 }
 
-func (citem *CallerItem) isHostIgnore(hostHame string) bool {
-	return InStringSlice(hostHame, citem.Ignore)
+func (citem *CallerItem) isHostIgnore(hostHame string, cpf *CallerPrefConf) bool {
+	isIgnore := InStringSlice(hostHame, citem.Ignore)
+	if isIgnore && cpf != nil {
+		hs := cpf.allPrefHosts()
+		//pref host must not ignore
+		if InStringSlice(hostHame, hs) {
+			return false
+		}
+	}
+	return isIgnore
 }
 
 const ipAll string = "*.*.*.*"
