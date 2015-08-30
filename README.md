@@ -24,7 +24,7 @@ api manager 是用来做api管理，可进行请求代理转发、协议抓包�
 ###简单
 每个端口配置一个apiserver:
 conf/man.json
-`
+```
 {
 "server":[
     {"port":8080,"enable":true,"name":"8080测试","note":"","hidden_cookie":true},
@@ -32,12 +32,12 @@ conf/man.json
 ]
 }
 
-`
+```
 
 ###高级
 虚拟主机方式，一个端口可以配置多个apiserver
 <p>conf/man.json</p>
-`
+```
 {
 "server_name":"api.xxx.com",
 "server":[
@@ -46,11 +46,11 @@ conf/man.json
 ]
 }
 
-`
+```
 <p>conf/vhost/order_8081.json</p>
-`
+```
 {"port":8081,"enable":true,"name":"order api","note":"","hidden_cookie":true}
-`
+```
 通过 order.api.xxx.com:8081 和 test.api.xxx.com:8081访问 8081端口上的apiserver。
 
 ###说明
