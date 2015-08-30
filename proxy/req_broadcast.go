@@ -6,12 +6,13 @@ import (
 	"strings"
 )
 
+// BroadCastData broad to browser data
 type BroadCastData struct {
 	ID   string                 `json:"id"`
 	Data map[string]interface{} `json:"data"`
 }
 
-func NewReqBroadCastData(req *http.Request) *BroadCastData {
+func newReqBroadCastData(req *http.Request) *BroadCastData {
 	data := &BroadCastData{
 		Data: make(map[string]interface{}),
 	}
@@ -22,14 +23,15 @@ func NewReqBroadCastData(req *http.Request) *BroadCastData {
 	return data
 }
 
-func (d *BroadCastData) SetData(key string, val interface{}) {
+func (d *BroadCastData) setData(key string, val interface{}) {
 	d.Data[key] = val
 }
 
-func (d *BroadCastData) SetError(err string) {
+func (d *BroadCastData) setError(err string) {
 	d.Data["err"] = err
 }
 
+// String json encode data
 func (d *BroadCastData) String() string {
 	data, _ := json.Marshal(d)
 	return string(data)

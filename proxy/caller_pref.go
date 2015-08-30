@@ -6,11 +6,13 @@ import (
 	"strings"
 )
 
+// CallerPrefConf pref item
 type CallerPrefConf struct {
 	ip           string
 	prefHostName map[string][]string
 }
 
+// AddNewPrefHost add new pref
 func (cpf *CallerPrefConf) AddNewPrefHost(prefType string, hostName string) {
 	hostName = strings.TrimSpace(hostName)
 	if hostName == "" {
@@ -34,6 +36,7 @@ func (cpf *CallerPrefConf) allPrefHosts() []string {
 	return hs
 }
 
+// AddNewPrefHostRaw add new pref host
 func (cpf *CallerPrefConf) AddNewPrefHostRaw(prefType string, str string, spitStr string) {
 	strSlice := strings.Split(str, spitStr)
 	for _, v := range strSlice {
@@ -41,13 +44,14 @@ func (cpf *CallerPrefConf) AddNewPrefHostRaw(prefType string, str string, spitSt
 	}
 }
 
+// GetIP get pref item ip
 func (cpf *CallerPrefConf) GetIP() string {
 	return cpf.ip
 }
 
 var ipReg = regexp.MustCompile(`^(\d+\.){3}\d+$`)
 
-func NewCallerPrefConfByHTTPRequest(req *http.Request, api *Api) *CallerPrefConf {
+func newCallerPrefConfByHTTPRequest(req *http.Request, api *apiStruct) *CallerPrefConf {
 	prefConf := &CallerPrefConf{}
 	prefConf.prefHostName = make(map[string][]string)
 

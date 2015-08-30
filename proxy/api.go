@@ -13,8 +13,7 @@ import (
 	"time"
 )
 
-//Api   一般是一个模块
-type Api struct {
+type apiStruct struct {
 	Name        string       `json:"-"`
 	ConfPath    string       `json:"-"`
 	Path        string       `json:"path"`
@@ -29,12 +28,12 @@ type Api struct {
 	Pv          uint64       `json:"-"`
 	LastVisit   time.Time    `json:"-"`       //最后访问时间
 	Version     int64        `json:"version"` //配置文件的版本号
-	apiServer   *ApiServer
+	apiServer   *APIServer
 }
 
 // init new api for server
-func newAPI(apiServer *ApiServer, apiName string) *Api {
-	api := &Api{
+func newAPI(apiServer *APIServer, apiName string) *apiStruct {
+	api := &apiStruct{
 		Name:      apiName,
 		ConfPath:  fmt.Sprintf("%s/%s.json", apiServer.getConfDir(), apiName),
 		Hosts:     newHosts(),
@@ -43,7 +42,7 @@ func newAPI(apiServer *ApiServer, apiName string) *Api {
 	return api
 }
 
-func (api *Api) init() (err error) {
+func (api *apiStruct) init() (err error) {
 	log.Println("start load api [", api.Name, "] conf")
 
 	if api.TimeoutMs < 1 {
@@ -70,11 +69,11 @@ var pathReg = regexp.MustCompile(`^/[\w-/]+/$`)
 
 var apiNameReg = regexp.MustCompile(`^[\w-]+$`)
 
-func (api *Api) isValidPath(myPath string) bool {
+func (api *apiStruct) isValidPath(myPath string) bool {
 	return pathReg.MatchString(myPath)
 }
 
-func (api *Api) save() error {
+func (api *apiStruct) save() error {
 	api.rw.Lock()
 	defer api.rw.Unlock()
 
@@ -93,7 +92,7 @@ func (api *Api) save() error {
 	return err
 }
 
-func (api *Api) delete() {
+func (api *apiStruct) delete() {
 	api.rw.Lock()
 	defer api.rw.Unlock()
 	backPath := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(timeFormatInt)
@@ -102,11 +101,11 @@ func (api *Api) delete() {
 	log.Println("backup ", backPath, err)
 }
 
-func (api *Api) clone() *Api {
+func (api *apiStruct) clone() *apiStruct {
 	api.rw.RLock()
 	defer api.rw.RUnlock()
 	data, _ := json.Marshal(api)
-	var newAPI *Api
+	var newAPI *apiStruct
 	json.Unmarshal(data, &newAPI)
 	newAPI.Name = api.Name
 	newAPI.ConfPath = api.ConfPath
@@ -117,7 +116,7 @@ func (api *Api) clone() *Api {
 	return newAPI
 }
 
-func (api *Api) hostRename(origName, newName string) {
+func (api *apiStruct) hostRename(origName, newName string) {
 	if origName == "" || origName == newName {
 		return
 	}
@@ -129,8 +128,7 @@ func (api *Api) hostRename(origName, newName string) {
 	}
 }
 
-func (api *Api) hostCheckDelete(hostNames []string) {
-
+func (api *apiStruct) hostCheckDelete(hostNames []string) {
 	api.rw.Lock()
 	defer api.rw.Unlock()
 
@@ -147,7 +145,7 @@ func (api *Api) hostCheckDelete(hostNames []string) {
 
 }
 
-func (api *Api) getMasterHostName(cpf *CallerPrefConf) string {
+func (api *apiStruct) getMasterHostName(cpf *CallerPrefConf) string {
 	api.rw.RLock()
 	defer api.rw.RUnlock()
 
@@ -160,11 +158,11 @@ func (api *Api) getMasterHostName(cpf *CallerPrefConf) string {
 	return api.Caller.getPrefHostName(names, cpf)
 }
 
-func (api *Api) cookieName() string {
+func (api *apiStruct) cookieName() string {
 	return apiCookieName(api.Name)
 }
 
-func loadAPIByConf(apiServer *ApiServer, apiName string) (*Api, error) {
+func loadAPIByConf(apiServer *APIServer, apiName string) (*apiStruct, error) {
 	api := newAPI(apiServer, apiName)
 	relName, _ := filepath.Rel(filepath.Dir(apiServer.getConfDir()), api.ConfPath)
 	logMsg := fmt.Sprint("load api [", apiName, "],[", relName, "]")
@@ -187,7 +185,7 @@ func loadAPIByConf(apiServer *ApiServer, apiName string) (*Api, error) {
 		api.Path = fmt.Sprintf("/%s/", apiName)
 	}
 	if !api.isValidPath(api.Path) {
-		return api, fmt.Errorf("path wrong:", api.Path)
+		return api, fmt.Errorf("path wrong:%s", api.Path)
 	}
 
 	err = api.init()
@@ -195,15 +193,15 @@ func loadAPIByConf(apiServer *ApiServer, apiName string) (*Api, error) {
 	return api, err
 }
 
-func (api *Api) pvInc() uint64 {
+func (api *apiStruct) pvInc() uint64 {
 	return api.apiServer.GetCounter().pvInc(api.Name)
 }
 
-func (api *Api) GetPv() uint64 {
+func (api *apiStruct) GetPv() uint64 {
 	return api.apiServer.GetCounter().GetPv(api.Name)
 }
 
-func (api *Api) roomName() string {
+func (api *apiStruct) roomName() string {
 	return fmt.Sprintf("_room_%s", api.Name)
 }
 
@@ -214,8 +212,8 @@ func apiCookieName(apiName string) string {
 /**
 * get sorted hosts,master is at first
  */
-func (api *Api) getAPIHostsByReq(req *http.Request) (hs []*Host, master string, cpf *CallerPrefConf) {
-	cpf = NewCallerPrefConfByHTTPRequest(req, api)
+func (api *apiStruct) getAPIHostsByReq(req *http.Request) (hs []*Host, master string, cpf *CallerPrefConf) {
+	cpf = newCallerPrefConfByHTTPRequest(req, api)
 	caller := api.Caller.getCallerItemByIP(cpf.GetIP())
 	masterHost := api.getMasterHostName(cpf)
 

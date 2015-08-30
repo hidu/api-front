@@ -4,15 +4,17 @@ import (
 	"time"
 )
 
+// Host one api backend host
 type Host struct {
 	Name      string `json:"-"`
-	Url       string `json:"url"`
+	URLStr    string `json:"url"`
 	Enable    bool   `json:"enable"`
 	Note      string `json:"note"`
 	SortIndex int    `json:"sort"`
 	Checked   bool   `json:"-"`
 }
 
+// Hosts api hosts
 type Hosts map[string]*Host
 
 func newHosts() Hosts {
@@ -22,7 +24,7 @@ func newHosts() Hosts {
 func (h *Host) copy() *Host {
 	return &Host{
 		Name:      h.Name,
-		Url:       h.Url,
+		URLStr:    h.URLStr,
 		Enable:    h.Enable,
 		Note:      h.Note,
 		SortIndex: h.SortIndex,
@@ -42,7 +44,7 @@ func (hs Hosts) init() {
 func newHost(name string, url string, enable bool) *Host {
 	return &Host{
 		Name:   name,
-		Url:    url,
+		URLStr: url,
 		Enable: enable,
 	}
 }
@@ -68,7 +70,9 @@ func (hs Hosts) activeHostsNum() int {
 	return num
 }
 
-func (hs Hosts) getHostsWithPref(pref []string) []*Host {
+// GetHostsWithPref tpl call this
+//
+func (hs Hosts) GetHostsWithPref(pref []string) []*Host {
 
 	enableNames := []string{}
 	for name, host := range hs {

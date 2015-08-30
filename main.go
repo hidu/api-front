@@ -16,7 +16,7 @@ func init() {
 	flag.Usage = func() {
 		ua()
 		fmt.Println("\n site: https://github.com/hidu/api-man")
-		fmt.Println(" version:", proxy.API_PROXY_VERSION)
+		fmt.Println(" version:", proxy.APIProxyVersion)
 	}
 }
 
@@ -26,7 +26,7 @@ func main() {
 		showConfDemo()
 		return
 	}
-	manager := proxy.NewApiServerManager(*confPath)
+	manager := proxy.NewAPIServerManager(*confPath)
 	manager.Start()
 }
 

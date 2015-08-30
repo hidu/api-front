@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// Counter counter for server
 type Counter struct {
 	Pv        map[string]uint64 `json:"pv"`
 	rw        sync.RWMutex
@@ -17,8 +18,8 @@ type Counter struct {
 	lastWrite time.Time
 }
 
-func newCounter(apiServer *ApiServer) *Counter {
-	jsonPath := apiServer.getConfDir() + "/_counter.json"
+func newCounter(apiServer *APIServer) *Counter {
+	jsonPath := apiServer.getConfDir() + "_counter.json"
 	var counter *Counter
 	err := LoadJSONFile(jsonPath, &counter)
 	if err != nil {
@@ -48,6 +49,7 @@ func (c *Counter) pvInc(name string) uint64 {
 	return c.TotalPv
 }
 
+// GetPv  get pv num
 func (c *Counter) GetPv(name string) uint64 {
 	c.rw.RLock()
 	defer c.rw.RUnlock()
@@ -57,12 +59,14 @@ func (c *Counter) GetPv(name string) uint64 {
 	return 0
 }
 
+// GetTotalPv total pv
 func (c *Counter) GetTotalPv() uint64 {
 	c.rw.RLock()
 	defer c.rw.RUnlock()
 	return c.TotalPv
 }
 
+// AutoSave auto save to file
 func (c *Counter) AutoSave(sec int64) {
 	t := time.NewTicker(time.Duration(sec) * time.Second)
 	for {
@@ -75,6 +79,7 @@ func (c *Counter) AutoSave(sec int64) {
 	}
 }
 
+// SaveFile save to file
 func (c *Counter) SaveFile() error {
 	log.Println("save counter file:", c.filePath)
 	c.rw.RLock()

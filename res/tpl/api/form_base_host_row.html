@@ -10,7 +10,7 @@
    <div class="col-lg-6">
     <div class="input-group" title="后端服务url地址,如: http://10.10.10.10/myapi/">
         <label class="input-group-addon">网址:</label> 
-        <input type="text" class="form-control" name="host_url" value="{{$host.Url|html}}" required="required" pattern="^http(s?)://.+" >
+        <input type="text" class="form-control" name="host_url" value="{{$host.URLStr|html}}" required="required" pattern="^http(s?)://.+" >
     </div>
    </div>
    <div class="col-lg-2">

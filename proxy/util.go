@@ -19,6 +19,7 @@ import (
 const timeFormatStd string = "2006-01-02 15:04:05"
 const timeFormatInt string = "20060102150405"
 
+// SetInterval interval run func
 func SetInterval(call func(), sec int64) *time.Ticker {
 	ticker := time.NewTicker(time.Duration(sec) * time.Second)
 	go func() {
@@ -32,6 +33,7 @@ func SetInterval(call func(), sec int64) *time.Ticker {
 	return ticker
 }
 
+// FileExists check file exists
 func FileExists(filePath string) bool {
 	_, err := os.Stat(filePath)
 	if err == nil {
@@ -40,6 +42,7 @@ func FileExists(filePath string) bool {
 	return os.IsExist(err)
 }
 
+// DirCheck create dir if not exists
 func DirCheck(filePath string) {
 	dir := filepath.Dir(filePath)
 	if !FileExists(dir) {
@@ -48,9 +51,20 @@ func DirCheck(filePath string) {
 	}
 }
 
+// InStringSlice check string in slice
 func InStringSlice(str string, strSli []string) bool {
 	for _, v := range strSli {
 		if str == v {
+			return true
+		}
+	}
+	return false
+}
+
+// InIntSlice check int in slice
+func InIntSlice(id int, idSli []int) bool {
+	for _, v := range idSli {
+		if id == v {
 			return true
 		}
 	}
@@ -65,6 +79,7 @@ func copyHeaders(dst, src http.Header) {
 	}
 }
 
+// StrSliceRandItem get random item  from slice
 func StrSliceRandItem(strsli []string) string {
 	if len(strsli) == 0 {
 		return ""
@@ -73,9 +88,7 @@ func StrSliceRandItem(strsli []string) string {
 	return strsli[n]
 }
 
-/**
-*get one of a ,which a is in b
- */
+// StrSliceIntersectGetOne  get one of a ,which a is in b
 func StrSliceIntersectGetOne(a, b []string) string {
 	c := make([]string, 0, len(b))
 	for _, v := range a {
@@ -86,6 +99,7 @@ func StrSliceIntersectGetOne(a, b []string) string {
 	return StrSliceRandItem(c)
 }
 
+// URLPathClean clean url path
 func URLPathClean(urlPath string) string {
 	str := path.Clean(fmt.Sprintf("/%s/", urlPath))
 	if strings.HasSuffix(str, "/") {
@@ -96,6 +110,7 @@ func URLPathClean(urlPath string) string {
 
 var textContentTypes = []string{"text", "javascript", "json"}
 
+//IsContentTypeText check contentType is text
 func IsContentTypeText(contentType string) bool {
 	for _, v := range textContentTypes {
 		if strings.Contains(contentType, v) {
@@ -105,6 +120,7 @@ func IsContentTypeText(contentType string) bool {
 	return false
 }
 
+// LoadJSONFile easy load json file
 func LoadJSONFile(jsonPath string, obj interface{}) error {
 	data, err := ioutil.ReadFile(jsonPath)
 	if err != nil {
@@ -114,6 +130,7 @@ func LoadJSONFile(jsonPath string, obj interface{}) error {
 	return err
 }
 
+// IsRequestDumpBody if not big body,can  dump request
 func IsRequestDumpBody(req *http.Request) bool {
 	switch req.Method {
 	case "GET":
@@ -139,6 +156,7 @@ func forgetRead(reader *io.ReadCloser) *bytes.Buffer {
 	return bytes.NewBuffer(buf.Bytes())
 }
 
+// ReqCookieHidden hidden request cookie value
 func ReqCookieHidden(str string) string {
 	cs := []string{}
 	arr := strings.Split(str[7:], "; ")
@@ -149,6 +167,7 @@ func ReqCookieHidden(str string) string {
 	return str[:7] + strings.Join(cs, "; ") + "\r\n"
 }
 
+// ResCookieSetHidden hidden response cookie value
 func ResCookieSetHidden(str string) string {
 	arr := strings.SplitN(strings.TrimSpace(str[11:]), ";", 2)
 	tmp := strings.SplitN(arr[0], "=", 2)
@@ -171,4 +190,12 @@ func gzipDocode(buf *bytes.Buffer) string {
 	}
 	log.Println("unzip body failed", err)
 	return ""
+}
+
+func loadFile(file string) string {
+	if !FileExists(file) {
+		return ""
+	}
+	ds, _ := ioutil.ReadFile(file)
+	return string(ds)
 }

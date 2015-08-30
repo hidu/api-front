@@ -10,44 +10,41 @@ import (
 	"time"
 )
 
-type ApiServer struct {
+// APIServer api server
+type APIServer struct {
 	Enable     bool
-	Apis       map[string]*Api
-	manager    *ApiServerManager
+	Apis       map[string]*apiStruct
+	manager    *APIServerManager
 	ConfDir    string
 	Rw         sync.RWMutex
-	routers    *Routers
-	web        *WebAdmin
-	ServerConf *ServerConfItem
+	routers    *routers
+	web        *webAdmin
+	ServerConf *serverConfItem
 	counter    *Counter
 }
 
-func NewApiServer(conf *ServerConfItem, manager *ApiServerManager) *ApiServer {
-	apiServer := &ApiServer{ServerConf: conf, manager: manager}
-	apiServer.ConfDir = fmt.Sprintf("%s/api_%d", filepath.Dir(manager.ConfPath), conf.Port)
-	apiServer.Apis = make(map[string]*Api)
+func newAPIServer(conf *serverConfItem, manager *APIServerManager) *APIServer {
+	apiServer := &APIServer{ServerConf: conf, manager: manager}
+	apiServer.ConfDir = fmt.Sprintf("%sapi_%d", manager.rootConfDir(), conf.Port)
+	if conf.SubDoamin != "" {
+		apiServer.ConfDir += "_" + conf.SubDoamin
+	}
+	apiServer.ConfDir += string(filepath.Separator)
+
+	apiServer.Apis = make(map[string]*apiStruct)
 	apiServer.routers = newRouters()
-	apiServer.web = NewWebAdmin(apiServer)
+	apiServer.web = newWebAdmin(apiServer)
 	apiServer.counter = newCounter(apiServer)
+	apiServer.loadAllApis()
 	return apiServer
 }
 
-func (apiServer *ApiServer) Start() error {
-	addr := fmt.Sprintf(":%d", apiServer.ServerConf.Port)
-
-	apiServer.loadAllApis()
-	log.Println("start server:", addr)
-	err := http.ListenAndServe(addr, apiServer)
-	return err
-}
-
-func (apiServer *ApiServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (apiServer *APIServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	router := apiServer.routers.getRouterByReqPath(req.URL.Path)
 	if router != nil {
 		router.Hander.ServeHTTP(rw, req)
 		return
 	}
-
 	if strings.HasPrefix(req.URL.Path, "/_") || req.URL.Path == "/" {
 		apiServer.web.ServeHTTP(rw, req)
 	} else {
@@ -55,16 +52,22 @@ func (apiServer *ApiServer) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 	}
 }
 
-func (apiServer *ApiServer) loadAllApis() {
-	fileNames, _ := filepath.Glob(apiServer.ConfDir + "/*.json")
+func (apiServer *APIServer) loadAllApis() {
+	fileNames, _ := filepath.Glob(apiServer.ConfDir + string(filepath.Separator) + "*.json")
 	for _, fileName := range fileNames {
 		log.Println("start load conf file:", fileName)
 
-		baseName := filepath.Base(fileName)
+		_, baseName := filepath.Split(fileName)
+
+		if baseName == "" {
+			log.Println("skip api conf:", fileName)
+			continue
+		}
 
 		apiName := baseName[:len(baseName)-5]
 
 		if strings.HasPrefix(apiName, "_") {
+			log.Println("skip api", apiName)
 			continue
 		}
 
@@ -72,7 +75,7 @@ func (apiServer *ApiServer) loadAllApis() {
 	}
 }
 
-func (apiServer *ApiServer) deleteAPI(apiName string) {
+func (apiServer *APIServer) deleteAPI(apiName string) {
 	apiServer.Rw.Lock()
 	defer apiServer.Rw.Unlock()
 	api, has := apiServer.Apis[apiName]
@@ -83,15 +86,19 @@ func (apiServer *ApiServer) deleteAPI(apiName string) {
 	delete(apiServer.Apis, apiName)
 }
 
-func (apiServer *ApiServer) newAPI(apiName string) *Api {
+func (apiServer *APIServer) newAPI(apiName string) *apiStruct {
 	return newAPI(apiServer, apiName)
 }
 
-func (apiServer *ApiServer) getConfDir() string {
+func (apiServer *APIServer) getConfDir() string {
 	return apiServer.ConfDir
 }
 
-func (apiServer *ApiServer) loadAPI(apiName string) error {
+func (apiServer *APIServer) rootConfDir() string {
+	return apiServer.manager.rootConfDir()
+}
+
+func (apiServer *APIServer) loadAPI(apiName string) error {
 	apiServer.Rw.Lock()
 	defer apiServer.Rw.Unlock()
 
@@ -115,18 +122,25 @@ func (apiServer *ApiServer) loadAPI(apiName string) error {
 	return nil
 }
 
-func (apiServer *ApiServer) uniqReqID(id uint64) string {
+func (apiServer *APIServer) uniqReqID(id uint64) string {
 	return fmt.Sprintf("%s_%d", time.Now().Format("20060102_150405"), id)
 }
 
-func (apiServer *ApiServer) getAPIByName(name string) *Api {
+func (apiServer *APIServer) serverName() string {
+	return fmt.Sprintf("%s:%d", apiServer.ServerConf.SubDoamin, apiServer.ServerConf.Port)
+}
+func (apiServer *APIServer) subDomain() string {
+	return apiServer.ServerConf.SubDoamin
+}
+
+func (apiServer *APIServer) getAPIByName(name string) *apiStruct {
 	if api, has := apiServer.Apis[name]; has {
 		return api
 	}
 	return nil
 }
 
-func (apiServer *ApiServer) getAPIByPath(bindPath string) *Api {
+func (apiServer *APIServer) getAPIByPath(bindPath string) *apiStruct {
 	bindPath = URLPathClean(bindPath)
 	for _, api := range apiServer.Apis {
 		if api.Path == bindPath {
@@ -136,6 +150,7 @@ func (apiServer *ApiServer) getAPIByPath(bindPath string) *Api {
 	return nil
 }
 
-func (apiServer *ApiServer) GetCounter() *Counter {
+// GetCounter get counter
+func (apiServer *APIServer) GetCounter() *Counter {
 	return apiServer.counter
 }

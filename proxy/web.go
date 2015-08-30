@@ -16,27 +16,28 @@ import (
 	"time"
 )
 
-var API_PROXY_VERSION string
+// APIProxyVersion current server version
+var APIProxyVersion string
 
 func init() {
-	API_PROXY_VERSION = Assest.GetContent("/res/version")
+	APIProxyVersion = Assest.GetContent("/res/version")
 }
 
-type WebAdmin struct {
-	apiServer *ApiServer
+type webAdmin struct {
+	apiServer *APIServer
 	wsServer  *socketio.Server
 	wsSocket  socketio.Socket
 }
 
-func NewWebAdmin(mimo *ApiServer) *WebAdmin {
-	ser := &WebAdmin{
-		apiServer: mimo,
+func newWebAdmin(server *APIServer) *webAdmin {
+	ser := &webAdmin{
+		apiServer: server,
 	}
 	ser.wsInit()
 
 	return ser
 }
-func (web *WebAdmin) wsInit() {
+func (web *webAdmin) wsInit() {
 	server, err := socketio.NewServer(nil)
 	if err != nil {
 		log.Fatalln("init ws server failed:", err.Error())
@@ -61,9 +62,9 @@ func (web *WebAdmin) wsInit() {
 	server.On("error", func(so socketio.Socket) {
 		log.Println("ws error:", err)
 	})
-	web.broadApiPvs()
+	web.broadAPIPvs()
 }
-func (web *WebAdmin) broadApiPvs() {
+func (web *webAdmin) broadAPIPvs() {
 	pvs := make(map[string]uint64)
 
 	utils.SetInterval(func() {
@@ -85,16 +86,16 @@ func (web *WebAdmin) broadApiPvs() {
 	}, 1)
 }
 
-func (web *WebAdmin) BroadcastApi(api *Api, broadType string, reqData *BroadCastData) {
+func (web *webAdmin) broadcastAPI(api *apiStruct, broadType string, reqData *BroadCastData) {
 	roomName := api.roomName()
 	log.Println("broad:", roomName, broadType)
 	web.wsServer.BroadcastTo(roomName, broadType, reqData)
 }
 
-func (web *WebAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (web *webAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if strings.HasPrefix(req.URL.Path, "/_res/") {
 		req.URL.Path = "/res/" + req.URL.Path[5:]
-		Assest.HttpHandler("/").ServeHTTP(rw, req)
+		Assest.HTTPHandler("/").ServeHTTP(rw, req)
 		return
 	}
 	if strings.HasPrefix(req.URL.Path, "/_socket.io/") {
@@ -114,15 +115,14 @@ func (web *WebAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 type webReq struct {
 	rw     http.ResponseWriter
 	req    *http.Request
-	web    *WebAdmin
+	web    *webAdmin
 	values map[string]interface{}
 }
 
 func (wr *webReq) execute() {
 	wr.values["Title"] = "Index"
-	wr.values["version"] = API_PROXY_VERSION
+	wr.values["version"] = APIProxyVersion
 	wr.values["base_url"] = "http://" + wr.req.Host
-	wr.values["server_list"] = wr.web.apiServer.manager.ServerConf.Server
 	hostInfo := strings.Split(wr.req.Host, ":")
 	if hostInfo[1] == "" {
 		hostInfo[1] = "80"
@@ -153,6 +153,9 @@ func (wr *webReq) execute() {
 		wr.apiAnalysis()
 		return
 	}
+
+	userIndexHtmlPath := wr.web.apiServer.rootConfDir() + "index.html"
+	wr.values["userIndex"] = loadFile(userIndexHtmlPath)
 	wr.render("index.html", true)
 }
 
@@ -229,6 +232,7 @@ func (wr *webReq) alertAndGo(msg string, urlstr string) {
 	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s");top.location.href="%s";</script>`, msg, urlstr)))
 }
 
+// JSONResult json result when ajax call
 type JSONResult struct {
 	Code int         `json:"code"`
 	Msg  string      `json:"msg"`
@@ -253,7 +257,7 @@ func (wr *webReq) apiEdit() {
 	req := wr.req
 	name := req.FormValue("name")
 	if req.Method != "POST" {
-		var api *Api
+		var api *apiStruct
 		if name != "" {
 			apiOld := wr.web.apiServer.getAPIByName(name)
 			if apiOld == nil {

@@ -18,8 +18,10 @@ const (
 
 var prefTypes = []string{apiPrefTypeReq, apiPrefTypeCookie, apiPrefTypeHeader}
 
+// Caller caller hosts
 type Caller []*CallerItem
 
+// CallerItem caller host
 type CallerItem struct {
 	Note   string         `json:"note"`
 	IP     string         `json:"ip"`
@@ -77,17 +79,17 @@ func (citem *CallerItem) isHostIgnore(hostHame string, cpf *CallerPrefConf) bool
 const ipAll string = "*.*.*.*"
 
 func (caller *Caller) init() (err error) {
-	has_all := false
+	hasAll := false
 	for _, citem := range *caller {
 		err := citem.init()
 		if err != nil {
 			return err
 		}
 		if citem.IP == ipAll {
-			has_all = true
+			hasAll = true
 		}
 	}
-	if !has_all {
+	if !hasAll {
 		citem := newCallerItemMust(ipAll)
 		citem.Note = "default all"
 		citem.Enable = true
@@ -121,6 +123,7 @@ func (caller *Caller) getPrefHostName(allowNames []string, cpf *CallerPrefConf) 
 	return StrSliceRandItem(allowNames)
 }
 
+// Sort sort by host ip
 func (caller Caller) Sort() {
 	sort.Sort(caller)
 }

@@ -8,7 +8,7 @@
     </legend>
     <p class="text-muted" style="font-size:-2">IP的<a href="/#adv">优先级</a>低于GET/POST、Header、Cookie参数</p>
     {{range $i,$caller:=.api.Caller}}
-    <div class="{{if eq $caller.Ip ""}}hidden api_caller_tpl{{end}}">
+    <div class="{{if eq $caller.IP ""}}hidden api_caller_tpl{{end}}">
          {%my_include "api/form_caller_panel.html"%}
       </div>      
     {{end}}

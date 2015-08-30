@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http.Request) {
+func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter, *http.Request) {
 	bindPath := api.Path
 	log.Println(apiServer.ServerConf.Port, api.Name, "bind path [", bindPath, "]")
 	return func(rw http.ResponseWriter, req *http.Request) {
@@ -29,11 +29,11 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		start := time.Now()
 		defer func() {
 			used := float64(time.Now().Sub(start).Nanoseconds()) / 1e6
-			broadData.SetData("used", used)
-			go apiServer.broadcastApiReq(api, broadData)
+			broadData.setData("used", used)
+			go apiServer.broadcastAPIReq(api, broadData)
 		}()
 
-		rw.Header().Set("Api-Proxy-Version", API_PROXY_VERSION)
+		rw.Header().Set("Api-Proxy-Version", APIProxyVersion)
 		log.Println(req.URL.String())
 
 		relPath := req.URL.Path[len(bindPath):]
@@ -48,14 +48,14 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 		if err != nil {
 			rw.WriteHeader(http.StatusBadGateway)
 			rw.Write([]byte("read body failed"))
-			broadData.SetError(err.Error())
+			broadData.setError(err.Error())
 			return
 		}
 		//get body must by before  parse callerPref
 
 		hosts, masterHost, cpf := api.getAPIHostsByReq(req)
-		broadData.SetData("master", masterHost)
-		broadData.SetData("remote", cpf.GetIP())
+		broadData.setData("master", masterHost)
+		broadData.setData("remote", cpf.GetIP())
 
 		_uri := req.URL.Path
 		if req.URL.RawQuery != "" {
@@ -79,7 +79,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 			logData["hostTotal"] = 0
 			rw.WriteHeader(http.StatusBadGateway)
 			rw.Write([]byte("no backend hosts"))
-			broadData.SetError("no backend hosts")
+			broadData.setError("no backend hosts")
 			return
 		}
 
@@ -91,7 +91,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 			isMaster := apiHost.Name == masterHost
 			urlNew := ""
 
-			serverURL := apiHost.Url
+			serverURL := apiHost.URLStr
 			if api.HostAsProxy {
 				serverURL = "http://" + req.Host + api.Path
 			}
@@ -104,7 +104,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 				urlNew += "?" + req.URL.RawQuery
 			}
 
-			rawURL := apiHost.Url + urlNew
+			rawURL := apiHost.URLStr + urlNew
 
 			if isMaster {
 				rw.Header().Set("Api-Proxy-Raw-Url", rawURL)
@@ -112,7 +112,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 
 			urlNew = serverURL + urlNew
 
-			broadData.SetData("raw_url", rawURL)
+			broadData.setData("raw_url", rawURL)
 
 			reqNew, err := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 			if err != nil {
@@ -121,7 +121,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 					rw.WriteHeader(http.StatusBadGateway)
 					rw.Write([]byte("error:" + err.Error() + "\nraw_url:" + rawURL))
 				}
-				broadData.SetError(err.Error())
+				broadData.setError(err.Error())
 				return
 
 			}
@@ -153,7 +153,7 @@ func (apiServer *ApiServer) newHandler(api *Api) func(http.ResponseWriter, *http
 					return func(req *http.Request) (*url.URL, error) {
 						return url.Parse(u)
 					}
-				})(apiHost.Url)
+				})(apiHost.URLStr)
 			}
 			apiReq := &apiHostRequest{
 				req:       reqNew,
@@ -256,8 +256,8 @@ type apiHostRequest struct {
 
 var reqCookieDumpLine = regexp.MustCompile(`Cookie: .+\r\n`)
 
-func (apiServer *ApiServer) initBroadCastData(req *http.Request) *BroadCastData {
-	data := NewReqBroadCastData(req)
+func (apiServer *APIServer) initBroadCastData(req *http.Request) *BroadCastData {
+	data := newReqBroadCastData(req)
 	dumpBody := IsRequestDumpBody(req)
 
 	dump, _ := httputil.DumpRequest(req, dumpBody)
@@ -266,13 +266,13 @@ func (apiServer *ApiServer) initBroadCastData(req *http.Request) *BroadCastData 
 		reqDetail = reqCookieDumpLine.ReplaceAllStringFunc(reqDetail, ReqCookieHidden)
 	}
 
-	data.SetData("req_detail", base64.StdEncoding.EncodeToString([]byte(reqDetail)))
+	data.setData("req_detail", base64.StdEncoding.EncodeToString([]byte(reqDetail)))
 	return data
 }
 
 var resCookieDumpLine = regexp.MustCompile(`Set-Cookie: .+\r\n`)
 
-func (apiServer *ApiServer) addBroadCastDataResponse(broadData *BroadCastData, resp *http.Response) {
+func (apiServer *APIServer) addBroadCastDataResponse(broadData *BroadCastData, resp *http.Response) {
 	dumpBody := true
 	if resp.StatusCode == http.StatusOK {
 		dumpBody = IsContentTypeText(resp.Header.Get("Content-Type"))
@@ -296,7 +296,7 @@ func (apiServer *ApiServer) addBroadCastDataResponse(broadData *BroadCastData, r
 		break
 	}
 
-	broadData.SetData("resp_status", resp.StatusCode)
+	broadData.setData("resp_status", resp.StatusCode)
 	dump, _ := httputil.DumpResponse(resp, false)
 
 	resDetail := string(dump)
@@ -314,9 +314,9 @@ func (apiServer *ApiServer) addBroadCastDataResponse(broadData *BroadCastData, r
 		}
 	}
 	//	fmt.Println(res_detail)
-	broadData.SetData("res_detail", base64.StdEncoding.EncodeToString([]byte(resDetail)))
+	broadData.setData("res_detail", base64.StdEncoding.EncodeToString([]byte(resDetail)))
 }
 
-func (apiServer *ApiServer) broadcastApiReq(api *Api, data *BroadCastData) {
-	apiServer.web.BroadcastApi(api, "req", data)
+func (apiServer *APIServer) broadcastAPIReq(api *apiStruct, data *BroadCastData) {
+	apiServer.web.broadcastAPI(api, "req", data)
 }
