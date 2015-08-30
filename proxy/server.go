@@ -12,9 +12,10 @@ import (
 
 // APIServer api server
 type APIServer struct {
-	Enable     bool
-	Apis       map[string]*apiStruct
-	manager    *APIServerManager
+	Enable  bool
+	Apis    map[string]*apiStruct
+	manager *APIServerManager
+	//current apiServer's conf dir
 	ConfDir    string
 	Rw         sync.RWMutex
 	routers    *routers

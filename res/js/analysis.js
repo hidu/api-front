@@ -44,7 +44,7 @@ $().ready(function(){
 
 function showReqTr(req){
 	
-	var tr="<tr class='req_tr'>" +
+	var tr="<tr class='req_tr' data-reqid='"+req.id+"'>" +
 			"<td>"+req.id+"</td>" +
 			"<td>"+req.data.method+"</td>" +
 			"<td>"+h(req.data["path"]||"unknow")+"</td>" +
@@ -194,6 +194,7 @@ window.onbeforeunload=function(){
 $().ready(function(){
 	$("#req_list").on("click","tr.req_tr",function(){
 		$(this).next("tr").toggleClass("hidden");
+		location.hash=$(this).data("reqid")+""
 	})
 	$("#item_open_all").click(function(){
 		$("#req_list tr").not(".req_tr").removeClass("hidden")
@@ -206,4 +207,12 @@ $().ready(function(){
 	$("#item_checkbox_receive").click(function(){
 		allow_receive_req=$(this).is(":checked")
 	});
+	
+	if(location.hash!="" && location.hash.length>8){
+		$("#req_list tr.req_tr").each(function(){
+			if("#"+$(this).data("reqid")==location.hash){
+				$(this).next("tr").toggleClass("hidden");
+			}
+		});
+	}
 });

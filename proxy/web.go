@@ -154,8 +154,8 @@ func (wr *webReq) execute() {
 		return
 	}
 
-	userIndexHtmlPath := wr.web.apiServer.rootConfDir() + "index.html"
-	wr.values["userIndex"] = loadFile(userIndexHtmlPath)
+	userIndexHTMLPath := wr.web.apiServer.rootConfDir() + "index.html"
+	wr.values["userIndex"] = loadFile(userIndexHTMLPath)
 	wr.render("index.html", true)
 }
 

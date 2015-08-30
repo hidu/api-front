@@ -45,12 +45,12 @@ func (ps *portServer) addServer(itemConf *serverConfItem) bool {
 // ServeHTTP serve all http request
 // mutil ports
 func (ps *portServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	host_info := strings.Split(req.Host, ":")
-	host := host_info[0]
+	hostInfo := strings.Split(req.Host, ":")
+	host := hostInfo[0]
 	port := 80
-	if len(host_info) == 2 {
+	if len(hostInfo) == 2 {
 		var err error
-		port, err = strconv.Atoi(host_info[1])
+		port, err = strconv.Atoi(hostInfo[1])
 		if err != nil {
 			rw.WriteHeader(http.StatusBadRequest)
 			rw.Write([]byte("bad request"))
