@@ -4,7 +4,7 @@
     <legend>Cookie标记客户端 &nbsp;<sub class="text-muted">直接使用浏览器访问接口时有效</sub></legend>
 {{range $host_name,$host:=$.api.Hosts}} 
     {{if $host.Enable}} 
-    <label  class="checkbox-inline" title="{{$host.Note|html}} {{$host.Url|html}} &#10;Cookie(api_pref_{{$.api.Name}}={{$host_name|html}}) ">
+    <label  class="checkbox-inline" title="{{$host.Note|html}} {{$host.URLStr|html}} &#10;Cookie(api_pref_{{$.api.Name}}={{$host_name|html}}) ">
         <input   type="checkbox" name="host_names" {{if  in_array $host_name $.cookiePref}}checked='checked' {{end}} value="{{$host_name|html}}"> 
         {{$host_name|html}} &nbsp;<span class="text-info">{{$host.Note|html}}</span>
     </label>
