@@ -3,13 +3,19 @@
 version :0.6.1
 
 ##概述
-api manager 是用来做api管理，可进行请求代理转发、协议抓包分析、流量复制。
+api manager 是用来做api管理，可进行`请求代理转发`、`协议抓包分析`、`流量复制`。  
+每一个请求会同时复制到所有的后端，然后选取其中一个后端的响应返回给client。  
 
-<p>每一个请求会同时复制到所有的后端，每一个后端服务都可以接收到全量的数据。</p>
+##安装
 
-<h1 class="page-header">安装</h1>
+```
+go get -u github.com/hidu/api-man
+```
 
-<code>go get -u github.com/hidu/api-man</code>
+##运行
+```
+api-man -conf ./conf/man.json
+```
 
 ##用途
 ###多人多模块开发演示
