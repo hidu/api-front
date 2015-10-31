@@ -76,14 +76,24 @@ func (apiServer *APIServer) loadAllApis() {
 	}
 }
 
-func (apiServer *APIServer) deleteAPI(apiName string) {
+//func (apiServer *APIServer) deleteAPI(apiName string) {
+//	apiServer.Rw.Lock()
+//	defer apiServer.Rw.Unlock()
+//	api, has := apiServer.Apis[apiName]
+//	if !has {
+//		return
+//	}
+//	api.delete()
+//	delete(apiServer.Apis, apiName)
+//}
+
+func (apiServer *APIServer) unRegisterAPI(apiName string) {
 	apiServer.Rw.Lock()
 	defer apiServer.Rw.Unlock()
-	api, has := apiServer.Apis[apiName]
+	_, has := apiServer.Apis[apiName]
 	if !has {
 		return
 	}
-	api.delete()
 	delete(apiServer.Apis, apiName)
 }
 
@@ -135,6 +145,9 @@ func (apiServer *APIServer) subDomain() string {
 }
 
 func (apiServer *APIServer) getAPIByName(name string) *apiStruct {
+	if name == "" {
+		return nil
+	}
 	if api, has := apiServer.Apis[name]; has {
 		return api
 	}

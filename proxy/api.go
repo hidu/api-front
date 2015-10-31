@@ -35,11 +35,15 @@ type apiStruct struct {
 func newAPI(apiServer *APIServer, apiName string) *apiStruct {
 	api := &apiStruct{
 		Name:      apiName,
-		ConfPath:  fmt.Sprintf("%s/%s.json", apiServer.getConfDir(), apiName),
 		Hosts:     newHosts(),
 		apiServer: apiServer,
 	}
+	api.ConfPath = api.getConfPath()
 	return api
+}
+
+func (api *apiStruct) getConfPath() string {
+	return fmt.Sprintf("%s/%s.json", api.apiServer.getConfDir(), api.Name)
 }
 
 func (api *apiStruct) init() (err error) {
@@ -92,13 +96,28 @@ func (api *apiStruct) save() error {
 	return err
 }
 
-func (api *apiStruct) delete() {
+func (api *apiStruct) delete() error {
 	api.rw.Lock()
 	defer api.rw.Unlock()
 	backPath := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(timeFormatInt)
 	DirCheck(backPath)
 	err := os.Rename(api.ConfPath, backPath)
 	log.Println("backup ", backPath, err)
+	return err
+}
+
+func (api *apiStruct) reName(newName string) error {
+	if api.Name == newName {
+		log.Println("rename skip,not change,newName:", newName)
+		return nil
+	}
+	err := api.delete()
+	if err != nil {
+		return err
+	}
+	api.Name = newName
+	api.ConfPath = api.getConfPath()
+	return api.save()
 }
 
 func (api *apiStruct) clone() *apiStruct {

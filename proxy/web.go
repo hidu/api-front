@@ -20,7 +20,7 @@ import (
 var APIProxyVersion string
 
 func init() {
-	APIProxyVersion = Assest.GetContent("/res/version")
+	APIProxyVersion = strings.TrimSpace(Assest.GetContent("/res/version"))
 }
 
 type webAdmin struct {
@@ -297,8 +297,39 @@ func (wr *webReq) apiEdit() {
 		wr.apiBaseSave()
 	case "caller":
 		wr.apiCallerSave()
-
+	case "rename":
+		wr.apiRename()
+	default:
+		wr.alert("unknow")
 	}
+}
+
+func (wr *webReq) apiRename() {
+	req := wr.req
+	origName := req.FormValue("orig_name")
+	newName := req.FormValue("new_name")
+
+	if origName == newName {
+		wr.json(304, "now change", nil)
+		return
+	}
+	if !apiNameReg.MatchString(newName) {
+		wr.json(400, "name wrong", nil)
+		return
+	}
+
+	origApi := wr.web.apiServer.getAPIByName(origName)
+	if origApi == nil {
+		wr.json(404, "api not found", nil)
+		return
+	}
+	if err := origApi.reName(newName); err != nil {
+		wr.json(500, "rename failed", nil)
+		return
+	}
+	wr.web.apiServer.unRegisterAPI(origName)
+	wr.web.apiServer.loadAPI(newName)
+	wr.json(0, "success", newName)
 }
 func (wr *webReq) apiBaseSave() {
 	req := wr.req
@@ -310,18 +341,16 @@ func (wr *webReq) apiBaseSave() {
 
 	apiName := req.FormValue("api_name")
 	api := wr.web.apiServer.getAPIByName(apiName)
-	apiNameOrig := req.FormValue("api_name_orig")
+
+	//绑定路径
 	apiPath := URLPathClean(req.FormValue("path"))
-	if apiNameOrig == "" && api != nil {
-		wr.alert("失败：新创建的模块已经存在")
-		return
-	}
 
 	if !apiNameReg.MatchString(apiName) {
 		wr.alert(`模块名称不满足规则：^[\w-]+$`)
 		return
 	}
 
+	//按照路径查找得到的api
 	apiByPath := wr.web.apiServer.getAPIByPath(apiPath)
 
 	if apiByPath != nil {
@@ -377,9 +406,6 @@ func (wr *webReq) apiBaseSave() {
 	api.Enable = req.FormValue("enable") == "1"
 	api.Path = apiPath
 	api.HostAsProxy = req.FormValue("host_as_proxy") == "1"
-	if apiNameOrig != apiName {
-		wr.web.apiServer.deleteAPI(apiNameOrig)
-	}
 
 	err = api.save()
 	if err != nil {
@@ -490,5 +516,6 @@ func renderHTML(fileName string, values map[string]interface{}, layout bool) str
 		values["body"] = body
 		return renderHTML("layout.html", values, false)
 	}
+	return body
 	return utils.Html_reduceSpace(body)
 }
