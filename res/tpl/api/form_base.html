@@ -11,16 +11,17 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
 </span>
 </legend>
 
-<input type="hidden" name="api_name_orig" value="{{.api.Name}}">
-
 <div class="form-group">
     <label class="col-sm-2 control-label">模块名称:</label>
     <div class="col-sm-3">
         {{if .api.Exists}}
-        <div class="form-control-static">{{.api.Name|html}}
-         <button type="button" class="btn" data-toggle="modal" data-target="#modifyApiNameModal" data-whatever="{{.api.Name|html}}">修改</button>
+        <input type="hidden" name="api_name" value="{{.api.Name|html}}">
+        <input type="hidden" name="mod" value="update">
+        <div >{{.api.Name|html}}
+         <button type="button" class="btn btn-link" data-toggle="modal" data-target="#modifyApiNameModal" data-whatever="{{.api.Name|html}}">修改</button>
         </div>
         {{else}}
+        <input type="hidden" name="mod" value="new">
          <input class="form-control" type="text" required="required" pattern="[\w-]+" name="api_name" value="{{.api.Name|html}}" placeholder="需满足 [\w-]+"> 
         {{end}}
     </div>
@@ -29,7 +30,7 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
 <div class="form-group">
     <label class="col-sm-2 control-label">绑定路径:</label>
     <div class="col-sm-3">
-     <input class="form-control" type="text" name="path" value="{{.api.Path}}" pattern="/([\w-]+/)*" placeholder="需满足/([\w-]+/)">
+     <input class="form-control" type="text" name="path" value="{{.api.Path}}" pattern="/([\w-]+/)*" placeholder="需满足/([\w-]+/)*">
     </div>
      {{if .api.Exists}}
     <div class="form-control-static"><a href="{{.api_url}}" target="_blank">{{.api_url}}</a></div>
@@ -115,19 +116,22 @@ $().ready(function(){
 
 {{if .api.Exists}}
 <div class="modal fade" id="modifyApiNameModal" tabindex="-1" role="dialog">
-  <div class="modal-dialog" role="document">
+  <div class="modal-dialog" role="document" style="width:500px">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
         <h4 class="modal-title">修改模块名称</h4>
       </div>
-      <form method="post">
+      <form method="post" class="form-horizontal">
       <input  name="do" type="hidden" value="rename">
       <div class="modal-body">
           <div class="form-group">
-            <label for="recipient-name" class="control-label">模块名称</label>
-            <input name="orig_name" type="hidden" value="">
-            <input type="text" class="form-control" value="" name="new_name">
+            <label for="recipient-name" class="col-sm-3 control-label">模块名称：</label>
+            <div class="col-sm-4">
+	            <input name="orig_name" type="hidden" value="">
+	            <input type="text" class="form-control" value="" name="new_name">
+            </div>
+               <span class="form-control-static emsg" id="mod_help" style='color:red;'></span>
           </div>
       </div>
       <div class="modal-footer">
@@ -145,12 +149,13 @@ $('#modifyApiNameModal').on('show.bs.modal', function (event) {
 	  var recipient = button.data('whatever')
 	  var modal = $(this)
 	  modal.find('.modal-body input').val(recipient)
+	  modal.find(".emsg").html("")
 	})
 $("#modifyApiNameModal form").ajaxForm(function(data){
 	if(data.code==0){
 		location.href="/_api?name="+data.data
 	}else{
-		alert(data.msg)
+		$("#mod_help").text(data.msg)
 	}
 });
 </script>

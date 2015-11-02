@@ -323,6 +323,13 @@ func (wr *webReq) apiRename() {
 		wr.json(404, "api not found", nil)
 		return
 	}
+	
+	newApi:= wr.web.apiServer.getAPIByName(newName)
+	if(newApi!=nil){
+		wr.json(404, newName+" aready exists!", nil)
+		return
+	}
+	
 	if err := origApi.reName(newName); err != nil {
 		wr.json(500, "rename failed", nil)
 		return
@@ -331,6 +338,8 @@ func (wr *webReq) apiRename() {
 	wr.web.apiServer.loadAPI(newName)
 	wr.json(0, "success", newName)
 }
+
+
 func (wr *webReq) apiBaseSave() {
 	req := wr.req
 	timeout, err := strconv.ParseInt(req.FormValue("timeout"), 10, 64)
@@ -338,17 +347,24 @@ func (wr *webReq) apiBaseSave() {
 		wr.alert("超时时间错误,不是int")
 		return
 	}
-
+	mod:=req.FormValue("mod")
 	apiName := req.FormValue("api_name")
-	api := wr.web.apiServer.getAPIByName(apiName)
+	
 
 	//绑定路径
 	apiPath := URLPathClean(req.FormValue("path"))
 
 	if !apiNameReg.MatchString(apiName) {
-		wr.alert(`模块名称不满足规则：^[\w-]+$`)
+		wr.alert(fmt.Sprintf(`模块名称(%s)不满足规则：^[\w-]+$`,apiName))
 		return
 	}
+	
+	api := wr.web.apiServer.getAPIByName(apiName)
+	if(api!=nil && mod=="new"){
+		wr.alert(fmt.Sprintf(`模块(%s)已经存在`,apiName))
+		return
+	}
+	
 
 	//按照路径查找得到的api
 	apiByPath := wr.web.apiServer.getAPIByPath(apiPath)
@@ -413,7 +429,7 @@ func (wr *webReq) apiBaseSave() {
 		return
 	}
 	wr.web.apiServer.loadAPI(apiName)
-	wr.alertAndGo("已经更新！", "/_api?name="+apiName)
+	wr.alertAndGo("已经保存！", "/_api?name="+apiName)
 }
 
 func (wr *webReq) apiCallerSave() {
@@ -516,6 +532,6 @@ func renderHTML(fileName string, values map[string]interface{}, layout bool) str
 		values["body"] = body
 		return renderHTML("layout.html", values, false)
 	}
-	return body
+//	return body
 	return utils.Html_reduceSpace(body)
 }

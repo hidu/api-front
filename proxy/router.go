@@ -56,9 +56,11 @@ func (rs *routers) String() string {
 }
 
 func (rs *routers) getRouterByReqPath(urlPath string) *routerItem {
+	if strings.HasPrefix(urlPath,"/_"){
+		return nil
+	}
 	rs.rw.RLock()
 	defer rs.rw.RUnlock()
-
 	for _, bindPath := range rs.BindPaths {
 		if bindPath != "" && strings.HasPrefix(urlPath, bindPath) {
 			return rs.BindMap[bindPath]
@@ -92,6 +94,7 @@ func (rs *routers) deleteRouterByPath(bindPath string) {
 	}()
 	rs.Sort()
 }
+
 
 func (rs *routers) bindRouter(bindPath string, router *routerItem) {
 	func() {
