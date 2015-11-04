@@ -29,6 +29,7 @@ type apiStruct struct {
 	LastVisit   time.Time    `json:"-"`       //最后访问时间
 	Version     int64        `json:"version"` //配置文件的版本号
 	apiServer   *APIServer
+	Users       users `json:"users"`
 }
 
 // init new api for server
@@ -250,4 +251,12 @@ func (api *apiStruct) getAPIHostsByReq(req *http.Request) (hs []*Host, master st
 	}
 	hs = append(hs, hsTmp...)
 	return hs, masterHost, cpf
+}
+
+func (api *apiStruct) userCanEdit(name string) bool {
+	if api.Users != nil && api.Users.hasUser(name) {
+		return true
+	}
+
+	return api.apiServer.hasUser(name)
 }

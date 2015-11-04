@@ -10,11 +10,14 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
 )
+
+const userCookieName = "_apiman"
 
 // APIProxyVersion current server version
 var APIProxyVersion string
@@ -27,6 +30,7 @@ type webAdmin struct {
 	apiServer *APIServer
 	wsServer  *socketio.Server
 	wsSocket  socketio.Socket
+	userConf  *usersConf
 }
 
 func newWebAdmin(server *APIServer) *webAdmin {
@@ -34,7 +38,7 @@ func newWebAdmin(server *APIServer) *webAdmin {
 		apiServer: server,
 	}
 	ser.wsInit()
-
+	ser.userConf = loadUsers(filepath.Join(server.rootConfDir(), "users"))
 	return ser
 }
 func (web *webAdmin) wsInit() {
@@ -117,6 +121,7 @@ type webReq struct {
 	req    *http.Request
 	web    *webAdmin
 	values map[string]interface{}
+	user   *user
 }
 
 func (wr *webReq) execute() {
@@ -132,6 +137,17 @@ func (wr *webReq) execute() {
 	port, _ := strconv.ParseInt(hostInfo[1], 10, 64)
 	wr.values["host_port"] = int(port)
 	wr.values["conf"] = wr.web.apiServer.ServerConf
+	wr.getUser()
+
+	wr.values["isLogin"] = wr.user != nil
+	if wr.user != nil {
+		wr.values["uname"] = wr.user.Name
+	}
+
+	if wr.req.Method == "POST" && wr.req.URL.Path != "/_login" && wr.user == nil {
+		wr.alert("login required")
+		return
+	}
 
 	switch wr.req.URL.Path {
 	case "/_api":
@@ -148,6 +164,12 @@ func (wr *webReq) execute() {
 	case "/_apipv":
 		wr.apiPv()
 		return
+	case "/_login":
+		wr.login()
+		return
+	case "/_logout":
+		wr.logout()
+		return
 	case "/_analysis":
 		wr.values["Title"] = "Analysis"
 		wr.apiAnalysis()
@@ -159,10 +181,55 @@ func (wr *webReq) execute() {
 	wr.render("index.html", true)
 }
 
+func (wr *webReq) getUser() {
+	cookie, err := wr.req.Cookie(userCookieName)
+	if err != nil {
+		return
+	}
+	info := strings.SplitN(cookie.Value, ":", 2)
+	if len(info) != 2 {
+		return
+	}
+	user := wr.web.userConf.getUser(info[0])
+	if user.PswMd5 == info[1] {
+		wr.user = user
+	}
+}
+
 func (wr *webReq) apiList() {
 	wr.values["apis"] = wr.web.apiServer.Apis
 	wr.render("list.html", true)
 }
+
+func (wr *webReq) logout() {
+	cookie := &http.Cookie{Name: userCookieName, Value: "", Path: "/"}
+	http.SetCookie(wr.rw, cookie)
+	http.Redirect(wr.rw, wr.req, "/_index", 302)
+}
+
+func (wr *webReq) login() {
+	if wr.req.Method == "POST" {
+		name := wr.req.PostFormValue("name")
+		psw := wr.req.PostFormValue("psw")
+		user := wr.web.userConf.checkUser(name, psw)
+		if user == nil {
+			log.Println("login failed;user:", name)
+			wr.alert("login failed")
+			return
+		}
+		cookie := &http.Cookie{
+			Name:    userCookieName,
+			Value:   fmt.Sprintf("%s:%s", name, user.PswMd5),
+			Path:    "/",
+			Expires: time.Now().Add(24 * 30 * time.Hour),
+		}
+		http.SetCookie(wr.rw, cookie)
+		wr.rw.Write([]byte("<script>parent.location.href='/_index'</script>"))
+	} else {
+		wr.render("login.html", true)
+	}
+}
+
 func (wr *webReq) apiPref() {
 	apiName := strings.TrimSpace(wr.req.FormValue("name"))
 	prefHost := strings.TrimSpace(wr.req.FormValue("host"))
@@ -323,13 +390,13 @@ func (wr *webReq) apiRename() {
 		wr.json(404, "api not found", nil)
 		return
 	}
-	
-	newApi:= wr.web.apiServer.getAPIByName(newName)
-	if(newApi!=nil){
+
+	newApi := wr.web.apiServer.getAPIByName(newName)
+	if newApi != nil {
 		wr.json(404, newName+" aready exists!", nil)
 		return
 	}
-	
+
 	if err := origApi.reName(newName); err != nil {
 		wr.json(500, "rename failed", nil)
 		return
@@ -339,32 +406,41 @@ func (wr *webReq) apiRename() {
 	wr.json(0, "success", newName)
 }
 
-
 func (wr *webReq) apiBaseSave() {
 	req := wr.req
+
+	mod := req.FormValue("mod")
+
+	if mod == "new" && !wr.web.apiServer.hasUser(wr.user.Name) {
+		wr.alert("没有权限!")
+		return
+	}
+
 	timeout, err := strconv.ParseInt(req.FormValue("timeout"), 10, 64)
 	if err != nil {
 		wr.alert("超时时间错误,不是int")
 		return
 	}
-	mod:=req.FormValue("mod")
 	apiName := req.FormValue("api_name")
-	
 
 	//绑定路径
 	apiPath := URLPathClean(req.FormValue("path"))
 
 	if !apiNameReg.MatchString(apiName) {
-		wr.alert(fmt.Sprintf(`模块名称(%s)不满足规则：^[\w-]+$`,apiName))
+		wr.alert(fmt.Sprintf(`模块名称(%s)不满足规则：^[\w-]+$`, apiName))
 		return
 	}
-	
+
 	api := wr.web.apiServer.getAPIByName(apiName)
-	if(api!=nil && mod=="new"){
-		wr.alert(fmt.Sprintf(`模块(%s)已经存在`,apiName))
+	if api != nil && mod == "new" {
+		wr.alert(fmt.Sprintf(`模块(%s)已经存在`, apiName))
 		return
 	}
-	
+
+	if api != nil && !api.userCanEdit(wr.user.Name) {
+		wr.alert("没有权限")
+		return
+	}
 
 	//按照路径查找得到的api
 	apiByPath := wr.web.apiServer.getAPIByPath(apiPath)
@@ -532,6 +608,6 @@ func renderHTML(fileName string, values map[string]interface{}, layout bool) str
 		values["body"] = body
 		return renderHTML("layout.html", values, false)
 	}
-//	return body
+	//	return body
 	return utils.Html_reduceSpace(body)
 }

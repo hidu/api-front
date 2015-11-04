@@ -168,3 +168,13 @@ func (apiServer *APIServer) getAPIByPath(bindPath string) *apiStruct {
 func (apiServer *APIServer) GetCounter() *Counter {
 	return apiServer.counter
 }
+
+func (apiServer *APIServer) hasUser(name string) bool {
+	if apiServer.ServerConf.users != nil && apiServer.ServerConf.users.hasUser(name) {
+		return true
+	}
+	if apiServer.manager.serverConf.Users != nil && apiServer.manager.serverConf.Users.hasUser(name) {
+		return true
+	}
+	return false
+}

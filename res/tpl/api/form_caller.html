@@ -13,7 +13,13 @@
       </div>      
     {{end}}
     </fieldset>
-    <div class="t_c"><input type="submit" value="保 存" class="btn btn-default"></div>
+    <div class="t_c">
+    {{if .isLogin}}
+    <input type="submit" value="保 存" class="btn btn-default">
+    {{else}}
+    Login pls
+    {{end}}
+    </div>
  </form>
 <script>
 function proxy_api_caller_del(obj){

@@ -16,12 +16,14 @@ type serverConfItem struct {
 	Note         string `json:"note"`
 	HiddenCookie bool   `json:"hidden_cookie"`
 	SubDoamin    string `string:"sub_domain"`
+	users        users  `json:"users"`
 }
 
 type apiServerConf struct {
 	ServerName string            `json:"server_name"`
 	Server     []*serverConfItem `json:"server"`
 	confPath   string            `json:"-"`
+	Users      users             `json:"users"`
 }
 
 func loadServerConf(confPath string) *apiServerConf {
