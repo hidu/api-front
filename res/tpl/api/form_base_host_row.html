@@ -30,7 +30,9 @@
    </div>
    <div class="col-lg-1">
        <div class="input-group checkbox">
-        <a href="#" onclick="proxy_api_host_delete(this);return false;">X</a>
+         {{if $.userCanEdit}}
+         <a href="#" onclick="proxy_api_host_delete(this);return false;">X</a>
+         {{end}}
        </div>
    </div>
     <input type="hidden" name="sort_index" value="{{$host.SortIndex}}">

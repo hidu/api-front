@@ -1,0 +1,43 @@
+<div class="modal fade" id="modifyApiNameModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document" style="width:500px">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">修改模块名称</h4>
+      </div>
+      <form method="post" class="form-horizontal">
+      <input  name="do" type="hidden" value="rename">
+      <div class="modal-body">
+          <div class="form-group">
+            <label for="recipient-name" class="col-sm-3 control-label">模块名称：</label>
+            <div class="col-sm-4">
+                <input name="orig_name" type="hidden" value="">
+                <input type="text" class="form-control" value="" name="new_name">
+            </div>
+               <span class="form-control-static emsg" id="mod_help" style='color:red;'></span>
+          </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+        <button type="submit" class="btn btn-primary">保存</button>
+      </div>
+        </form>
+    </div>
+  </div>
+</div>
+<script>
+$('#modifyApiNameModal').on('show.bs.modal', function (event) {
+      var button = $(event.relatedTarget)
+      var recipient = button.data('whatever')
+      var modal = $(this)
+      modal.find('.modal-body input').val(recipient)
+      modal.find(".emsg").html("")
+    })
+$("#modifyApiNameModal form").ajaxForm(function(data){
+    if(data.code==0){
+        location.href="/_api?name="+data.data
+    }else{
+        $("#mod_help").text(data.msg)
+    }
+});
+</script>

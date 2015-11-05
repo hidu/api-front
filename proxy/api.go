@@ -253,10 +253,14 @@ func (api *apiStruct) getAPIHostsByReq(req *http.Request) (hs []*Host, master st
 	return hs, masterHost, cpf
 }
 
-func (api *apiStruct) userCanEdit(name string) bool {
+func (api *apiStruct) userCanEditByName(name string) bool {
 	if api.Users != nil && api.Users.hasUser(name) {
 		return true
 	}
 
 	return api.apiServer.hasUser(name)
+}
+
+func (api *apiStruct) userCanEdit(u *user) bool {
+	return u != nil && api.userCanEditByName(u.Name)
 }

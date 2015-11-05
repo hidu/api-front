@@ -20,11 +20,7 @@
     <td>{{$api.Note|html}}</td>   
     <td>{{$api.TimeoutMs}}</td>
     <td><span id="api_pv_{{$name}}">{{$api.GetPv}}</span></td>
-    <td>
-    {{if not $api.Enable}}<font color=red>{{end}}
-    {{$api.Enable}}
-    {{if not $api.Enable}}</font>{{end}}
-    </td>
+    <td>{{if not $api.Enable}}<font color=red>{{end}}{{$api.Enable}}{{if not $api.Enable}}</font>{{end}}</td>
     <td><a href="{{$.base_url}}{{$api.Path}}" target="_blank">{{$.base_url}}{{$api.Path}}</a></td>   
     <td><a href="/_analysis?name={{$name}}" target="_blank">analysis</a></td>   
 </tr>

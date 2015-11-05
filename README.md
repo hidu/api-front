@@ -1,6 +1,6 @@
 # api-manager
 
-version :0.6.1
+version :0.6.2
 
 ##概述
 api manager 是用来做api管理，可进行`请求代理转发`、`协议抓包分析`、`流量复制`。  

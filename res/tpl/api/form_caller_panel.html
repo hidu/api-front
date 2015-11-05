@@ -1,6 +1,8 @@
 <div class="panel panel-default api_caller">
     <div class="panel-body">
-          <div class="pull-right"><a href="#" onclick="proxy_api_caller_del(this);return false;">X</a></div>
+          {{if $.userCanEdit}}
+            <div class="pull-right"><a href="#" onclick="proxy_api_caller_del(this);return false;">X</a></div>
+          {{end}}
           {%my_include "api/form_caller_panel_body.html"%}
     </div>
 </div>

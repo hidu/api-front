@@ -13,52 +13,48 @@
       </div>      
     {{end}}
     </fieldset>
-    <div class="t_c">
-    {{if .isLogin}}
-    <input type="submit" value="保 存" class="btn btn-default">
-    {{else}}
-    Login pls
-    {{end}}
-    </div>
+    {%my_include "api/submit.html"%}
  </form>
-<script>
-function proxy_api_caller_del(obj){
-    var div=$(obj).parents("div.api_caller");
-    var ip=div.find("input[name=ip]").val();
-    if(ip!="" && !confirm("确定要删除(ip="+ip+")吗?")){
-        return false;
-    }
-    div.remove();
-    return false;
-}
-function proxy_api_caller_add(){
-    var tpl=$("#form_api_caller .api_caller_tpl").eq(0).clone();
-    tpl.find(":input").removeAttr("disabled")
-    var html=tpl.html()
-    $("#form_api_caller fieldset").append(html)
-    return false;
-}
-
-$().ready(function(){
-    var caller_form=$("#form_api_caller");
-    caller_form.find(".api_caller_tpl :input").attr("disabled","disabled")
-    caller_form.submit(function(){
-        var datas=[]
-        $(this).find("div.api_caller:visible").each(function(){
-            datas.push($(this).find("input").serialize())
-        });
-        var params={
-                "api_name":caller_form.find("input[name=api_name]").val(),
-                 "do":"caller",
-                 "datas":datas
-        }
-        $.post("/_api",params,function(data){
-            alert(data.msg)
-            if(data.code==0){
-                location.reload()
-            }
-        })
-        return false;
-    });
-});
-</script>
+{{if .userCanEdit}}
+	<script>
+	function proxy_api_caller_del(obj){
+	    var div=$(obj).parents("div.api_caller");
+	    var ip=div.find("input[name=ip]").val();
+	    if(ip!="" && !confirm("确定要删除(ip="+ip+")吗?")){
+	        return false;
+	    }
+	    div.remove();
+	    return false;
+	}
+	function proxy_api_caller_add(){
+	    var tpl=$("#form_api_caller .api_caller_tpl").eq(0).clone();
+	    tpl.find(":input").removeAttr("disabled")
+	    var html=tpl.html()
+	    $("#form_api_caller fieldset").append(html)
+	    return false;
+	}
+	
+	$().ready(function(){
+	    var caller_form=$("#form_api_caller");
+	    caller_form.find(".api_caller_tpl :input").attr("disabled","disabled")
+	    caller_form.submit(function(){
+	        var datas=[]
+	        $(this).find("div.api_caller:visible").each(function(){
+	            datas.push($(this).find("input").serialize())
+	        });
+	        var params={
+	                "api_name":caller_form.find("input[name=api_name]").val(),
+	                 "do":"caller",
+	                 "datas":datas
+	        }
+	        $.post("/_api",params,function(data){
+	            alert(data.msg)
+	            if(data.code==0){
+	                location.reload()
+	            }
+	        })
+	        return false;
+	    });
+	});
+	</script>
+{{end}}

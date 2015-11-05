@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"github.com/googollee/go-socket.io"
@@ -97,6 +98,18 @@ func (web *webAdmin) broadcastAPI(api *apiStruct, broadType string, reqData *Bro
 }
 
 func (web *webAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	if !strings.Contains(req.Header.Get("Accept-Encoding"), "gzip") || strings.HasPrefix(req.URL.Path, "/_socket.io/") {
+		web.serveHTTP(rw, req)
+		return
+	}
+	rw.Header().Set("Content-Encoding", "gzip")
+	gz := gzip.NewWriter(rw)
+	defer gz.Close()
+	gzr := gzipResponseWriter{Writer: gz, ResponseWriter: rw}
+	web.serveHTTP(gzr, req)
+}
+
+func (web *webAdmin) serveHTTP(rw http.ResponseWriter, req *http.Request) {
 	if strings.HasPrefix(req.URL.Path, "/_res/") {
 		req.URL.Path = "/res/" + req.URL.Path[5:]
 		Assest.HTTPHandler("/").ServeHTTP(rw, req)
@@ -165,6 +178,7 @@ func (wr *webReq) execute() {
 		wr.apiPv()
 		return
 	case "/_login":
+		wr.values["Title"] = "Login"
 		wr.login()
 		return
 	case "/_logout":
@@ -277,6 +291,7 @@ func (wr *webReq) apiPv() {
 }
 func (wr *webReq) apiAnalysis() {
 	apiName := strings.TrimSpace(wr.req.FormValue("name"))
+	wr.values["Title"] = "Analysis-" + apiName
 	if apiName == "" {
 		wr.values["error"] = "param empty"
 		wr.render("error.html", true)
@@ -315,6 +330,7 @@ func (wr *webReq) json(code int, msg string, data interface{}) {
 
 func (wr *webReq) render(tplName string, layout bool) {
 	html := renderHTML(tplName, wr.values, true)
+	wr.rw.Header().Set("Content-Type", "text/html;charset=utf-8")
 	wr.rw.Write([]byte(html))
 }
 
@@ -345,6 +361,8 @@ func (wr *webReq) apiEdit() {
 		wr.values["api"] = &api
 		wr.values["HostsTpl"] = hostsTpl
 		wr.values["api_url"] = "http://" + req.Host + api.Path
+
+		wr.values["userCanEdit"] = api.userCanEdit(wr.user)
 
 		prefCookie, err := wr.req.Cookie(api.cookieName())
 		cookiePref := ""
@@ -437,7 +455,7 @@ func (wr *webReq) apiBaseSave() {
 		return
 	}
 
-	if api != nil && !api.userCanEdit(wr.user.Name) {
+	if api != nil && !api.userCanEdit(wr.user) {
 		wr.alert("没有权限")
 		return
 	}
