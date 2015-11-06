@@ -98,6 +98,8 @@ func (web *webAdmin) broadcastAPI(api *apiStruct, broadType string, reqData *Bro
 }
 
 func (web *webAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	web.serveHTTP(rw, req)
+	return
 	if !strings.Contains(req.Header.Get("Accept-Encoding"), "gzip") || strings.HasPrefix(req.URL.Path, "/_socket.io/") {
 		web.serveHTTP(rw, req)
 		return
