@@ -170,7 +170,7 @@ func (apiServer *APIServer) GetCounter() *Counter {
 }
 
 func (apiServer *APIServer) hasUser(name string) bool {
-	if apiServer.ServerConf.users != nil && apiServer.ServerConf.users.hasUser(name) {
+	if apiServer.ServerConf.Users != nil && apiServer.ServerConf.Users.hasUser(name) {
 		return true
 	}
 	if apiServer.manager.serverConf.Users != nil && apiServer.manager.serverConf.Users.hasUser(name) {

@@ -15,8 +15,8 @@ type serverConfItem struct {
 	Name         string `json:"name"`
 	Note         string `json:"note"`
 	HiddenCookie bool   `json:"hidden_cookie"`
-	SubDoamin    string `string:"sub_domain"`
-	users        users  `json:"users"`
+	SubDoamin    string `json:"sub_domain"`
+	Users        users  `json:"users"`
 }
 
 type apiServerConf struct {
