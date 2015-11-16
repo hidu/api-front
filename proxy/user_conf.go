@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"fmt"
 	"github.com/hidu/goutils"
 	"log"
 )
@@ -10,6 +11,10 @@ type users []string
 type user struct {
 	Name   string
 	PswMd5 string
+}
+
+func (u *user) pswEnc() string {
+	return utils.StrMd5(fmt.Sprintf("%s201501116%s", u.Name, u.PswMd5))
 }
 
 type usersConf struct {

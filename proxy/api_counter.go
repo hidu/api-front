@@ -23,7 +23,7 @@ func newCounter(apiServer *APIServer) *Counter {
 	var counter *Counter
 	err := LoadJSONFile(jsonPath, &counter)
 	if err != nil {
-		log.Println("load counter failed:", jsonPath, ",err:", err)
+		log.Println("[warning]load counter failed:", jsonPath, ",err:", err)
 		counter = new(Counter)
 	}
 	counter.filePath = jsonPath
@@ -81,7 +81,7 @@ func (c *Counter) AutoSave(sec int64) {
 
 // SaveFile save to file
 func (c *Counter) SaveFile() error {
-	log.Println("save counter file:", c.filePath)
+	log.Println("[info]save counter file:", c.filePath)
 	c.rw.RLock()
 	defer c.rw.RUnlock()
 	data, err := json.MarshalIndent(c, "", "  ")

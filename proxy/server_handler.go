@@ -34,12 +34,13 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		}()
 
 		rw.Header().Set("Api-Proxy-Version", APIProxyVersion)
-		log.Println(req.URL.String())
+		log.Println("[access]", req.URL.String())
 
 		relPath := req.URL.Path[len(bindPath):]
 		req.Header.Set("Connection", "close")
 
 		logData := make(map[string]interface{})
+		var logRw sync.RWMutex
 
 		body, err := ioutil.ReadAll(req.Body)
 
@@ -64,11 +65,13 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		mainLogStr := fmt.Sprintf("uniqid=%s port=%d remote=%s method=%s uri=%s master=%s hostsTotal=%d refer=%s", uniqID, apiServer.ServerConf.Port, req.RemoteAddr, req.Method, _uri, masterHost, len(hosts), req.Referer())
 
 		var printLog = func(logIndex int) {
+			logRw.RLock()
+			defer logRw.RUnlock()
 			totalUsed := fmt.Sprintf("%.3fms", float64(time.Now().Sub(start).Nanoseconds())/1e6)
-			log.Println(fmt.Sprintf("logindex=%d", logIndex), mainLogStr, fmt.Sprintf("totalUsed=%s", totalUsed), logData)
+			log.Println(fmt.Sprintf("[access]logindex=%d/%d", logIndex, len(hosts)), mainLogStr, fmt.Sprintf("totalUsed=%s", totalUsed), logData)
 		}
 		defer (func() {
-			printLog(0)
+			printLog(1)
 		})()
 
 		rw.Header().Set("Api-Proxy-Master", masterHost)
@@ -116,7 +119,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 
 			reqNew, err := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 			if err != nil {
-				log.Println("build req failed:", err)
+				log.Println("[error]build req failed:", err)
 				if isMaster {
 					rw.WriteHeader(http.StatusBadGateway)
 					rw.Write([]byte("error:" + err.Error() + "\nraw_url:" + rawURL))
@@ -172,13 +175,19 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				continue
 			}
 			backLog := make(map[string]interface{})
-			logData[fmt.Sprintf("host_%s_%d", apiReq.apiHost.Name, index)] = backLog
+
+			defer (func() {
+				logRw.Lock()
+				logData[fmt.Sprintf("host_%s_%d", apiReq.apiHost.Name, index)] = backLog
+				logRw.Unlock()
+			})()
+
 			hostStart := time.Now()
 			backLog["isMaster"] = apiReq.isMaster
 			backLog["start"] = fmt.Sprintf("%.4f", float64(hostStart.UnixNano())/1e9)
 			resp, err := apiReq.transport.RoundTrip(apiReq.req)
 			if err != nil {
-				log.Println("fetch "+apiReq.urlNew, err)
+				log.Println("[error]call_master_sync "+apiReq.urlNew, err)
 				rw.WriteHeader(http.StatusBadGateway)
 				rw.Write([]byte("fetch_error:" + err.Error() + "\nraw_url:" + apiReq.urlRaw + "\nnew_url:" + apiReq.urlNew))
 				return
@@ -206,42 +215,49 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 
 		}
 
-		//call other hosts async
-		go (func(reqs []*apiHostRequest) {
-			defer (func() {
-				printLog(1)
-			})()
-			var wgOther sync.WaitGroup
-			for index, apiReq := range reqs {
-				if apiReq.isMaster {
-					continue
-				}
-				wgOther.Add(1)
-				go (func(index int, apiReq *apiHostRequest) {
-					defer wgOther.Done()
-					backLog := make(map[string]interface{})
-					logData[fmt.Sprintf("host_%s_%d", apiReq.apiHost.Name, index)] = backLog
-					hostStart := time.Now()
-					backLog["isMaster"] = apiReq.isMaster
-					backLog["start"] = fmt.Sprintf("%.4f", float64(hostStart.UnixNano())/1e9)
-					backLog["isMaster"] = apiReq.isMaster
-					resp, err := apiReq.transport.RoundTrip(apiReq.req)
-					if err != nil {
-						log.Println("fetch "+apiReq.urlNew, err)
-						return
+		if len(reqs) > 1 {
+			//call other hosts async
+			go (func(reqs []*apiHostRequest) {
+				defer (func() {
+					printLog(len(reqs))
+				})()
+				var wgOther sync.WaitGroup
+				for index, apiReq := range reqs {
+					if apiReq.isMaster {
+						continue
 					}
-					backLog["status"] = resp.StatusCode
-					defer resp.Body.Close()
+					wgOther.Add(1)
+					go (func(index int, apiReq *apiHostRequest) {
+						backLog := make(map[string]interface{})
+						defer (func() {
+							logRw.Lock()
+							logData[fmt.Sprintf("host_%s_%d", apiReq.apiHost.Name, index)] = backLog
+							logRw.Unlock()
+							wgOther.Done()
+						})()
 
-					hostEnd := time.Now()
-					used := hostEnd.Sub(hostStart)
-					backLog["end"] = fmt.Sprintf("%.4f", float64(hostEnd.UnixNano())/1e9)
-					backLog["used"] = fmt.Sprintf("%.3fms", float64(used.Nanoseconds())/1e6)
-				})(index, apiReq)
-			}
-			wgOther.Wait()
+						hostStart := time.Now()
+						backLog["isMaster"] = apiReq.isMaster
+						backLog["start"] = fmt.Sprintf("%.4f", float64(hostStart.UnixNano())/1e9)
+						backLog["isMaster"] = apiReq.isMaster
+						resp, err := apiReq.transport.RoundTrip(apiReq.req)
+						if err != nil {
+							log.Println("[error]call_other_async,fetch "+apiReq.urlNew, err)
+							return
+						}
+						backLog["status"] = resp.StatusCode
+						defer resp.Body.Close()
 
-		})(reqs)
+						hostEnd := time.Now()
+						used := hostEnd.Sub(hostStart)
+						backLog["end"] = fmt.Sprintf("%.4f", float64(hostEnd.UnixNano())/1e9)
+						backLog["used"] = fmt.Sprintf("%.3fms", float64(used.Nanoseconds())/1e6)
+					})(index, apiReq)
+				}
+				wgOther.Wait()
+
+			})(reqs)
+		}
 	}
 }
 

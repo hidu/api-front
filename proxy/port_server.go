@@ -21,7 +21,7 @@ func newPortServer(manager *APIServerManager) *portServer {
 	}
 	for _, signConf := range manager.serverConf.Server {
 		if !signConf.Enable {
-			log.Println("server ", signConf.Name, signConf.Port, " is not enable,skip")
+			log.Println("[warning]server ", signConf.Name, signConf.Port, " is not enable,skip")
 			continue
 		}
 		ps.addServer(signConf)
@@ -33,7 +33,7 @@ func newPortServer(manager *APIServerManager) *portServer {
 func (ps *portServer) addServer(itemConf *serverConfItem) bool {
 	apiServer := newAPIServer(itemConf, ps.manager)
 
-	log.Println("add server", apiServer.serverName())
+	log.Println("[info]add server", apiServer.serverName())
 
 	if _, has := ps.apiServers[itemConf.Port]; !has {
 		ps.apiServers[itemConf.Port] = make(map[string]*APIServer)
@@ -60,12 +60,12 @@ func (ps *portServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	apiServer := ps.getAPIServer(port, host)
 	logMsg := req.RemoteAddr + " " + req.RequestURI + " " + req.Referer()
 	if apiServer == nil {
-		log.Println(logMsg, "app not found,404")
+		log.Println("[warning]", logMsg, "app not found,404")
 		rw.WriteHeader(http.StatusNotFound)
 		rw.Write([]byte("app not found\n----------------\npowered by api-manager"))
 		return
 	}
-	log.Println(logMsg, "server is:", apiServer.serverName())
+	log.Println("[info]", logMsg, "server is:", apiServer.serverName())
 	apiServer.ServeHTTP(rw, req)
 }
 
@@ -102,17 +102,17 @@ func (ps *portServer) getAPIServer(port int, hostName string) *APIServer {
 
 func (ps *portServer) start() {
 	var wg sync.WaitGroup
-	log.Println("ports total:", len(ps.apiServers))
+	log.Println("[info]ports total:", len(ps.apiServers))
 	for port := range ps.apiServers {
 		wg.Add(1)
 		go (func(port int) {
 			addr := fmt.Sprintf(":%d", port)
 			log.Println(addr, "start")
 			err := http.ListenAndServe(addr, ps)
-			log.Println(addr, "exit:", err)
+			log.Println("[fatal]", addr, "exit:", err)
 			wg.Done()
 		})(port)
 	}
 	wg.Wait()
-	log.Println("portServer exit")
+	log.Println("[fatal]portServer exit")
 }

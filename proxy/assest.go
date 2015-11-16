@@ -386,8 +386,8 @@ var Assest = &AssestStruct{
 
 		_assestBase64Decode("cmVzL3ZlcnNpb24="): {
 			Name:    _assestBase64Decode("cmVzL3ZlcnNpb24="),
-			Mtime:   1446725598,
-			Content: _assestGzipBase64decode("H4sIAAAJbogA/zLQM9MzAgAAAP//AQAA//8YVtjEBQAAAA=="),
+			Mtime:   1447683274,
+			Content: _assestGzipBase64decode("H4sIAAAJbogA/zLQM9MzBgAAAP//AQAA//+OZt+zBQAAAA=="),
 		},
 	},
 }

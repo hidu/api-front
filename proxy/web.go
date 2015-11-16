@@ -1,20 +1,17 @@
 package proxy
 
 import (
-	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"github.com/googollee/go-socket.io"
 	"github.com/hidu/goutils"
-	"html"
 	"log"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"text/template"
 	"time"
 )
 
@@ -203,11 +200,11 @@ func (wr *webReq) getUser() {
 		return
 	}
 	info := strings.SplitN(cookie.Value, ":", 2)
-	if len(info) != 2 {
+	if len(info) != 2 || len(info[1]) != 32 {
 		return
 	}
 	user := wr.web.userConf.getUser(info[0])
-	if user.PswMd5 == info[1] {
+	if user != nil && user.pswEnc() == info[1] {
 		wr.user = user
 	}
 }
@@ -229,13 +226,13 @@ func (wr *webReq) login() {
 		psw := wr.req.PostFormValue("psw")
 		user := wr.web.userConf.checkUser(name, psw)
 		if user == nil {
-			log.Println("login failed;user:", name)
+			log.Println("[warning]login failed;user:", name)
 			wr.alert("login failed")
 			return
 		}
 		cookie := &http.Cookie{
 			Name:    userCookieName,
-			Value:   fmt.Sprintf("%s:%s", name, user.PswMd5),
+			Value:   fmt.Sprintf("%s:%s", name, user.pswEnc()),
 			Path:    "/",
 			Expires: time.Now().Add(24 * 30 * time.Hour),
 		}
@@ -567,67 +564,4 @@ func (wr *webReq) apiCallerSave() {
 	}
 	wr.web.apiServer.loadAPI(apiName)
 	wr.json(0, "已经更新！", nil)
-}
-
-func readerHTMLInclude(fileName string) string {
-
-	html := Assest.GetContent("/res/tpl/" + fileName)
-	myfn := template.FuncMap{
-		"my_include": func(name string) string {
-			return readerHTMLInclude(name)
-		},
-	}
-	tpl, _ := template.New("page_include").Delims("{%", "%}").Funcs(myfn).Parse(html)
-	var bf []byte
-	w := bytes.NewBuffer(bf)
-	tpl.Execute(w, make(map[string]string))
-	body := w.String()
-	return body
-}
-
-func renderHTML(fileName string, values map[string]interface{}, layout bool) string {
-	htmlStr := readerHTMLInclude(fileName)
-	myfn := template.FuncMap{
-		"shortTime": func(tu int64) string {
-			t := time.Unix(tu, 0)
-			return t.Format(timeFormatStd)
-		},
-		"myNum": func(n int64) string {
-			if n == 0 {
-				return ""
-			}
-			return fmt.Sprintf("%d", n)
-		},
-		"in_array": func(name string, names []string) bool {
-			for _, v := range names {
-				if v == name {
-					return true
-				}
-			}
-			return false
-		},
-		"str_eq": func(x, y interface{}) bool {
-			ret := fmt.Sprintf("%x", x) == fmt.Sprintf("%x", y)
-			return ret
-		},
-		"my_include": func(fileName string) string {
-			return "include (" + fileName + ") with Delims {%my_include %}"
-		},
-		"h": func(str string) string {
-			return html.EscapeString(str)
-		},
-	}
-
-	tpl, _ := template.New("page").Funcs(myfn).Parse(htmlStr)
-
-	var bf []byte
-	w := bytes.NewBuffer(bf)
-	tpl.Execute(w, values)
-	body := w.String()
-	if layout {
-		values["body"] = body
-		return renderHTML("layout.html", values, false)
-	}
-	//	return body
-	return utils.Html_reduceSpace(body)
 }
