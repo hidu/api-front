@@ -1,21 +1,23 @@
-# api-manager
+# api-front
 
-version :0.6.2
+version :0.6.4
 
 ##概述
-api manager 是用来做api管理，可进行`请求代理转发`、`协议抓包分析`、`流量复制`。  
-每一个请求会同时复制到所有的后端，然后选取其中一个后端的响应返回给client。  
+api front是HTTP API前端，可进行`请求代理转发`、`协议抓包分析`、`流量复制`。  
+
 
 ##安装
 
 ```
-go get -u github.com/hidu/api-man
+go get -u github.com/hidu/api-front
 ```
 
 ##运行
 ```
-api-man -conf ./conf/man.json
+api-front -conf ./conf/server.json
 ```
+##部署示例
+<p><img src="/res/img/dispatch.png"></p>
 
 ##用途
 ###多人多模块开发演示
@@ -29,7 +31,7 @@ api-man -conf ./conf/man.json
 ##配置
 ###简单
 每个端口配置一个apiserver:
-conf/man.json
+conf/server.json
 ```
 {
 "server":[
