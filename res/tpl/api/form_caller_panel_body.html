@@ -1,13 +1,13 @@
 
 <div class="form-group row">
-    <div class="col-lg-3">
+    <div class="col-sm-3">
         <div class="input-group">
             <label class="input-group-addon">&nbsp;&nbsp;IP :&nbsp;</label> 
             <input type="text" class="form-control" name="ip" value="{{$caller.IP}}" required="required"  pattern="^([\d\*]{1,3}\.){3}[\d\*]{1,3}$">
         </div>
     </div>
 
-    <div class="col-lg-1">
+    <div class="col-sm-1">
         <div class="input-group checkbox">
             <label {{if not $caller.Enable}}style='color:red'{{end}}> 
                 <input type="checkbox" name="enable" value="1" {{if $caller.Enable}}checked=checked{{end}}>
@@ -15,7 +15,7 @@
             </label>
         </div>
     </div>
-    <div class="col-lg-7">
+    <div class="col-sm-7">
         <div class="form-group">
             <div class="input-group">
                 <label class="input-group-addon">备注:</label> 
@@ -28,8 +28,8 @@
 
 
 <div class="form-group">
-    <label class="control-label">返回以下后端服务的结果:</label> 
-    <span class="text-muted">(多个或0个将随机选取一个)</span>
+    <label class="control-label">使用这个后端服务的结果:</label> 
+    <span class="text-muted">(多个或0个将随机选取一个作为主服务，同步的处理Request和Response，然后才发送给其他服务)</span>
     <div>
         <div class="input-group sortable">
         {{with $x:=$.api.Hosts.GetHostsWithPref $caller.Pref}}
@@ -47,6 +47,7 @@
 
 <div class="form-group">
     <label class="control-label">不调用这个后端:</label>
+     <span class="text-muted">(勾选上才不会调用，否则也会异步调用)</span>
     <div>
         <div class="input-group">
             {{range $host_name,$host:=$.api.Hosts}} 

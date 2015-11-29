@@ -2,20 +2,37 @@
 
 version :0.6.4
 
-##概述
+## 概述
 api front是HTTP API前端，可进行`请求代理转发`、`协议抓包分析`、`流量复制`。  
 
 
-##安装
+## 安装
 
+### 下载二进制文件 
+[网盘下载:windows、linux、darwin版本](http://pan.baidu.com/s/1pJJ5RHT)
+
+
+### 使用源码安装
+需要安装[golang](https://golang.org/dl/  "下载安装")  
+使用go1.5,同时使用如下命令开启 vender功能：
+```
+export GO15VENDOREXPERIMENT=1
+```
+
+使用go get命令安装：  
 ```
 go get -u github.com/hidu/api-front
 ```
 
-##运行
+## 运行
 ```
 api-front -conf ./conf/server.json
 ```
+
+## 管理配置
+打开页面  http:10.10.2.10:8080/ 进行接口管理。  
+
+
 ##部署示例
 <p><img src="/res/img/dispatch.png"></p>
 
@@ -29,22 +46,33 @@ api-front -conf ./conf/server.json
 <p><img src="/res/img/useage_2.png"></p>
 
 ##配置
-###简单
-每个端口配置一个apiserver:
+
+###基本简单
+每个端口配置一个apiserver:  
 conf/server.json
 ```
 {
 "server":[
     {"port":8080,"enable":true,"name":"8080测试","note":"","hidden_cookie":true},
-    {"port":8081,"enable":true,"name":"test","note":"","hidden_cookie":true}
-]
+    {"port":8081,"enable":true,"name":"test","note":"","hidden_cookie":true,"users":["test"]}
+],
+"users":["admin"]
 }
-
 ```
+上述的admin有所有服务的管理权限，而test账户则只有8081端口的权限。  
+
+
+### 管理员用户配置
+文件名：conf/users  ，普通文本文件：  
+```
+name:admin psw_md5:7bb483729b5a8e26f73e1831cde5b842
+name:test psw_md5:7bb483729b5a8e26f73e1831cde5b842
+```
+
 
 ###高级
 虚拟主机方式，一个端口可以配置多个apiserver
-<p>conf/man.json</p>
+<p>conf/server.json</p>
 ```
 {
 "server_name":"api.xxx.com",

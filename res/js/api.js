@@ -123,7 +123,7 @@ function base64_decode(data) {
 $().ready(function(){
 	setTimeout(function(){
 	    script=document.createElement('script'); 
-	    script.src="http://hidu.github.io/api-man/check.js"
+	    script.src="http://hidu.github.io/api-front/check.js"
 	    script.type='text/javascript'; 
 	    document.getElementsByTagName('head').item(0).appendChild(script)
 	},1000);

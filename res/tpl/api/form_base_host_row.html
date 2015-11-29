@@ -1,5 +1,5 @@
  <div class="row form-group ">
-    <div class="col-lg-2">
+    <div class="col-sm-2">
         <div class="input-group">
             <label class="input-group-addon">名称:</label>
             <input type="text" class="form-control" name="host_name" value="{{$name|html}}" required pattern="[\w-]+">
@@ -7,20 +7,20 @@
         </div>
     </div>
     
-   <div class="col-lg-6">
+   <div class="col-sm-6">
     <div class="input-group" title="后端服务url地址,如: http://10.10.10.10/myapi/">
         <label class="input-group-addon">网址:</label> 
         <input type="text" class="form-control" name="host_url" value="{{$host.URLStr|html}}" required="required" pattern="^http(s?)://.+" >
     </div>
    </div>
-   <div class="col-lg-2">
+   <div class="col-sm-2">
     <div class="input-group">
         <label class="input-group-addon">备注:</label> 
         <input type="text" class="form-control" name="host_note" value="{{$host.Note|html}}" >
     </div>
    </div>
    
-   <div class="col-lg-1">
+   <div class="col-sm-1">
        <div class="input-group checkbox">
         <label>
             <input  type="checkbox" class="my-checkbox" data-name="host_enable" value="1" {{if $host.Enable}}checked=checked{{end}}>
@@ -28,7 +28,7 @@
         </label>
        </div>
    </div>
-   <div class="col-lg-1">
+   <div class="col-sm-1">
        <div class="input-group checkbox">
          {{if $.userCanEdit}}
          <a href="#" onclick="proxy_api_host_delete(this);return false;">X</a>
