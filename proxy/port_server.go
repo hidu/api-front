@@ -62,7 +62,7 @@ func (ps *portServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if apiServer == nil {
 		log.Println("[warning]", logMsg, "app not found,404")
 		rw.WriteHeader(http.StatusNotFound)
-		rw.Write([]byte("app not found\n----------------\npowered by api-manager"))
+		rw.Write([]byte("app not found\n----------------\npowered by api-front"))
 		return
 	}
 	log.Println("[info]", logMsg, "server is:", apiServer.serverName())

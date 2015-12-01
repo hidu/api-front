@@ -91,4 +91,3 @@ vhost的子配置（如上`order_8081.json`）,格式是 `{subdomain}_{port}.jso
 
 ###说明
 hidden_cookie:在使用协议抓包分析(analysis)是输出到前端的cookie值是否隐藏起来。  
-不使用域名方式的时候也可以使用vhos来配置多端口的apiserver。

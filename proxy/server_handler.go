@@ -33,7 +33,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			go apiServer.broadcastAPIReq(api, broadData)
 		}()
 
-		rw.Header().Set("Api-Proxy-Version", APIProxyVersion)
+		rw.Header().Set("Api-Front-Version", APIProxyVersion)
 		log.Println("[access]", req.URL.String())
 
 		relPath := req.URL.Path[len(bindPath):]
@@ -74,7 +74,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			printLog(1)
 		})()
 
-		rw.Header().Set("Api-Proxy-Master", masterHost)
+		rw.Header().Set("Api-Front-Master", masterHost)
 
 		addrInfo := strings.Split(req.RemoteAddr, ":")
 
@@ -110,7 +110,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			rawURL := apiHost.URLStr + urlNew
 
 			if isMaster {
-				rw.Header().Set("Api-Proxy-Raw-Url", rawURL)
+				rw.Header().Set("Api-Front-Raw-Url", rawURL)
 			}
 
 			urlNew = serverURL + urlNew
