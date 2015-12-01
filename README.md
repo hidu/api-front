@@ -4,7 +4,12 @@ version :0.6.4
 
 ## 概述
 api front是HTTP API前端，可进行`请求代理转发`、`协议抓包分析`、`流量复制`。  
+主要是用于开发测试环境。  
 
+##部署示例
+<p><img src="/res/img/dispatch.png"></p>
+api-front作为对外统一api入口。  
+如上图，可打开页面  http:10.10.2.10/_ 进行接口管理。(系统自己的接口，页面都是以_开头的)  
 
 ## 安装
 
@@ -29,12 +34,6 @@ go get -u github.com/hidu/api-front
 api-front -conf ./conf/server.json
 ```
 
-## 管理配置
-打开页面  http:10.10.2.10:8080/ 进行接口管理。  
-
-
-##部署示例
-<p><img src="/res/img/dispatch.png"></p>
 
 ##用途
 ###多人多模块开发演示
@@ -87,7 +86,8 @@ name:test psw_md5:7bb483729b5a8e26f73e1831cde5b842
 ```
 {"port":8081,"enable":true,"name":"order api","note":"","hidden_cookie":true}
 ```
-通过 order.api.xxx.com:8081 和 test.api.xxx.com:8081访问 8081端口上的apiserver。
+通过 order.api.xxx.com:8081 和 test.api.xxx.com:8081访问 8081端口上的apiserver。  
+vhost的子配置（如上`order_8081.json`）,格式是 `{subdomain}_{port}.json` 或者  `{port}.json`
 
 ###说明
 hidden_cookie:在使用协议抓包分析(analysis)是输出到前端的cookie值是否隐藏起来。  
