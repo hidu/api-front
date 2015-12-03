@@ -24,13 +24,13 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
         </div>
         {{else}}
         <input type="hidden" name="mod" value="new">
-         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="api_name" value="{{.api.Name|html}}" placeholder="需满足 [\w-]+"> 
+         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="api_name" value="{{.api.Name|html}}" placeholder="需满足 [\w-]+，全局唯一"> 
         {{end}}
     </div>
 </div>
 
 <div class="form-group">
-    <label class="col-sm-2 control-label">绑定路径:</label>
+    <label class="col-sm-2 control-label">绑定目录:</label>
     <div class="col-sm-3">
      <input class="form-control" type="text" name="path" value="{{.api.Path}}" pattern="/([\w-]+/)*" placeholder="需满足/([\w-]+/)*">
     </div>

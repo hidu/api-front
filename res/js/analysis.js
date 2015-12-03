@@ -111,7 +111,7 @@ function formatReqData(str,path){
 		}
 	}
 	if(bodyFormat.length>0){
-		result+="<--------body---format------------------\n"
+		result+="\n<--------body---format------------------\n"
 		result+=bodyFormat
 	}
 	
