@@ -13,7 +13,7 @@ api front是HTTP API前端，可进行`请求代理转发`、`协议抓包分析
 
 
 ##部署示例
-<p><img src="res/img/dispatch.png"></p>
+![dispatch](res/img/dispatch.png)  
 api-front作为对外统一api入口。  
 如上图，可打开页面  http:10.10.2.10/_ 进行接口管理。(系统自己的接口，页面都是以_开头的)  
 
@@ -44,11 +44,11 @@ api-front -conf ./conf/server.json
 ##用途
 ###多人多模块开发演示
 <p><code>1.一种情况：2个模块分别2个人开发，2个环境都能收到数据。</code></p>
-<p><img src="res/img/useage_0.png"></p>
+![useage](res/img/useage_0.png)  
 <p><code>2.另一种情况：合作有交叉，下游一个人就收不到数据了。</code></p>
-<p><img src="res/img/useage_1.png"></p>
+![useage](res/img/useage_1.png)  
 <p><code>3.一个理想的情况：合作有交叉时，下游每个人都能收到数据。</code></p>
-<p><img src="res/img/useage_2.png"></p>
+![useage](res/img/useage_2.png)  
 
 ##配置
 
