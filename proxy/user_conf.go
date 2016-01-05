@@ -23,7 +23,7 @@ type usersConf struct {
 
 func (us users) hasUser(name string) bool {
 	for _, n := range us {
-		if n == name {
+		if n == name || n==":any"{
 			return true
 		}
 	}

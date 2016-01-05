@@ -156,10 +156,10 @@ func (wr *webReq) execute() {
 		wr.values["uname"] = wr.user.Name
 	}
 
-	if wr.req.Method == "POST" && wr.req.URL.Path != "/_login" && wr.user == nil {
-		wr.alert("login required")
-		return
-	}
+//	if wr.req.Method == "POST" && wr.req.URL.Path != "/_login" && wr.user == nil {
+//		wr.alert("login required")
+//		return
+//	}
 
 	switch wr.req.URL.Path {
 	case "/_api":
@@ -207,6 +207,13 @@ func (wr *webReq) getUser() {
 	if user != nil && user.pswEnc() == info[1] {
 		wr.user = user
 	}
+}
+
+func (wr *webReq)getUname()string{
+	if wr.user!=nil{
+		return wr.user.Name
+	}
+	return ""
 }
 
 func (wr *webReq) apiList() {
@@ -407,6 +414,10 @@ func (wr *webReq) apiRename() {
 		wr.json(404, "api not found", nil)
 		return
 	}
+	if !origApi.userCanEdit(wr.user){
+		wr.json(403, "没有编辑权限", nil)
+		return
+	}
 
 	newApi := wr.web.apiServer.getAPIByName(newName)
 	if newApi != nil {
@@ -428,7 +439,7 @@ func (wr *webReq) apiBaseSave() {
 
 	mod := req.FormValue("mod")
 
-	if mod == "new" && !wr.web.apiServer.hasUser(wr.user.Name) {
+	if mod == "new" && !wr.web.apiServer.hasUser(wr.getUname()) {
 		wr.alert("没有权限!")
 		return
 	}
@@ -531,6 +542,10 @@ func (wr *webReq) apiCallerSave() {
 	api := wr.web.apiServer.getAPIByName(apiName)
 	if api == nil {
 		wr.alert("api模块不存在")
+		return
+	}
+	if !api.userCanEdit(wr.user){
+		wr.alert("没有编辑权限")
 		return
 	}
 	datas := req.Form["datas[]"]

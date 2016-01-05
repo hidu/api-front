@@ -2,7 +2,7 @@
 "server_name":"local.198509.com",
 "server":[
     {"port":8080,"enable":true,"name":"8080测试","note":"哈哈哈哈和","hidden_cookie":true},
-    {"port":8081,"enable":true,"name":"test","note":"","hidden_cookie":true}
+    {"port":8081,"enable":true,"name":"test","note":"","hidden_cookie":true,"users":[":any"]}
 ],
 "users":["admin"]
 }

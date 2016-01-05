@@ -262,5 +262,9 @@ func (api *apiStruct) userCanEditByName(name string) bool {
 }
 
 func (api *apiStruct) userCanEdit(u *user) bool {
-	return u != nil && api.userCanEditByName(u.Name)
+	var uname string
+	if(u!=nil){
+		uname=u.Name
+	}
+	return api.userCanEditByName(uname)
 }

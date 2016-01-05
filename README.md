@@ -59,12 +59,14 @@ conf/server.json
 {
 "server":[
     {"port":8080,"enable":true,"name":"8080测试","note":"","hidden_cookie":true},
-    {"port":8081,"enable":true,"name":"test","note":"","hidden_cookie":true,"users":["test"]}
+    {"port":8081,"enable":true,"name":"test","note":"","hidden_cookie":true,"users":["test"]},
+    {"port":8083,"enable":true,"name":"test","note":"","hidden_cookie":true,"users":[":any"]},
 ],
 "users":["admin"]
 }
 ```
 上述的admin有所有服务的管理权限，而test账户则只有8081端口的权限。  
+port:8083 配置了用户 `:any`,即不登陆也可以管理。  
 
 
 ### 管理员用户配置
