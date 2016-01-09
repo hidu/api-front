@@ -49,7 +49,7 @@ func (apiServer *APIServer) ServeHTTP(rw http.ResponseWriter, req *http.Request)
 	if strings.HasPrefix(req.URL.Path, "/_") || req.URL.Path == "/" {
 		apiServer.web.ServeHTTP(rw, req)
 	} else {
-		http.Error(rw, "Api Not Found (api-proxy)", http.StatusNotFound)
+		http.Error(rw, "Api Not Found (api-front)", http.StatusNotFound)
 	}
 }
 

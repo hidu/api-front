@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/googollee/go-socket.io"
+	"github.com/gorilla/sessions"
 	"github.com/hidu/goutils"
 	"log"
 	"net/http"
@@ -15,20 +16,21 @@ import (
 	"time"
 )
 
-const userCookieName = "_apiman"
+const userCookieName = "_apifront"
 
-// APIProxyVersion current server version
-var APIProxyVersion string
+// APIFrontVersion current server version
+var APIFrontVersion string
 
 func init() {
-	APIProxyVersion = strings.TrimSpace(Assest.GetContent("/res/version"))
+	APIFrontVersion = strings.TrimSpace(Assest.GetContent("/res/version"))
 }
 
 type webAdmin struct {
-	apiServer *APIServer
-	wsServer  *socketio.Server
-	wsSocket  socketio.Socket
-	userConf  *usersConf
+	apiServer    *APIServer
+	wsServer     *socketio.Server
+	wsSocket     socketio.Socket
+	userConf     *usersConf
+	sessionStore *sessions.CookieStore
 }
 
 func newWebAdmin(server *APIServer) *webAdmin {
@@ -37,6 +39,7 @@ func newWebAdmin(server *APIServer) *webAdmin {
 	}
 	ser.wsInit()
 	ser.userConf = loadUsers(filepath.Join(server.rootConfDir(), "users"))
+	ser.sessionStore = sessions.NewCookieStore([]byte("something-very-secret"))
 	return ser
 }
 func (web *webAdmin) wsInit() {
@@ -119,26 +122,30 @@ func (web *webAdmin) serveHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	session, _ := web.sessionStore.Get(req, "api-front")
+
 	wr := &webReq{
-		rw:     rw,
-		req:    req,
-		web:    web,
-		values: make(map[string]interface{}),
+		rw:      rw,
+		req:     req,
+		web:     web,
+		values:  make(map[string]interface{}),
+		session: session,
 	}
 	wr.execute()
 }
 
 type webReq struct {
-	rw     http.ResponseWriter
-	req    *http.Request
-	web    *webAdmin
-	values map[string]interface{}
-	user   *user
+	rw      http.ResponseWriter
+	req     *http.Request
+	web     *webAdmin
+	values  map[string]interface{}
+	user    *User
+	session *sessions.Session
 }
 
 func (wr *webReq) execute() {
 	wr.values["Title"] = "Index"
-	wr.values["version"] = APIProxyVersion
+	wr.values["version"] = APIFrontVersion
 	wr.values["base_url"] = "http://" + wr.req.Host
 	hostInfo := strings.Split(wr.req.Host, ":")
 	if hostInfo[1] == "" {
@@ -149,17 +156,19 @@ func (wr *webReq) execute() {
 	port, _ := strconv.ParseInt(hostInfo[1], 10, 64)
 	wr.values["host_port"] = int(port)
 	wr.values["conf"] = wr.web.apiServer.ServerConf
+	wr.session.Values["aaa"] = "aaa"
 	wr.getUser()
 
+	fmt.Println("session", wr.session.Values)
 	wr.values["isLogin"] = wr.user != nil
 	if wr.user != nil {
-		wr.values["uname"] = wr.user.Name
+		wr.values["uname"] = wr.user.DisplayName()
 	}
 
-//	if wr.req.Method == "POST" && wr.req.URL.Path != "/_login" && wr.user == nil {
-//		wr.alert("login required")
-//		return
-//	}
+	//	if wr.req.Method == "POST" && wr.req.URL.Path != "/_login" && wr.user == nil {
+	//		wr.alert("login required")
+	//		return
+	//	}
 
 	switch wr.req.URL.Path {
 	case "/_api":
@@ -187,31 +196,57 @@ func (wr *webReq) execute() {
 		wr.values["Title"] = "Analysis"
 		wr.apiAnalysis()
 		return
+	case "/_oauth2_callback":
+		wr.oauth2CallBack()
+		return
 	}
 
 	userIndexHTMLPath := wr.web.apiServer.rootConfDir() + "index.html"
 	wr.values["userIndex"] = loadFile(userIndexHTMLPath)
+	wr.saveSession()
 	wr.render("index.html", true)
 }
-
-func (wr *webReq) getUser() {
-	cookie, err := wr.req.Cookie(userCookieName)
-	if err != nil {
-		return
-	}
-	info := strings.SplitN(cookie.Value, ":", 2)
-	if len(info) != 2 || len(info[1]) != 32 {
-		return
-	}
-	user := wr.web.userConf.getUser(info[0])
-	if user != nil && user.pswEnc() == info[1] {
-		wr.user = user
-	}
+func (wr *webReq) getServerConf() *apiServerConf {
+	return wr.web.apiServer.manager.serverConf
 }
 
-func (wr *webReq)getUname()string{
-	if wr.user!=nil{
-		return wr.user.Name
+func (wr *webReq) saveSession() {
+	wr.session.Save(wr.req, wr.rw)
+}
+
+func (wr *webReq) oauth2CallBack() {
+	oauthconf := wr.getServerConf().Oauth2Conf
+	if oauthconf == nil {
+		wr.alert("oauth login is disabled")
+		return
+	}
+	user, err := oauthconf.getUserInfo(wr.req)
+	fmt.Println("callBack", user, err)
+	if err != nil {
+		wr.showError("oath2 get user_info failed:" + err.Error())
+		return
+	}
+	wr.user = user
+	wr.session.Values["user"] = user
+	wr.saveSession()
+	http.Redirect(wr.rw, wr.req, "/_", 302)
+}
+
+//func (wr *webReq)jump(urlStr string){
+//	wr.values["url"]=urlStr
+//	wr.render("jump.html",false)
+//}
+func (wr *webReq) getUser() {
+	if u, has := wr.session.Values["user"]; has {
+		wr.user = u.(*User)
+		log.Println("get user from useesion:", wr.user)
+	}
+
+}
+
+func (wr *webReq) getUserID() string {
+	if wr.user != nil {
+		return wr.user.ID
 	}
 	return ""
 }
@@ -222,28 +257,30 @@ func (wr *webReq) apiList() {
 }
 
 func (wr *webReq) logout() {
-	cookie := &http.Cookie{Name: userCookieName, Value: "", Path: "/"}
-	http.SetCookie(wr.rw, cookie)
+	wr.session.Options.MaxAge = -1
+	wr.saveSession()
 	http.Redirect(wr.rw, wr.req, "/_index", 302)
 }
 
 func (wr *webReq) login() {
+	oauthconf := wr.getServerConf().Oauth2Conf
+	if oauthconf != nil {
+		urlStr := oauthconf.getOauthUrl("http://" + wr.req.Host + "/_oauth2_callback")
+		log.Println("redirect to:", urlStr)
+		http.Redirect(wr.rw, wr.req, urlStr, 302)
+		return
+	}
 	if wr.req.Method == "POST" {
-		name := wr.req.PostFormValue("name")
+		id := wr.req.PostFormValue("id")
 		psw := wr.req.PostFormValue("psw")
-		user := wr.web.userConf.checkUser(name, psw)
+		user := wr.web.userConf.checkUser(id, psw)
 		if user == nil {
-			log.Println("[warning]login failed;user:", name)
+			log.Println("[warning]login failed;user:", id)
 			wr.alert("login failed")
 			return
 		}
-		cookie := &http.Cookie{
-			Name:    userCookieName,
-			Value:   fmt.Sprintf("%s:%s", name, user.pswEnc()),
-			Path:    "/",
-			Expires: time.Now().Add(24 * 30 * time.Hour),
-		}
-		http.SetCookie(wr.rw, cookie)
+		wr.session.Values["user"]=user
+		wr.saveSession()
 		wr.rw.Write([]byte("<script>parent.location.href='/_index'</script>"))
 	} else {
 		wr.render("login.html", true)
@@ -299,8 +336,7 @@ func (wr *webReq) apiAnalysis() {
 	apiName := strings.TrimSpace(wr.req.FormValue("name"))
 	wr.values["Title"] = "Analysis-" + apiName
 	if apiName == "" {
-		wr.values["error"] = "param empty"
-		wr.render("error.html", true)
+		wr.showError("param empty")
 		return
 	}
 	api := wr.web.apiServer.getAPIByName(apiName)
@@ -311,6 +347,11 @@ func (wr *webReq) apiAnalysis() {
 	}
 	wr.values["api"] = api
 	wr.render("analysis.html", true)
+}
+
+func (wr *webReq) showError(msg string) {
+	wr.values["error"] = msg
+	wr.render("error.html", true)
 }
 
 func (wr *webReq) alert(msg string) {
@@ -414,7 +455,7 @@ func (wr *webReq) apiRename() {
 		wr.json(404, "api not found", nil)
 		return
 	}
-	if !origApi.userCanEdit(wr.user){
+	if !origApi.userCanEdit(wr.user) {
 		wr.json(403, "没有编辑权限", nil)
 		return
 	}
@@ -439,7 +480,7 @@ func (wr *webReq) apiBaseSave() {
 
 	mod := req.FormValue("mod")
 
-	if mod == "new" && !wr.web.apiServer.hasUser(wr.getUname()) {
+	if mod == "new" && !wr.web.apiServer.hasUser(wr.getUserID()) {
 		wr.alert("没有权限!")
 		return
 	}
@@ -544,7 +585,7 @@ func (wr *webReq) apiCallerSave() {
 		wr.alert("api模块不存在")
 		return
 	}
-	if !api.userCanEdit(wr.user){
+	if !api.userCanEdit(wr.user) {
 		wr.alert("没有编辑权限")
 		return
 	}

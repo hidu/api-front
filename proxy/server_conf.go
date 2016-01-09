@@ -2,12 +2,21 @@ package proxy
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"path/filepath"
 	"regexp"
 	"strconv"
 )
+
+type apiServerConf struct {
+	ServerName string            `json:"server_name"`
+	Server     []*serverConfItem `json:"server"`
+	confPath   string            `json:"-"`
+	Users      users             `json:"users"`
+	Oauth2Conf *oauth2Conf       `json:"oauth2"`
+}
 
 type serverConfItem struct {
 	Port         int    `json:"port"`
@@ -17,13 +26,6 @@ type serverConfItem struct {
 	HiddenCookie bool   `json:"hidden_cookie"`
 	SubDoamin    string `json:"sub_domain"`
 	Users        users  `json:"users"`
-}
-
-type apiServerConf struct {
-	ServerName string            `json:"server_name"`
-	Server     []*serverConfItem `json:"server"`
-	confPath   string            `json:"-"`
-	Users      users             `json:"users"`
 }
 
 func loadServerConf(confPath string) *apiServerConf {
@@ -37,16 +39,21 @@ func loadServerConf(confPath string) *apiServerConf {
 		log.Fatalln(err)
 	}
 	conf.confPath, _ = filepath.Abs(confPath)
+	if conf.Users == nil {
+		conf.Users = NewUsers()
+	}
 	conf.loadVhosts()
+	conf.parseOauthConf()
+	fmt.Println("conf", conf)
 	return conf
 }
 
-func (apiConf *apiServerConf) confDir() string {
-	return filepath.Dir(apiConf.confPath) + string(filepath.Separator)
+func (conf *apiServerConf) confDir() string {
+	return filepath.Dir(conf.confPath) + string(filepath.Separator)
 }
 
-func (apiConf *apiServerConf) loadVhosts() {
-	vhostConfDir := apiConf.confDir() + "vhost" + string(filepath.Separator)
+func (conf *apiServerConf) loadVhosts() {
+	vhostConfDir := conf.confDir() + "vhost" + string(filepath.Separator)
 	fileNames, err := filepath.Glob(vhostConfDir + "*.json")
 	if err != nil {
 		log.Println("load vhost conf failed:", err)
@@ -79,14 +86,31 @@ func (apiConf *apiServerConf) loadVhosts() {
 		}
 		item.SubDoamin = subDomain
 		item.Port = port
-		apiConf.Server = append(apiConf.Server, item)
+		conf.Server = append(conf.Server, item)
+	}
+	for _, item := range conf.Server {
+		if item.Users == nil {
+			item.Users = NewUsers()
+		}
 	}
 }
-func (apiConf *apiServerConf) ports() (ports []int) {
-	for _, item := range apiConf.Server {
+func (conf *apiServerConf) ports() (ports []int) {
+	for _, item := range conf.Server {
 		if !InIntSlice(item.Port, ports) {
 			ports = append(ports, item.Port)
 		}
 	}
 	return
+}
+
+func (conf *apiServerConf) parseOauthConf() {
+	if conf.Oauth2Conf == nil {
+		return
+	}
+	conf.Oauth2Conf.checkConf()
+}
+
+func (conf *apiServerConf) String() string {
+	ds, _ := json.MarshalIndent(conf, "", "  ")
+	return string(ds)
 }

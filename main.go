@@ -16,7 +16,7 @@ func init() {
 	flag.Usage = func() {
 		ua()
 		fmt.Println("\n site: https://github.com/hidu/api-front")
-		fmt.Println(" version:", proxy.APIProxyVersion)
+		fmt.Println(" version:", proxy.APIFrontVersion)
 	}
 }
 

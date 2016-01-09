@@ -1,0 +1,48 @@
+{
+	"ImportPath": "github.com/hidu/api-front",
+	"GoVersion": "go1.5.2",
+	"Deps": [
+		{
+			"ImportPath": "github.com/antonholmquist/jason",
+			"Comment": "v1.0.0-12-g45d2bc8",
+			"Rev": "45d2bc81fe7570f04969728f3a941216fc565b61"
+		},
+		{
+			"ImportPath": "github.com/googollee/go-engine.io",
+			"Rev": "5525e3de461352f4c88d28287161ca2272c024ac"
+		},
+		{
+			"ImportPath": "github.com/googollee/go-socket.io",
+			"Comment": "0.9.x-37-g76e104d",
+			"Rev": "76e104d69892d45b272728110e61d4981408787a"
+		},
+		{
+			"ImportPath": "github.com/gorilla/context",
+			"Rev": "1c83b3eabd45b6d76072b66b746c20815fb2872d"
+		},
+		{
+			"ImportPath": "github.com/gorilla/securecookie",
+			"Rev": "e95799a481bbcc3d01c2ad5178524cb8bec9f370"
+		},
+		{
+			"ImportPath": "github.com/gorilla/sessions",
+			"Rev": "3752dbe3d898496114ebb398c8960ff127cbbe93"
+		},
+		{
+			"ImportPath": "github.com/gorilla/websocket",
+			"Rev": "527637c0f38a8035d7856bb758e56f7ee2c704a9"
+		},
+		{
+			"ImportPath": "github.com/hidu/goutils",
+			"Rev": "ee2ee06e1fab98420ba500419a9cac952d58e82d"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "415f1917e1dbc946ec834288a8a1e5ff6eee2900"
+		},
+		{
+			"ImportPath": "golang.org/x/oauth2",
+			"Rev": "2baa8a1b9338cf13d9eeb27696d761155fa480be"
+		}
+	]
+}

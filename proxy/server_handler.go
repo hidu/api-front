@@ -33,7 +33,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			go apiServer.broadcastAPIReq(api, broadData)
 		}()
 
-		rw.Header().Set("Api-Front-Version", APIProxyVersion)
+		rw.Header().Set("Api-Front-Version", APIFrontVersion)
 		log.Println("[access]", req.URL.String())
 
 		relPath := req.URL.Path[len(bindPath):]
@@ -140,8 +140,10 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				reqNew.ContentLength = bodyLen
 				reqNew.Header.Set("Content-Length", fmt.Sprintf("%d", bodyLen))
 			}
-
-			reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
+			
+            if(req.Header.Get("HTTP_X_FORWARDED_FOR")!=""){
+				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
+            }
 
 			transport := &http.Transport{
 				Proxy: http.ProxyFromEnvironment,

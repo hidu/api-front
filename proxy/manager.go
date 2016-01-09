@@ -34,7 +34,7 @@ func NewAPIServerManager(confPath string) *APIServerManager {
 
 // Start start run manager
 func (manager *APIServerManager) Start() {
-	logPath := filepath.Dir(filepath.Dir(manager.ConfPath)) + "/log/api-man.log"
+	logPath := filepath.Dir(filepath.Dir(manager.ConfPath)) + "/log/api-front.log"
 	manager.setupLog(logPath)
 	defer manager.LogFile.Close()
 	manager.ps.start()

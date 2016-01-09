@@ -1,6 +1,6 @@
 # api-front
 
-version :0.6.4
+version :0.6.5
 
 ## 概述
 api front是HTTP API前端，可进行`请求代理转发`、`协议抓包分析`、`流量复制`。  
@@ -72,8 +72,8 @@ port:8083 配置了用户 `:any`,即不登陆也可以管理。
 ### 管理员用户配置
 文件名：conf/users  ，普通文本文件：  
 ```
-name:admin psw_md5:7bb483729b5a8e26f73e1831cde5b842
-name:test psw_md5:7bb483729b5a8e26f73e1831cde5b842
+id:admin psw_md5:7bb483729b5a8e26f73e1831cde5b842
+id:test psw_md5:7bb483729b5a8e26f73e1831cde5b842
 ```
 
 
