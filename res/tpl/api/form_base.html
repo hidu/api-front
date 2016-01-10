@@ -39,7 +39,7 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
     {{end}}
 </div>
 <div class="form-group">
-    <label class="col-sm-2 control-label">描述:</label>
+    <label class="col-sm-2 control-label">备注:</label>
     <div class="col-sm-8">
      <input class="form-control" type="text" name="note" value="{{.api.Note|html}}">
     </div>
@@ -52,6 +52,14 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
 	        <input class="form-control text-right" type="text" name="timeout" value="{{.api.TimeoutMs}}">
 	        <div class="input-group-addon">ms</div>
     </div>
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">管理员列表:</label>
+    <div class="col-sm-8">
+        <div><input class="form-control" type="text" name="uids" value="{{.api.Users|html}}"></div>
+        <div class="">多个使用竖线[ <font color="blue">|</font> ]连接,若包含[&nbsp;<font color="blue">:any</font>&nbsp;]则任意用户都有权限!</div>
     </div>
 </div>
 

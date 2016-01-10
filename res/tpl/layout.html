@@ -27,7 +27,7 @@
        <div class='right'>
           <ul>
             {{if .isLogin}}
-              <li>{{.uname}}</li> 
+              <li title="ID:{{.user.ID}}">{{.uname}}</li> 
               <li><a href="/_logout">logout</a></li>
              {{else}}
               <li><a href="/_login">login</a></li>
@@ -39,6 +39,7 @@
 </div>
 <div class="clear"></div>
 <div id="body" class="container my_container">
+{{.userIndex}}
 {{.body}}
 </div>
 <div class="clear"></div>

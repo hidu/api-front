@@ -16,8 +16,6 @@ import (
 	"time"
 )
 
-const userCookieName = "_apifront"
-
 // APIFrontVersion current server version
 var APIFrontVersion string
 
@@ -159,8 +157,9 @@ func (wr *webReq) execute() {
 	wr.session.Values["aaa"] = "aaa"
 	wr.getUser()
 
-	fmt.Println("session", wr.session.Values)
+//	fmt.Println("session", wr.session.Values)
 	wr.values["isLogin"] = wr.user != nil
+	wr.values["user"]=wr.user
 	if wr.user != nil {
 		wr.values["uname"] = wr.user.DisplayName()
 	}
@@ -169,6 +168,8 @@ func (wr *webReq) execute() {
 	//		wr.alert("login required")
 	//		return
 	//	}
+	userIndexHTMLPath := wr.web.apiServer.rootConfDir() + "index.html"
+	wr.values["userIndex"] = loadFile(userIndexHTMLPath)
 
 	switch wr.req.URL.Path {
 	case "/_api":
@@ -201,8 +202,6 @@ func (wr *webReq) execute() {
 		return
 	}
 
-	userIndexHTMLPath := wr.web.apiServer.rootConfDir() + "index.html"
-	wr.values["userIndex"] = loadFile(userIndexHTMLPath)
 	wr.saveSession()
 	wr.render("index.html", true)
 }
@@ -216,7 +215,7 @@ func (wr *webReq) saveSession() {
 
 func (wr *webReq) oauth2CallBack() {
 	oauthconf := wr.getServerConf().Oauth2Conf
-	if oauthconf == nil {
+	if oauthconf == nil || !oauthconf.Enable{
 		wr.alert("oauth login is disabled")
 		return
 	}
@@ -232,10 +231,6 @@ func (wr *webReq) oauth2CallBack() {
 	http.Redirect(wr.rw, wr.req, "/_", 302)
 }
 
-//func (wr *webReq)jump(urlStr string){
-//	wr.values["url"]=urlStr
-//	wr.render("jump.html",false)
-//}
 func (wr *webReq) getUser() {
 	if u, has := wr.session.Values["user"]; has {
 		wr.user = u.(*User)
@@ -264,7 +259,7 @@ func (wr *webReq) logout() {
 
 func (wr *webReq) login() {
 	oauthconf := wr.getServerConf().Oauth2Conf
-	if oauthconf != nil {
+	if oauthconf != nil && oauthconf.Enable {
 		urlStr := oauthconf.getOauthUrl("http://" + wr.req.Host + "/_oauth2_callback")
 		log.Println("redirect to:", urlStr)
 		http.Redirect(wr.rw, wr.req, urlStr, 302)
@@ -529,6 +524,7 @@ func (wr *webReq) apiBaseSave() {
 	hostUrls := req.PostForm["host_url"]
 	hostNotes := req.PostForm["host_note"]
 	hostEnables := req.PostForm["host_enable"]
+	
 
 	if len(hostNames) != len(hostUrls) || len(hostNames) != len(hostNotes) || len(hostNames) != len(hostEnables) {
 		wr.alert("保存失败：数据格式错误")
@@ -567,6 +563,21 @@ func (wr *webReq) apiBaseSave() {
 	api.Enable = req.FormValue("enable") == "1"
 	api.Path = apiPath
 	api.HostAsProxy = req.FormValue("host_as_proxy") == "1"
+	api.Users=make(users,0)
+	
+	uids:=strings.Split(req.FormValue("uids"),"|")
+	if(wr.user!=nil){
+		uids=append(uids,wr.user.ID)
+	}else{
+		uids=append(uids,":any")
+	}
+	
+	for _,v:=range uids{
+		v=strings.TrimSpace(v)
+		if(v!="" && !InStringSlice(v,api.Users)){
+			api.Users=append(api.Users,v)
+		}
+	}
 
 	err = api.save()
 	if err != nil {

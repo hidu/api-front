@@ -13,6 +13,7 @@ import (
 
 type oauth2Conf struct {
 	Type         string                `json:"type"`
+	Enable   bool	`json:"enable"`
 	ClientID     string                `json:"client_id"`
 	ClientSecret string                `json:"client_sk"`
 	Scopes       []string              `json:"scopes"`
@@ -126,7 +127,7 @@ func (conf *oauth2Conf) getUserInfo(req *http.Request) (*User, error) {
 		return nil, fmt.Errorf("response has no user info:" + string(data))
 	}
 	user := &User{
-		ID:       conf.Type + "_" + vs["id"],
+		ID:       vs["id"],
 		NickName: vs["nick_name"],
 		Picture:  vs["picture"],
 		Email:    vs["email"],

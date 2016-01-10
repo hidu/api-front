@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/hidu/goutils"
 	"log"
+	"strings"
 )
 
 type users []string
@@ -16,6 +17,10 @@ type User struct {
 	NickName string
 	Picture  string
 	PswMd5   string
+}
+
+func (us users)String()string{
+	return strings.Join(us," | ")
 }
 
 func init() {
