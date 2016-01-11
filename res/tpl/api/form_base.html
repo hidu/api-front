@@ -1,18 +1,24 @@
-<form method="post" action="/_api" class="form-horizontal" target="ifr_form" autocomplete="off">
+<form method="post" action="/_/api" class="form-horizontal" target="ifr_form" autocomplete="off">
 <input type="hidden" name="do" value="base">
 <fieldset>
 <legend>模块基础信息
 
+ {{if .api.Exists}}
+<div class="legend_note" style="display:inline-block;">
+访问地址：<a href="{{.api_url}}" target="_blank">{{.api_url}}</a>
+</div>
+{{end}}
+
 <span class="legend_note pull-right">
 {{if .api.Exists}}
-<a href="/_analysis?name={{.api.Name}}">Http Analysis</a>&nbsp;
+<a href="/_/analysis?name={{.api.Name}}">Http Analysis</a>&nbsp;
 {{end}}
 pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
 </span>
 </legend>
 
 <div class="form-group">
-    <label class="col-sm-2 control-label">英文名称:</label>
+    <label class="col-sm-2 control-label required">英文名称:</label>
     <div class="col-sm-3">
         {{if .api.Exists}}
         <input type="hidden" name="api_name" value="{{.api.Name|html}}">
@@ -27,16 +33,20 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
          <input class="form-control" type="text" required="required" pattern="[\w-]+" name="api_name" value="{{.api.Name|html}}" placeholder="需满足 [\w-]+，全局唯一"> 
         {{end}}
     </div>
+    <div class="help-block">
+       模块唯一标识，有英文、数字组成。
+    </div>
 </div>
 
 <div class="form-group">
-    <label class="col-sm-2 control-label">绑定目录:</label>
+    <label class="col-sm-2 control-label required">绑定目录:</label>
     <div class="col-sm-3">
      <input class="form-control" type="text" name="path" value="{{.api.Path}}" pattern="/([\w-]+/)*" placeholder="需满足/([\w-]+/)*">
     </div>
-     {{if .api.Exists}}
-    <div class="form-control-static">访问地址：<a href="{{.api_url}}" target="_blank">{{.api_url}}</a></div>
-    {{end}}
+    <div class="help-block">
+       接口URI的目录部分，如原接口<b>http://a.com/<font color="blue">action</font>/info.php</b>,
+       则此处填写 <font color="blue">/action/</font>,支持多级目录。
+    </div>
 </div>
 <div class="form-group">
     <label class="col-sm-2 control-label">备注:</label>

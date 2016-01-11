@@ -1,4 +1,4 @@
- <form method="post" action="/_api" target="ifr_form" autocomplete="off" id="form_api_caller">
+ <form method="post" action="/_/api" target="ifr_form" autocomplete="off" id="form_api_caller">
      <input type="hidden" name="do" value="caller">
      <input type="hidden" name="api_name" value="{{$.api.Name}}">
             
@@ -47,7 +47,7 @@
 	                 "do":"caller",
 	                 "datas":datas
 	        }
-	        $.post("/_api",params,function(data){
+	        $.post("/_/api",params,function(data){
 	            alert(data.msg)
 	            if(data.code==0){
 	                location.reload()

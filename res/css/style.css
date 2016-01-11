@@ -118,3 +118,9 @@ tr.redo{color:blue;}
 	top:160px;
 }
 
+.required:after{
+content:' *';
+color: red;
+ 
+ 
+}

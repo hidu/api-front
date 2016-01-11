@@ -3,15 +3,15 @@ var allow_receive_req=true
 
 socket.on("connect",function(msg){
 	console && console.log("socket.io connect",msg)
-	socket.emit("http_analysis",api_man_apiName)
+	socket.emit("http_analysis",api_front_apiName)
 })
 
 socket.on("req",function(req){
 	if(!allow_receive_req){
-		console&&console.log("receive and skiped")
+		console && console.log("receive and skiped")
 		return
 	}
-	console && console.log(req)
+	console && console.log("receive req data:",req)
 	if(req && typeof req =="object"){
 		try{
 			showReqDetail(req)
@@ -22,7 +22,7 @@ socket.on("req",function(req){
 })
 var req_max_length=500;
 var req_list=[];
-var localStrName="reqs_"+api_man_apiName
+var localStrName="ap_front_reqs_"+api_front_apiName
 try{
 	if(window.localStorage && window.localStorage[localStrName]){
 		req_list=$.parseJSON(window.localStorage[localStrName]||"[]")
@@ -43,7 +43,12 @@ $().ready(function(){
 })
 
 function showReqTr(req){
-	
+	var uri=req.data["path"]||"";
+	var uri_prex=$.trim($("#form_analysis_filter").find("[name=uri_prex]").val())
+	if(uri_prex!="" && uri.substr(0,uri_prex.length)!=uri_prex ){
+	    console && console.log("filter,uri",uri);
+	    return;
+	}
 	var tr="<tr class='req_tr' data-reqid='"+req.id+"'>" +
 			"<td>"+req.id+"</td>" +
 			"<td>"+req.data.method+"</td>" +
@@ -53,9 +58,12 @@ function showReqTr(req){
 			"<td>"+h(req.data.master)+"</td>"+
 			"<td title='ms'>"+(req.data.used && req.data.used.toFixed(2))+"</td>"
 			"</tr>";
+	
 	tr+="<tr class='hidden'><td colspan=7>" +
 			"<pre>"+h(formatReqData(req.data["req_detail"]||"",req.data["path"]||""))+"</pre>" +
-			"<pre>"+h(showDumpData(req.data["res_detail"]||""))+"</pre>" +
+			"<pre>"+
+			(req.data.err?h(req.data.err||""):"")+
+			h(showDumpData(req.data["res_detail"]||""))+"</pre>" +
 			"</td>" +
 			"</tr>"
 	$("#req_list").prepend(tr)

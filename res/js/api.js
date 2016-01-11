@@ -17,7 +17,7 @@ $().ready(function(){
 			hosts.push($(this).val())
 		});
 		
-		$.get("/_pref",{name:apiName,host:hosts.join(",")},function(data){
+		$.get("/_/pref",{name:apiName,host:hosts.join(",")},function(data){
 			alert(data.msg)
 			if(data.code==0){
 				location.reload()
@@ -48,7 +48,7 @@ socket.on("api_pv",function(data){
 
 function proxy_api_host_add(){
     var tpl=$("#api_host_tpl").clone();
-    var html=tpl.html().replace("tpl_api_proxy","").replace("http://127.0.0.1/","")
+    var html=tpl.html().replace("tpl_api_front","").replace("http://127.0.0.1/","")
     $("#fieldset_hosts").append(html)
 }
 

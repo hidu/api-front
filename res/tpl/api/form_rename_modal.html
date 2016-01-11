@@ -35,7 +35,7 @@ $('#modifyApiNameModal').on('show.bs.modal', function (event) {
     })
 $("#modifyApiNameModal form").ajaxForm(function(data){
     if(data.code==0){
-        location.href="/_api?name="+data.data
+        location.href="/_/api?name="+data.data
     }else{
         $("#mod_help").text(data.msg)
     }

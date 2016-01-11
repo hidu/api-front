@@ -19,8 +19,8 @@ type User struct {
 	PswMd5   string
 }
 
-func (us users)String()string{
-	return strings.Join(us," | ")
+func (us users) String() string {
+	return strings.Join(us, " | ")
 }
 
 func init() {
@@ -40,8 +40,8 @@ func (u *User) String() string {
 	return string(bs)
 }
 
-func (u *User)DisplayName()string{
-	if(u.NickName!=""){
+func (u *User) DisplayName() string {
+	if u.NickName != "" {
 		return u.NickName
 	}
 	return u.ID
@@ -95,7 +95,7 @@ func loadUsers(confPath string) (uc *usersConf) {
 		if !has || id == "" {
 			continue
 		}
-		
+
 		if _, has := uc.users[id]; has {
 			log.Println("dup id in users:", id, line)
 			continue
@@ -103,11 +103,11 @@ func loadUsers(confPath string) (uc *usersConf) {
 
 		user := new(User)
 		user.ID = id
-		
-		if name, has := line["name"];has{
-			user.NickName=name
+
+		if name, has := line["name"]; has {
+			user.NickName = name
 		}
-		
+
 		if val, has := line["psw_md5"]; has {
 			user.PswMd5 = val
 		}

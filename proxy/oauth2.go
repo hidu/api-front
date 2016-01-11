@@ -13,7 +13,7 @@ import (
 
 type oauth2Conf struct {
 	Type         string                `json:"type"`
-	Enable   bool	`json:"enable"`
+	Enable       bool                  `json:"enable"`
 	ClientID     string                `json:"client_id"`
 	ClientSecret string                `json:"client_sk"`
 	Scopes       []string              `json:"scopes"`
@@ -91,14 +91,17 @@ func (conf *oauth2Conf) checkConf() {
 	}
 }
 
-func (conf *oauth2Conf) getUserInfo(req *http.Request) (*User, error) {
+func (conf *oauth2Conf) getAccessToken(req *http.Request) (*oauth2.Token, error) {
 	code := req.FormValue("code")
 	tok, err := conf.config.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		log.Println("Exchange failed,tok:", tok, "error:", err)
 		return nil, err
 	}
-	log.Println("tok", tok)
+	return tok, err
+}
+
+func (conf *oauth2Conf) getUserInfo(tok *oauth2.Token) (*User, error) {
 	client := conf.config.Client(oauth2.NoContext, tok)
 
 	api := conf.getOauthApi(OAUTH2_API_USER_INFO)

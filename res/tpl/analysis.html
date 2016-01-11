@@ -1,11 +1,23 @@
-<p style="margin:10px">
-<span class="h1">{{.api.Name}}</span>
-&nbsp;抓包分析
-<a href="/_api?name={{.api.Name}}">Edit</a>
-&nbsp;pv:<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>
+<div style="margin:10px">
 
-<span class='pull-right text-info'>进行抓包分析时，请保持当前页面打开。</span>
-</p>
+<div class='pull-right text-info'>进行抓包分析时，请保持当前页面打开。</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <span class="h1">{{.api.Name}}</span>
+        &nbsp;抓包分析
+        <a href="/_/api?name={{.api.Name}}">管理</a>
+        &nbsp;pv:<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>
+    </div>
+    <div class="col-lg-4">
+        <form class="form form-inline" id="form_analysis_filter">
+        filter uri:<input type="text" name="uri_prex" class="form-control" value="{{.uri_prex}}">
+        </form>
+    </div>
+</div>
+
+</div>
+
 
 <div>
 <table class="table table-condensed">
@@ -28,11 +40,11 @@
 
 <script>
 
-var api_man_apiName="{{.api.Name}}";
+var api_front_apiName="{{.api.Name}}";
 
 </script>
 
-<script type="text/javascript" src="/_res/js/analysis.js?_v={{.version}}"></script>
+<script type="text/javascript" src="/_/res/js/analysis.js?_v={{.version}}"></script>
 <script>
 (function(){
 	var w=$(window).width()*0.78;
@@ -49,3 +61,5 @@ var api_man_apiName="{{.api.Name}}";
   </div>
   </li>
 </ul>
+
+

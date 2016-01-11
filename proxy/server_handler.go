@@ -140,10 +140,10 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				reqNew.ContentLength = bodyLen
 				reqNew.Header.Set("Content-Length", fmt.Sprintf("%d", bodyLen))
 			}
-			
-            if(req.Header.Get("HTTP_X_FORWARDED_FOR")!=""){
+
+			if req.Header.Get("HTTP_X_FORWARDED_FOR") != "" {
 				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
-            }
+			}
 
 			transport := &http.Transport{
 				Proxy: http.ProxyFromEnvironment,
@@ -192,6 +192,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				log.Println("[error]call_master_sync "+apiReq.urlNew, err)
 				rw.WriteHeader(http.StatusBadGateway)
 				rw.Write([]byte("fetch_error:" + err.Error() + "\nraw_url:" + apiReq.urlRaw + "\nnew_url:" + apiReq.urlNew))
+				broadData.setError(err.Error())
 				return
 			}
 			defer resp.Body.Close()

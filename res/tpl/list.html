@@ -15,14 +15,14 @@
 <tbody>
 {{range $name,$api:=.apis}}
 <tr>
-    <td><a href="/_api?name={{$name}}">{{$name}}</a></td>
-    <td><a href="/_api?name={{$name}}">{{$api.Path|html}}</a></td>   
+    <td><a href="/_/api?name={{$name}}">{{$name}}</a></td>
+    <td><a href="/_/api?name={{$name}}">{{$api.Path|html}}</a></td>   
     <td>{{$api.Note|html}}</td>   
     <td>{{$api.TimeoutMs}}</td>
     <td><span id="api_pv_{{$name}}">{{$api.GetPv}}</span></td>
     <td>{{if not $api.Enable}}<font color=red>{{end}}{{$api.Enable}}{{if not $api.Enable}}</font>{{end}}</td>
     <td><a href="{{$.base_url}}{{$api.Path}}" target="_blank">{{$.base_url}}{{$api.Path}}</a></td>   
-    <td><a href="/_analysis?name={{$name}}" target="_blank">analysis</a></td>   
+    <td><a href="/_/analysis?name={{$name}}" target="_blank">analysis</a></td>   
 </tr>
 {{end}}
 </tbody>

@@ -199,3 +199,8 @@ func loadFile(file string) string {
 	ds, _ := ioutil.ReadFile(file)
 	return string(ds)
 }
+
+func JSONEncode(obj interface{}) string {
+	bs, _ := json.Marshal(obj)
+	return string(bs)
+}

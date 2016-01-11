@@ -6,31 +6,31 @@
 <meta name="author" content="duwei">
 <meta name="src" content="https://github.com/hidu/api-front">
 <title>{{.Title}} | api front | {{.version}} | {{.conf.Name}}</title>
-<link rel="stylesheet" href="/_res/bootstrap/css/bootstrap.min.css?_v={{.version}}">
-<link rel="stylesheet" href="/_res/css/style.css?_v={{.version}}">
-<script type="text/javascript" src="/_res/js/socket.io.js"></script>
-<script type="text/javascript" src="/_res/js/jquery-2.1.4.min.js"></script>
-<script type="text/javascript" src="/_res/js/jquery.form.js"></script>
-<script type="text/javascript" src="/_res/bootstrap/js/bootstrap.min.js?_v={{.version}}"></script>
-<script type="text/javascript" src="/_res/js/api.js?_v={{.version}}"></script>
+<link rel="stylesheet" href="/_/res/bootstrap/css/bootstrap.min.css?_v={{.version}}">
+<link rel="stylesheet" href="/_/res/css/style.css?_v={{.version}}">
+<script type="text/javascript" src="/_/res/js/socket.io-1.3.7.js"></script>
+<script type="text/javascript" src="/_/res/js/jquery-2.1.4.min.js"></script>
+<script type="text/javascript" src="/_/res/js/jquery.form.js"></script>
+<script type="text/javascript" src="/_/res/bootstrap/js/bootstrap.min.js?_v={{.version}}"></script>
+<script type="text/javascript" src="/_/res/js/api.js?_v={{.version}}"></script>
 <script>var api_front_version='{{.version}}';</script>
 </head>
 <body>
 <div id="nav">
 <div id="menu">
        <ul id="left_submenu">
-           <li class="border_first"><a href="/_index">首页</a></li>
-           <li><a href="/_apis">API模块列表</a></li>
-           <li><a href="/_api">添加模块</a></li>
+           <li class="border_first"><a href="/_/index">首页</a></li>
+           <li><a href="/_/apis">API模块列表</a></li>
+           <li><a href="/_/api">添加模块</a></li>
        </ul>
        <div class="pull-left" style='margin-left:20%;margin-top:8px'>{{.conf.Note}}</div>
        <div class='right'>
           <ul>
             {{if .isLogin}}
               <li title="ID:{{.user.ID}}">{{.uname}}</li> 
-              <li><a href="/_logout">logout</a></li>
+              <li><a href="/_/logout">logout</a></li>
              {{else}}
-              <li><a href="/_login">login</a></li>
+              <li><a href="/_/login">login</a></li>
             {{end}}
          </ul> 
          </div>
@@ -47,7 +47,7 @@
 
 <footer class="wrap">
 <hr/>
-<center>&copy;2015 github.com/hidu/api-front<p id="new_version_slot"></p></center><br/>
+<center>&copy;2016 github.com/hidu/api-front<p id="new_version_slot"></p></center><br/>
 </footer>
 </body>
 </html>

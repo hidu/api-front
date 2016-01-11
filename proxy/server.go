@@ -164,6 +164,14 @@ func (apiServer *APIServer) getAPIByPath(bindPath string) *apiStruct {
 	return nil
 }
 
+func (apiServer *APIServer) getAPINameByUri(uri string) string {
+	router := apiServer.routers.getRouterByReqPath(uri)
+	if router == nil {
+		return ""
+	}
+	return router.APIName
+}
+
 // GetCounter get counter
 func (apiServer *APIServer) GetCounter() *Counter {
 	return apiServer.counter

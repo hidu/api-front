@@ -220,7 +220,7 @@ type tokenRefresher struct {
 // synchronizes calls to this method with its own mutex.
 func (tf *tokenRefresher) Token() (*Token, error) {
 	if tf.refreshToken == "" {
-		return nil, errors.New("oauth2: token expired and refresh token is not set,tf:")
+		return nil, errors.New("oauth2: token expired and refresh token is not set")
 	}
 
 	tk, err := retrieveToken(tf.ctx, tf.conf, url.Values{

@@ -9,12 +9,12 @@
 		},
 		{
 			"ImportPath": "github.com/googollee/go-engine.io",
-			"Rev": "5525e3de461352f4c88d28287161ca2272c024ac"
+			"Rev": "a66cf68b24e56df0cacdc6041b93742f983a296a"
 		},
 		{
 			"ImportPath": "github.com/googollee/go-socket.io",
-			"Comment": "0.9.x-37-g76e104d",
-			"Rev": "76e104d69892d45b272728110e61d4981408787a"
+			"Comment": "0.9.x-51-g14bb3d0",
+			"Rev": "14bb3d0368089a74cb52164a7a697cf404bda9c6"
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
@@ -30,7 +30,7 @@
 		},
 		{
 			"ImportPath": "github.com/gorilla/websocket",
-			"Rev": "527637c0f38a8035d7856bb758e56f7ee2c704a9"
+			"Rev": "3986be78bf859e01f01af631ad76da5b269d270c"
 		},
 		{
 			"ImportPath": "github.com/hidu/goutils",

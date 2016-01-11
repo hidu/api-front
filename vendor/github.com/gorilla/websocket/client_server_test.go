@@ -41,9 +41,16 @@ type cstServer struct {
 	URL string
 }
 
+const (
+	cstPath       = "/a/b"
+	cstRawQuery   = "x=y"
+	cstRequestURI = cstPath + "?" + cstRawQuery
+)
+
 func newServer(t *testing.T) *cstServer {
 	var s cstServer
 	s.Server = httptest.NewServer(cstHandler{t})
+	s.Server.URL += cstRequestURI
 	s.URL = makeWsProto(s.Server.URL)
 	return &s
 }
@@ -51,14 +58,20 @@ func newServer(t *testing.T) *cstServer {
 func newTLSServer(t *testing.T) *cstServer {
 	var s cstServer
 	s.Server = httptest.NewTLSServer(cstHandler{t})
+	s.Server.URL += cstRequestURI
 	s.URL = makeWsProto(s.Server.URL)
 	return &s
 }
 
 func (t cstHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		t.Logf("method %s not allowed", r.Method)
-		http.Error(w, "method not allowed", 405)
+	if r.URL.Path != cstPath {
+		t.Logf("path=%v, want %v", r.URL.Path, cstPath)
+		http.Error(w, "bad path", 400)
+		return
+	}
+	if r.URL.RawQuery != cstRawQuery {
+		t.Logf("query=%v, want %v", r.URL.RawQuery, cstRawQuery)
+		http.Error(w, "bad path", 400)
 		return
 	}
 	subprotos := Subprotocols(r)
@@ -193,7 +206,7 @@ func TestDialTLS(t *testing.T) {
 	d := cstDialer
 	d.NetDial = func(network, addr string) (net.Conn, error) { return net.Dial(network, u.Host) }
 	d.TLSClientConfig = &tls.Config{RootCAs: certs}
-	ws, _, err := d.Dial("wss://example.com/", nil)
+	ws, _, err := d.Dial("wss://example.com"+cstRequestURI, nil)
 	if err != nil {
 		t.Fatalf("Dial: %v", err)
 	}
@@ -265,6 +278,45 @@ func TestDialBadOrigin(t *testing.T) {
 	}
 	if resp.StatusCode != http.StatusForbidden {
 		t.Fatalf("status=%d, want %d", resp.StatusCode, http.StatusForbidden)
+	}
+}
+
+func TestDialBadHeader(t *testing.T) {
+	s := newServer(t)
+	defer s.Close()
+
+	for _, k := range []string{"Upgrade",
+		"Connection",
+		"Sec-Websocket-Key",
+		"Sec-Websocket-Version",
+		"Sec-Websocket-Protocol"} {
+		h := http.Header{}
+		h.Set(k, "bad")
+		ws, _, err := cstDialer.Dial(s.URL, http.Header{"Origin": {"bad"}})
+		if err == nil {
+			ws.Close()
+			t.Errorf("Dial with header %s returned nil", k)
+		}
+	}
+}
+
+func TestBadMethod(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ws, err := cstUpgrader.Upgrade(w, r, nil)
+		if err == nil {
+			t.Errorf("handshake succeeded, expect fail")
+			ws.Close()
+		}
+	}))
+	defer s.Close()
+
+	resp, err := http.PostForm(s.URL, url.Values{})
+	if err != nil {
+		t.Fatalf("PostForm returned error %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Errorf("Status = %d, want %d", resp.StatusCode, http.StatusMethodNotAllowed)
 	}
 }
 

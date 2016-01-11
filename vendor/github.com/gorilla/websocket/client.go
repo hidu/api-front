@@ -95,12 +95,19 @@ func parseURL(s string) (*url.URL, error) {
 		return nil, errMalformedURL
 	}
 
-	u.Host = s
-	u.Opaque = "/"
-	if i := strings.Index(s, "/"); i >= 0 {
-		u.Host = s[:i]
-		u.Opaque = s[i:]
+	if i := strings.Index(s, "?"); i >= 0 {
+		u.RawQuery = s[i+1:]
+		s = s[:i]
 	}
+
+	if i := strings.Index(s, "/"); i >= 0 {
+		u.Opaque = s[i:]
+		s = s[:i]
+	} else {
+		u.Opaque = "/"
+	}
+
+	u.Host = s
 
 	if strings.Contains(u.Host, "@") {
 		// Don't bother parsing user information because user information is
@@ -197,11 +204,18 @@ func (d *Dialer) Dial(urlStr string, requestHeader http.Header) (*Conn, *http.Re
 		req.Header["Sec-WebSocket-Protocol"] = []string{strings.Join(d.Subprotocols, ", ")}
 	}
 	for k, vs := range requestHeader {
-		if k == "Host" {
+		switch {
+		case k == "Host":
 			if len(vs) > 0 {
 				req.Host = vs[0]
 			}
-		} else {
+		case k == "Upgrade" ||
+			k == "Connection" ||
+			k == "Sec-Websocket-Key" ||
+			k == "Sec-Websocket-Version" ||
+			(k == "Sec-Websocket-Protocol" && len(d.Subprotocols) > 0):
+			return nil, nil, errors.New("websocket: duplicate header not allowed: " + k)
+		default:
 			req.Header[k] = vs
 		}
 	}
@@ -316,10 +330,9 @@ func (d *Dialer) Dial(urlStr string, requestHeader http.Header) (*Conn, *http.Re
 		n, _ := io.ReadFull(resp.Body, buf)
 		resp.Body = ioutil.NopCloser(bytes.NewReader(buf[:n]))
 		return nil, resp, ErrBadHandshake
-	} else {
-		resp.Body = ioutil.NopCloser(bytes.NewReader([]byte{}))
 	}
 
+	resp.Body = ioutil.NopCloser(bytes.NewReader([]byte{}))
 	conn.subprotocol = resp.Header.Get("Sec-Websocket-Protocol")
 
 	netConn.SetDeadline(time.Time{})
