@@ -216,7 +216,7 @@ func (wr *webReq) execute() {
 		return
 	}
 
-	wr.saveSession()
+//	wr.saveSession()
 	wr.render("index.html", true)
 }
 func (wr *webReq) getServerConf() *apiServerConf {
@@ -239,7 +239,7 @@ func (wr *webReq) oauth2CallBack() {
 		return
 	}
 
-	wr.session.Values["token"] = JSONEncode(tok)
+//	wr.session.Values["token"] = JSONEncode(tok)
 
 	user, err := oauthconf.getUserInfo(tok)
 	if err != nil {
