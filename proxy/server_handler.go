@@ -23,21 +23,28 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 	return func(rw http.ResponseWriter, req *http.Request) {
 		id := api.pvInc()
 		uniqID := apiServer.uniqReqID(id)
+		var broadData *BroadCastData
+		needBroad := apiServer.needBroadcast(api)
 
-		broadData := apiServer.initBroadCastData(req)
-		broadData.ID = uniqID
 		start := time.Now()
-		defer func() {
-			used := float64(time.Now().Sub(start).Nanoseconds()) / 1e6
-			broadData.setData("used", used)
-			go apiServer.broadcastAPIReq(api, broadData)
-		}()
+
+		if needBroad {
+			broadData = apiServer.initBroadCastData(req)
+			broadData.ID = uniqID
+			defer func() {
+				used := float64(time.Now().Sub(start).Nanoseconds()) / 1e6
+				broadData.setData("used", used)
+				go apiServer.broadcastAPIReq(api, broadData)
+			}()
+		}
 
 		rw.Header().Set("Api-Front-Version", APIFrontVersion)
 		log.Println("[access]", req.URL.String())
 
 		relPath := req.URL.Path[len(bindPath):]
 		req.Header.Set("Connection", "close")
+		//add this flag,so the real backend can catch it
+		req.Header.Add("Via", fmt.Sprintf("api-front/%s", APIFrontVersion))
 
 		logData := make(map[string]interface{})
 		var logRw sync.RWMutex
@@ -49,14 +56,20 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		if err != nil {
 			rw.WriteHeader(http.StatusBadGateway)
 			rw.Write([]byte("read body failed"))
-			broadData.setError(err.Error())
+
+			if needBroad {
+				broadData.setError(err.Error())
+			}
 			return
 		}
 		//get body must by before  parse callerPref
 
 		hosts, masterHost, cpf := api.getAPIHostsByReq(req)
-		broadData.setData("master", masterHost)
-		broadData.setData("remote", cpf.GetIP())
+
+		if needBroad {
+			broadData.setData("master", masterHost)
+			broadData.setData("remote", cpf.GetIP())
+		}
 
 		_uri := req.URL.Path
 		if req.URL.RawQuery != "" {
@@ -82,7 +95,9 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			logData["hostTotal"] = 0
 			rw.WriteHeader(http.StatusBadGateway)
 			rw.Write([]byte("no backend hosts"))
-			broadData.setError("no backend hosts")
+			if needBroad {
+				broadData.setError("no backend hosts")
+			}
 			return
 		}
 
@@ -114,8 +129,9 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			}
 
 			urlNew = serverURL + urlNew
-
-			broadData.setData("raw_url", rawURL)
+			if needBroad {
+				broadData.setData("raw_url", rawURL)
+			}
 
 			reqNew, err := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
 			if err != nil {
@@ -124,7 +140,9 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 					rw.WriteHeader(http.StatusBadGateway)
 					rw.Write([]byte("error:" + err.Error() + "\nraw_url:" + rawURL))
 				}
-				broadData.setError(err.Error())
+				if needBroad {
+					broadData.setError(err.Error())
+				}
 				return
 
 			}
@@ -192,12 +210,16 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				log.Println("[error]call_master_sync "+apiReq.urlNew, err)
 				rw.WriteHeader(http.StatusBadGateway)
 				rw.Write([]byte("fetch_error:" + err.Error() + "\nraw_url:" + apiReq.urlRaw + "\nnew_url:" + apiReq.urlNew))
-				broadData.setError(err.Error())
+				if needBroad {
+					broadData.setError(err.Error())
+				}
 				return
 			}
 			defer resp.Body.Close()
 
-			apiServer.addBroadCastDataResponse(broadData, resp)
+			if needBroad {
+				apiServer.addBroadCastDataResponse(broadData, resp)
+			}
 
 			for k, vs := range resp.Header {
 				for _, v := range vs {
@@ -338,4 +360,11 @@ func (apiServer *APIServer) addBroadCastDataResponse(broadData *BroadCastData, r
 
 func (apiServer *APIServer) broadcastAPIReq(api *apiStruct, data *BroadCastData) {
 	apiServer.web.broadcastAPI(api, "req", data)
+}
+
+func (apiServer *APIServer) needBroadcast(api *apiStruct) bool {
+	if apiServer.web.wsServer.Count() < 1 {
+		return false
+	}
+	return api.analysisClientNum > 0
 }

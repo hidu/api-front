@@ -30,6 +30,8 @@ type apiStruct struct {
 	Version     int64        `json:"version"` //配置文件的版本号
 	apiServer   *APIServer
 	Users       users `json:"users"`
+
+	analysisClientNum int `json:"-"` //进行协议分析的客户端数量
 }
 
 // init new api for server
@@ -221,8 +223,9 @@ func (api *apiStruct) GetPv() uint64 {
 	return api.apiServer.GetCounter().GetPv(api.Name)
 }
 
-func (api *apiStruct) roomName() string {
-	return fmt.Sprintf("_room_%s", api.Name)
+func (api *apiStruct) uniqID() string {
+	sc := api.apiServer.ServerConf
+	return fmt.Sprintf("api|%s|%d|%s", sc.SubDoamin, sc.Port, api.Name)
 }
 
 func apiCookieName(apiName string) string {
@@ -267,4 +270,14 @@ func (api *apiStruct) userCanEdit(u *User) bool {
 		id = u.ID
 	}
 	return api.userCanEditById(id)
+}
+
+func (api *apiStruct) analysisClientNumInc(num int) int {
+	api.rw.Lock()
+	defer api.rw.Unlock()
+	api.analysisClientNum += num
+	if api.analysisClientNum < 0 {
+		api.analysisClientNum = 0
+	}
+	return api.analysisClientNum
 }

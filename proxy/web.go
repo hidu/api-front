@@ -19,6 +19,7 @@ import (
 
 // APIFrontVersion current server version
 var APIFrontVersion string
+var sessionName string = "apifront"
 
 func init() {
 	APIFrontVersion = strings.TrimSpace(Assest.GetContent("/res/version"))
@@ -38,7 +39,16 @@ func newWebAdmin(server *APIServer) *webAdmin {
 	}
 	ser.wsInit()
 	ser.userConf = loadUsers(filepath.Join(server.rootConfDir(), "users"))
-	ser.sessionStore = sessions.NewCookieStore([]byte("something-very-secret"))
+
+	sname := server.manager.serverConf.SessionName
+	if sname != "" {
+		sessionName = sname
+	}
+
+	cookie_sk := "something-very-secret/" + server.manager.serverConf.userLoginType() + server.manager.serverConf.SessionSk
+
+	ser.sessionStore = sessions.NewCookieStore([]byte(cookie_sk))
+
 	ser.sessionStore.Options.Path = "/_/"
 	return ser
 }
@@ -48,20 +58,41 @@ func (web *webAdmin) wsInit() {
 	if err != nil {
 		log.Fatalln("init ws server failed:", err.Error())
 	}
+
 	web.wsServer = server
 
 	server.On("connection", func(so socketio.Socket) {
 		so.Emit("hello", "hello,now:"+time.Now().String())
+
+		analysisAPIs := make(map[string]*apiStruct)
+
 		so.On("disconnection", func() {
 			log.Println("on disconnect", so.Id())
+			for id, api := range analysisAPIs {
+				api.analysisClientNumInc(-1)
+				delete(analysisAPIs, id)
+			}
 		})
 		web.wsSocket = so
 		so.Join("api_pv")
 		so.On("http_analysis", func(name string) {
 			api := web.apiServer.getAPIByName(name)
+			log.Println("socket.io on http_analysis", name)
 			if api != nil {
-				err := so.Join(api.roomName())
-				log.Println("join_room", api.roomName(), err)
+				uniqID := api.uniqID()
+
+				if _, has := analysisAPIs[uniqID]; !has {
+					err := so.Join(uniqID)
+					log.Println("join_room", uniqID, err)
+					analysisAPIs[uniqID] = api
+					api.analysisClientNumInc(1)
+				}
+
+				msg := make(map[string]interface{})
+				msg["client_num"] = api.analysisClientNum
+				msg["api_name"] = api.Name
+
+				so.Emit("s_http_analysis", msg)
 			}
 		})
 
@@ -98,7 +129,7 @@ func (web *webAdmin) broadAPIPvs() {
 }
 
 func (web *webAdmin) broadcastAPI(api *apiStruct, broadType string, reqData *BroadCastData) {
-	roomName := api.roomName()
+	roomName := api.uniqID()
 	log.Println("broad:", roomName, broadType)
 	web.wsServer.BroadcastTo(roomName, broadType, reqData)
 }
@@ -128,7 +159,7 @@ func (web *webAdmin) serveHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, _ := web.sessionStore.Get(req, "apifront")
+	session, _ := web.sessionStore.Get(req, sessionName)
 
 	wr := &webReq{
 		rw:      rw,
@@ -216,7 +247,7 @@ func (wr *webReq) execute() {
 		return
 	}
 
-//	wr.saveSession()
+	//	wr.saveSession()
 	wr.render("index.html", true)
 }
 func (wr *webReq) getServerConf() *apiServerConf {
@@ -239,7 +270,7 @@ func (wr *webReq) oauth2CallBack() {
 		return
 	}
 
-//	wr.session.Values["token"] = JSONEncode(tok)
+	//	wr.session.Values["token"] = JSONEncode(tok)
 
 	user, err := oauthconf.getUserInfo(tok)
 	if err != nil {

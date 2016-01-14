@@ -1,9 +1,29 @@
 
 var allow_receive_req=true
 
+//每5秒ping一次,后端则>5秒去check存活
+function sendServiceNotice(){
+    socket.emit("http_analysis",api_front_apiName);
+    setTimeout(function(){
+        sendServiceNotice();
+    },5000);
+}
+
 socket.on("connect",function(msg){
 	console && console.log("socket.io connect",msg)
-	socket.emit("http_analysis",api_front_apiName)
+	sendServiceNotice();
+	$("#connect_status").html("<font color=green>online</font>");
+})
+
+socket.on("disconnect",function(msg){
+    $("#connect_status").html("<font color=red>offline</font>");
+})
+
+
+socket.on("s_http_analysis",function(msg){
+    console && console.log("socket.io http_analysis",msg,new Date())
+    var id="api_ana_user_"+api_front_apiName;
+    $("#"+id).html("<font color=blue>"+msg.client_num+"</font>")
 })
 
 socket.on("req",function(req){
@@ -45,7 +65,7 @@ $().ready(function(){
 function showReqTr(req){
 	var uri=req.data["path"]||"";
 	var uri_prex=$.trim($("#form_analysis_filter").find("[name=uri_prex]").val())
-	if(uri_prex!="" && uri.substr(0,uri_prex.length)!=uri_prex ){
+	if(uri_prex!="" && uri.match(uri_prex)!=uri_prex ){
 	    console && console.log("filter,uri",uri);
 	    return;
 	}

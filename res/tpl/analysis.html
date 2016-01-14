@@ -5,9 +5,11 @@
 <div class="row">
     <div class="col-lg-4">
         <span class="h1">{{.api.Name}}</span>
+        <span id="connect_status">offline</span>
         &nbsp;抓包分析
         <a href="/_/api?name={{.api.Name}}">管理</a>
         &nbsp;pv:<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>
+        &nbsp;user:<span id="api_ana_user_{{.api.Name}}">1</span>
     </div>
     <div class="col-lg-4">
         <form class="form form-inline" id="form_analysis_filter">

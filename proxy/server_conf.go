@@ -11,12 +11,21 @@ import (
 )
 
 type apiServerConf struct {
-	ServerName string            `json:"server_name"`
-	Server     []*serverConfItem `json:"server"`
-	confPath   string            `json:"-"`
-	Users      users             `json:"users"`
-	Oauth2Conf *oauth2Conf       `json:"oauth2"`
+	ServerName  string            `json:"server_name"`
+	Server      []*serverConfItem `json:"server"`
+	confPath    string            `json:"-"`
+	Users       users             `json:"users"`
+	Oauth2Conf  *oauth2Conf       `json:"oauth2"`
+	SessionName string            `json:"session_name"` //cookie name
+	SessionSk   string            `json:"session_sk"`   //secret
 }
+
+/**
+*登陆方式
+ */
+const LOGIN_TYPE_FILE string = "file"
+
+const LOGIN_TYPE_OAUTH string = "oauth"
 
 type serverConfItem struct {
 	Port         int    `json:"port"`
@@ -113,4 +122,11 @@ func (conf *apiServerConf) parseOauthConf() {
 func (conf *apiServerConf) String() string {
 	ds, _ := json.MarshalIndent(conf, "", "  ")
 	return string(ds)
+}
+
+func (conf *apiServerConf) userLoginType() string {
+	if conf.Oauth2Conf != nil && conf.Oauth2Conf.Enable {
+		return LOGIN_TYPE_OAUTH
+	}
+	return LOGIN_TYPE_FILE
 }
