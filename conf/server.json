@@ -1,6 +1,6 @@
 {
 "server_name":"local.198509.com",
-"server":[
+"vhost":[
     {"port":8180,"enable":true,"name":"8180测试","note":"哈哈哈哈和","hidden_cookie":true},
     {"port":8181,"enable":true,"name":"test","note":"","hidden_cookie":true,"users":[":any"]}
 ],

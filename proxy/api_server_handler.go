@@ -19,7 +19,7 @@ import (
 
 func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter, *http.Request) {
 	bindPath := api.Path
-	log.Println(apiServer.ServerConf.Port, api.Name, "bind path [", bindPath, "]")
+	log.Println(apiServer.ServerVhostConf.Port, api.Name, "bind path [", bindPath, "]")
 	return func(rw http.ResponseWriter, req *http.Request) {
 		id := api.pvInc()
 		uniqID := apiServer.uniqReqID(id)
@@ -75,7 +75,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		if req.URL.RawQuery != "" {
 			_uri += "?" + req.URL.RawQuery
 		}
-		mainLogStr := fmt.Sprintf("uniqid=%s port=%d remote=%s method=%s uri=%s master=%s hostsTotal=%d refer=%s", uniqID, apiServer.ServerConf.Port, req.RemoteAddr, req.Method, _uri, masterHost, len(hosts), req.Referer())
+		mainLogStr := fmt.Sprintf("uniqid=%s port=%d remote=%s method=%s uri=%s master=%s hostsTotal=%d refer=%s", uniqID, apiServer.ServerVhostConf.Port, req.RemoteAddr, req.Method, _uri, masterHost, len(hosts), req.Referer())
 
 		var printLog = func(logIndex int) {
 			logRw.RLock()
@@ -303,7 +303,7 @@ func (apiServer *APIServer) initBroadCastData(req *http.Request) *BroadCastData 
 
 	dump, _ := httputil.DumpRequest(req, dumpBody)
 	reqDetail := string(dump)
-	if apiServer.ServerConf.HiddenCookie {
+	if apiServer.ServerVhostConf.HiddenCookie {
 		reqDetail = reqCookieDumpLine.ReplaceAllStringFunc(reqDetail, ReqCookieHidden)
 	}
 
@@ -341,7 +341,7 @@ func (apiServer *APIServer) addBroadCastDataResponse(broadData *BroadCastData, r
 	dump, _ := httputil.DumpResponse(resp, false)
 
 	resDetail := string(dump)
-	if apiServer.ServerConf.HiddenCookie {
+	if apiServer.ServerVhostConf.HiddenCookie {
 		resDetail = resCookieDumpLine.ReplaceAllStringFunc(resDetail, ResCookieSetHidden)
 	}
 	if !dumpBody {

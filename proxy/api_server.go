@@ -20,12 +20,12 @@ type APIServer struct {
 	Rw         sync.RWMutex
 	routers    *routers
 	web        *webAdmin
-	ServerConf *serverConfItem
+	ServerVhostConf *serverVhost
 	counter    *Counter
 }
 
-func newAPIServer(conf *serverConfItem, manager *APIServerManager) *APIServer {
-	apiServer := &APIServer{ServerConf: conf, manager: manager}
+func newAPIServer(conf *serverVhost, manager *APIServerManager) *APIServer {
+	apiServer := &APIServer{ServerVhostConf: conf, manager: manager}
 	apiServer.ConfDir = fmt.Sprintf("%sapi_%d", manager.rootConfDir(), conf.Port)
 	if conf.SubDoamin != "" {
 		apiServer.ConfDir += "_" + conf.SubDoamin
@@ -138,10 +138,10 @@ func (apiServer *APIServer) uniqReqID(id uint64) string {
 }
 
 func (apiServer *APIServer) serverName() string {
-	return fmt.Sprintf("%s:%d", apiServer.ServerConf.SubDoamin, apiServer.ServerConf.Port)
+	return fmt.Sprintf("%s:%d", apiServer.ServerVhostConf.SubDoamin, apiServer.ServerVhostConf.Port)
 }
 func (apiServer *APIServer) subDomain() string {
-	return apiServer.ServerConf.SubDoamin
+	return apiServer.ServerVhostConf.SubDoamin
 }
 
 func (apiServer *APIServer) getAPIByName(name string) *apiStruct {
@@ -178,10 +178,10 @@ func (apiServer *APIServer) GetCounter() *Counter {
 }
 
 func (apiServer *APIServer) hasUser(name string) bool {
-	if apiServer.ServerConf.Users != nil && apiServer.ServerConf.Users.hasUser(name) {
+	if apiServer.ServerVhostConf.Users != nil && apiServer.ServerVhostConf.Users.hasUser(name) {
 		return true
 	}
-	if apiServer.manager.serverConf.Users != nil && apiServer.manager.serverConf.Users.hasUser(name) {
+	if apiServer.manager.mainConf.Users != nil && apiServer.manager.mainConf.Users.hasUser(name) {
 		return true
 	}
 	return false

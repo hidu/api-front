@@ -1,0 +1,30 @@
+<br/><br/>
+{{range $group,$vvs:=.vhosts}}
+<div class="panel panel-default">
+<div class="panel-heading">{{$group}}</div>
+<div class="panel-body">
+   <table class="table table-hover">
+   <thead>
+   <tr>
+      <th>服务名称</th>
+      <th>服务主页</th>
+      <th>备注</th>
+   </tr>
+   </thead>
+  <tdboy>
+  {{range $index,$vhost:=$vvs}}
+  {{$_hostUrl:=$vhost.HomeUrl $.server_name}}
+     <tr>
+     <td>{{$vhost.Name|html}}</td>
+     <td>
+      <a href="{{$_hostUrl}}/_/index" target="_blank">{{$_hostUrl}}</a>
+     &nbsp;<span class="glyphicon glyphicon-new-window"></span>
+     </td>
+     <td>{{$vhost.Note|html}}</td>
+     </tr>
+  {{end}}
+  </tdboy>
+   </table>
+</div>
+</div>
+{{end}}

@@ -4,8 +4,9 @@
 <legend>模块基础信息
 
  {{if .api.Exists}}
-<div class="legend_note" style="display:inline-block;">
+<div class="legend_note">
 访问地址：<a href="{{.api_url}}" target="_blank">{{.api_url}}</a>
+&nbsp;<span class="glyphicon glyphicon-new-window"></span>
 </div>
 {{end}}
 
@@ -34,7 +35,7 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
         {{end}}
     </div>
     <div class="help-block">
-       模块唯一标识，有英文、数字组成。
+       模块唯一标识，由英文、数字组成。
     </div>
 </div>
 
@@ -43,9 +44,10 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
     <div class="col-sm-3">
      <input class="form-control" type="text" name="path" value="{{.api.Path}}" pattern="/([\w-]+/)*" placeholder="需满足/([\w-]+/)*">
     </div>
-    <div class="help-block">
+    <div class="help">
        接口URI的目录部分，如原接口<b>http://a.com/<font color="blue">action</font>/info.php</b>,
-       则此处填写 <font color="blue">/action/</font>,支持多级目录。
+       则此处填写 <font color="blue">/action/</font>,支持多级目录。<br/>
+       类似于nginx的 <font color="blue">location /action/</font>指令。
     </div>
 </div>
 <div class="form-group">

@@ -5,6 +5,7 @@
     <fieldset>
     <legend>
     转发规则 <a onclick="return proxy_api_caller_add();" href="#">+</a>
+    <div class="legend_note">非必须，用于控制访问多个后端服务的时序。</div>
     </legend>
     <p class="text-muted" style="font-size:-2">IP的<a href="/#adv">优先级</a>低于GET/POST、Header、Cookie参数</p>
     {{range $i,$caller:=.api.Caller}}

@@ -2,13 +2,13 @@
 <table class="table table-hover">
 <thead>
 <tr>
-<th>Name</th>
-<th>Path</th>
-<th>Note</th>
-<th>Timeout</th>
-<th>Pv</th>
-<th>Enable</th>
-<th>访问地址</th>
+<th>ID</th>
+<th>模块路径</th>
+<th>备注</th>
+<th>超时</th>
+<th>PV</th>
+<th>启用</th>
+<th>模块访问地址</th>
 <th>抓包分析</th>
 </tr>
 </thead>
@@ -21,8 +21,16 @@
     <td>{{$api.TimeoutMs}}</td>
     <td><span id="api_pv_{{$name}}">{{$api.GetPv}}</span></td>
     <td>{{if not $api.Enable}}<font color=red>{{end}}{{$api.Enable}}{{if not $api.Enable}}</font>{{end}}</td>
-    <td><a href="{{$.base_url}}{{$api.Path}}" target="_blank">{{$.base_url}}{{$api.Path}}</a></td>   
-    <td><a href="/_/analysis?name={{$name}}" target="_blank">analysis</a></td>   
+    <td>
+    <a href="{{$.base_url}}{{$api.Path}}" target="_blank">{{$.base_url}}{{$api.Path}}
+    &nbsp;<span class="glyphicon glyphicon-new-window"></span>
+    </a>
+    </td>   
+    <td>
+    <a href="/_/analysis?name={{$name}}" target="_blank">抓包
+    &nbsp;<span class="glyphicon glyphicon-new-window"></span>
+    </a>
+    </td>   
 </tr>
 {{end}}
 </tbody>

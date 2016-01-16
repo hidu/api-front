@@ -12,6 +12,7 @@ a{text-decoration: none}
   margin:0;
   background: #446CB3;
   color:white;
+  height:40px;
 }
 #nav select{color:#333}
 #nav .right{padding-top:5px}
@@ -31,9 +32,9 @@ a{text-decoration: none}
   box-shadow: 1px 0 0 rgba(255, 255, 255, 0.11);
 }
 
-#nav ul#left_submenu li:HOVER{background: white;}
-#nav ul#left_submenu li:HOVER a{color:#446CB3}
 #nav ul li a{display: inline-block; color:white;}
+#nav ul#left_submenu li:HOVER,.nav_active{background: white;}
+#nav ul#left_submenu li:HOVER a,.nav_active a{color:#446CB3 !important;}
 
 #network-tb td{vertical-align: top}
 
@@ -106,7 +107,7 @@ tr.redo{color:blue;}
 
 .my-panel{border-radius:5px;padding: 5px;padding-bottom:1px; margin-bottom: 5px;margin-top: 5px}
 
-.legend_note{font-size: 12px;margin-left: 20px;padding:2px}
+.legend_note{font-size: 12px;margin-left: 20px;padding:2px;display: inline-block;}
 .legend_note label{font-weight: normal;}
 .my_container{width: 80%}
 
@@ -121,6 +122,5 @@ tr.redo{color:blue;}
 .required:after{
 content:' *';
 color: red;
- 
- 
 }
+.help{color:#737373}

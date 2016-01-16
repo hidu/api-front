@@ -127,4 +127,10 @@ $().ready(function(){
 	    script.type='text/javascript'; 
 	    document.getElementsByTagName('head').item(0).appendChild(script)
 	},1000);
+	
+	$("#left_submenu a").each(function(){
+	    if(location.search=="" && $(this).attr("href")==location.pathname){
+	        $(this).parent("li").addClass("nav_active");
+	    }
+	});
 });

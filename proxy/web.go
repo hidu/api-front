@@ -14,7 +14,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	//	"golang.org/x/oauth2"
 )
 
 // APIFrontVersion current server version
@@ -40,12 +39,12 @@ func newWebAdmin(server *APIServer) *webAdmin {
 	ser.wsInit()
 	ser.userConf = loadUsers(filepath.Join(server.rootConfDir(), "users"))
 
-	sname := server.manager.serverConf.SessionName
+	sname := server.manager.mainConf.SessionName
 	if sname != "" {
 		sessionName = sname
 	}
 
-	cookie_sk := "something-very-secret/" + server.manager.serverConf.userLoginType() + server.manager.serverConf.SessionSk
+	cookie_sk := "something-very-secret/" + server.manager.mainConf.userLoginType() + server.manager.mainConf.SessionSk
 
 	ser.sessionStore = sessions.NewCookieStore([]byte(cookie_sk))
 
@@ -190,9 +189,16 @@ func (wr *webReq) execute() {
 	}
 	wr.values["req_host"] = wr.req.Host
 	wr.values["host_name"] = hostInfo[0]
+	
+	serverName:=wr.web.apiServer.manager.mainConf.ServerName
+	if(serverName==""){
+		serverName=hostInfo[0]
+	}
+	wr.values["server_name"] = serverName
+	
 	port, _ := strconv.ParseInt(hostInfo[1], 10, 64)
 	wr.values["host_port"] = int(port)
-	wr.values["conf"] = wr.web.apiServer.ServerConf
+	wr.values["conf"] = wr.web.apiServer.ServerVhostConf
 	//	wr.session.Values["aaa"] = "aaa"
 	wr.getUser()
 
@@ -217,13 +223,21 @@ func (wr *webReq) execute() {
 		return
 	}
 	switch req_path {
+	case "/index":
+		wr.values["Title"] = "模块列表"
+		wr.apiList()
+		return
 	case "/api":
 		wr.values["Title"] = "Edit"
 		wr.apiEdit()
 		return
-	case "/apis":
-		wr.values["Title"] = "List"
-		wr.apiList()
+	case "/services":
+		wr.values["Title"] = "服务列表"
+		wr.serviceList()
+		return
+	case "/about":
+		wr.values["Title"] = "About"
+		wr.render("about.html", true)
 		return
 	case "/pref":
 		wr.apiPref()
@@ -250,8 +264,8 @@ func (wr *webReq) execute() {
 	//	wr.saveSession()
 	wr.render("index.html", true)
 }
-func (wr *webReq) getServerConf() *apiServerConf {
-	return wr.web.apiServer.manager.serverConf
+func (wr *webReq) getServerVhostConf() *mainConf {
+	return wr.web.apiServer.manager.mainConf
 }
 
 func (wr *webReq) saveSession() {
@@ -259,7 +273,7 @@ func (wr *webReq) saveSession() {
 }
 
 func (wr *webReq) oauth2CallBack() {
-	oauthconf := wr.getServerConf().Oauth2Conf
+	oauthconf := wr.getServerVhostConf().Oauth2Conf
 	if oauthconf == nil || !oauthconf.Enable {
 		wr.alert("oauth login is disabled")
 		return
@@ -313,7 +327,7 @@ func (wr *webReq) logout() {
 }
 
 func (wr *webReq) login() {
-	oauthconf := wr.getServerConf().Oauth2Conf
+	oauthconf := wr.getServerVhostConf().Oauth2Conf
 	if oauthconf != nil && oauthconf.Enable {
 		urlStr := oauthconf.getOauthUrl("http://" + wr.req.Host + "/_/oauth2_callback")
 		log.Println("redirect to:", urlStr)
@@ -382,6 +396,7 @@ func (wr *webReq) apiPv() {
 	}
 	wr.json(0, "suc", api.GetPv())
 }
+
 func (wr *webReq) apiAnalysis() {
 	name := wr.req.FormValue("name")
 
@@ -700,4 +715,21 @@ func (wr *webReq) apiCallerSave() {
 	}
 	wr.web.apiServer.loadAPI(apiName)
 	wr.json(0, "已经更新！", nil)
+}
+
+func (wr *webReq) serviceList() {
+	vhosts:=make(map[string][]*serverVhost)
+	for _,vhost:=range wr.web.apiServer.manager.mainConf.VhostConfs{
+		group:=vhost.Group
+		if(group==""){
+			group="default"
+		}
+		if _,has:=vhosts[group];!has{
+			vhosts[group]=make([]*serverVhost,0)
+		} 
+		vhosts[group]=append(vhosts[group],vhost)
+	}
+	wr.values["vhosts"]=vhosts
+	
+	wr.render("services.html", true)
 }

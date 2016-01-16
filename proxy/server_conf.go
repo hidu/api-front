@@ -10,14 +10,14 @@ import (
 	"strconv"
 )
 
-type apiServerConf struct {
-	ServerName  string            `json:"server_name"`
-	Server      []*serverConfItem `json:"server"`
-	confPath    string            `json:"-"`
-	Users       users             `json:"users"`
-	Oauth2Conf  *oauth2Conf       `json:"oauth2"`
-	SessionName string            `json:"session_name"` //cookie name
-	SessionSk   string            `json:"session_sk"`   //secret
+type mainConf struct {
+	ServerName  string         `json:"server_name"`
+	VhostConfs      []*serverVhost `json:"vhost"`
+	confPath    string         `json:"-"`
+	Users       users          `json:"users"`
+	Oauth2Conf  *oauth2Conf    `json:"oauth2"`
+	SessionName string         `json:"session_name"` //cookie name
+	SessionSk   string         `json:"session_sk"`   //secret
 }
 
 /**
@@ -27,22 +27,13 @@ const LOGIN_TYPE_FILE string = "file"
 
 const LOGIN_TYPE_OAUTH string = "oauth"
 
-type serverConfItem struct {
-	Port         int    `json:"port"`
-	Enable       bool   `json:"enable"`
-	Name         string `json:"name"`
-	Note         string `json:"note"`
-	HiddenCookie bool   `json:"hidden_cookie"`
-	SubDoamin    string `json:"sub_domain"`
-	Users        users  `json:"users"`
-}
 
-func loadServerConf(confPath string) *apiServerConf {
+func loadMainConf(confPath string) *mainConf {
 	data, err := ioutil.ReadFile(confPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	var conf *apiServerConf
+	var conf *mainConf
 	err = json.Unmarshal(data, &conf)
 	if err != nil {
 		log.Fatalln(err)
@@ -57,11 +48,11 @@ func loadServerConf(confPath string) *apiServerConf {
 	return conf
 }
 
-func (conf *apiServerConf) confDir() string {
+func (conf *mainConf) confDir() string {
 	return filepath.Dir(conf.confPath) + string(filepath.Separator)
 }
 
-func (conf *apiServerConf) loadVhosts() {
+func (conf *mainConf) loadVhosts() {
 	vhostConfDir := conf.confDir() + "vhost" + string(filepath.Separator)
 	fileNames, err := filepath.Glob(vhostConfDir + "*.json")
 	if err != nil {
@@ -87,7 +78,7 @@ func (conf *apiServerConf) loadVhosts() {
 			log.Println("skip vhost conf:", confName, ",port wrong")
 			continue
 		}
-		var item *serverConfItem
+		var item *serverVhost
 		err = LoadJSONFile(fileName, &item)
 		if err != nil {
 			log.Println("load vhost conf [", confName, "]", "failed,err:", err)
@@ -95,16 +86,16 @@ func (conf *apiServerConf) loadVhosts() {
 		}
 		item.SubDoamin = subDomain
 		item.Port = port
-		conf.Server = append(conf.Server, item)
+		conf.VhostConfs = append(conf.VhostConfs, item)
 	}
-	for _, item := range conf.Server {
+	for _, item := range conf.VhostConfs {
 		if item.Users == nil {
 			item.Users = NewUsers()
 		}
 	}
 }
-func (conf *apiServerConf) ports() (ports []int) {
-	for _, item := range conf.Server {
+func (conf *mainConf) ports() (ports []int) {
+	for _, item := range conf.VhostConfs {
 		if !InIntSlice(item.Port, ports) {
 			ports = append(ports, item.Port)
 		}
@@ -112,19 +103,19 @@ func (conf *apiServerConf) ports() (ports []int) {
 	return
 }
 
-func (conf *apiServerConf) parseOauthConf() {
+func (conf *mainConf) parseOauthConf() {
 	if conf.Oauth2Conf == nil {
 		return
 	}
 	conf.Oauth2Conf.checkConf()
 }
 
-func (conf *apiServerConf) String() string {
+func (conf *mainConf) String() string {
 	ds, _ := json.MarshalIndent(conf, "", "  ")
 	return string(ds)
 }
 
-func (conf *apiServerConf) userLoginType() string {
+func (conf *mainConf) userLoginType() string {
 	if conf.Oauth2Conf != nil && conf.Oauth2Conf.Enable {
 		return LOGIN_TYPE_OAUTH
 	}

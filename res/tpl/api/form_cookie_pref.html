@@ -1,7 +1,7 @@
  <form method="post" target="ifr_form" autocomplete="off" id="form_cookie_pref">
  <input type="hidden" name="api_name" value="{{.api.Name}}">
  <fieldset>
-    <legend>Cookie标记客户端 &nbsp;<sub class="text-muted">直接使用浏览器访问接口时有效</sub></legend>
+    <legend>Cookie标记转发规则 &nbsp;<sub class="text-muted">直接使用浏览器访问接口时有效</sub></legend>
 {{range $host_name,$host:=$.api.Hosts}} 
     {{if $host.Enable}} 
     <label  class="checkbox-inline" title="{{$host.Note|html}} {{$host.URLStr|html}} &#10;Cookie(api_pref_{{$.api.Name}}={{$host_name|html}}) ">

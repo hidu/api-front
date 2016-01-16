@@ -19,7 +19,7 @@ func newPortServer(manager *APIServerManager) *portServer {
 		apiServers: make(map[int]map[string]*APIServer),
 		manager:    manager,
 	}
-	for _, signConf := range manager.serverConf.Server {
+	for _, signConf := range manager.mainConf.VhostConfs {
 		if !signConf.Enable {
 			log.Println("[warning]server ", signConf.Name, signConf.Port, " is not enable,skip")
 			continue
@@ -30,7 +30,7 @@ func newPortServer(manager *APIServerManager) *portServer {
 }
 
 // AddServer add new server
-func (ps *portServer) addServer(itemConf *serverConfItem) bool {
+func (ps *portServer) addServer(itemConf *serverVhost) bool {
 	apiServer := newAPIServer(itemConf, ps.manager)
 
 	log.Println("[info]add server", apiServer.serverName())
@@ -77,7 +77,7 @@ func (ps *portServer) getAPIServer(port int, hostName string) *APIServer {
 	hasOneServer := len(as) == 1
 	//no server name or has just one server
 	//return the default server
-	if ps.manager.serverConf.ServerName == "" || hasOneServer {
+	if ps.manager.mainConf.ServerName == "" || hasOneServer {
 		for _, item := range as {
 			domain := item.subDomain()
 			if domain == "" {
@@ -88,10 +88,10 @@ func (ps *portServer) getAPIServer(port int, hostName string) *APIServer {
 			return nil
 		}
 	}
-	if !strings.HasSuffix(hostName, "."+ps.manager.serverConf.ServerName) {
+	if !strings.HasSuffix(hostName, "."+ps.manager.mainConf.ServerName) {
 		return nil
 	}
-	i := len(hostName) - len(ps.manager.serverConf.ServerName) - 1
+	i := len(hostName) - len(ps.manager.mainConf.ServerName) - 1
 	subDoamin := hostName[:i]
 	server, has := as[subDoamin]
 	if !has {
