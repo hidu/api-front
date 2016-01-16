@@ -58,6 +58,7 @@ api-front -conf ./conf/server.json
   "users":["admin"]
 }
 ```
+注：admin用户有所有权限。
 
 ### 子服务配置
 <p>conf/vhost/8080.json</p>
@@ -74,7 +75,9 @@ api-front -conf ./conf/server.json
     ]
 }
 ```
-访问 http://127.0.0.1:8080/ 即可进入管理页面。
+访问 http://127.0.0.1:8080/ 即可进入管理页面。  
+注：test用户有当前子服务的所有权限。
+
 
 ### 用户配置
 文件名：conf/users  ，普通文本文件：  
