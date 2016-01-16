@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"sync"
 	"time"
+	"net/url"
 )
 
 type apiStruct struct {
@@ -30,6 +31,9 @@ type apiStruct struct {
 	Version     int64        `json:"version"` //配置文件的版本号
 	apiServer   *APIServer
 	Users       users `json:"users"`
+	Proxy	string  `json:"proxy"` //使用父代理
+	
+	proxyURL *url.URL `json:"-"` //父代理的URL object
 
 	analysisClientNum int `json:"-"` //进行协议分析的客户端数量
 }
@@ -65,6 +69,11 @@ func (api *apiStruct) init() (err error) {
 	if api.Path != "" {
 		api.Path = URLPathClean(api.Path)
 	}
+	
+	if(api.Proxy!=""){
+		api.proxyURL,_=url.Parse(api.Proxy)
+	}
+	
 	api.Caller.Sort()
 	err = api.Caller.init()
 

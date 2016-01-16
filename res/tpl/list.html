@@ -7,9 +7,9 @@
 <th>备注</th>
 <th>超时</th>
 <th>PV</th>
-<th>启用</th>
+<th nowrap="nowrap">启用</th>
 <th>模块访问地址</th>
-<th>抓包分析</th>
+<th nowrap="nowrap">抓包分析</th>
 </tr>
 </thead>
 <tbody>
@@ -23,7 +23,6 @@
     <td>{{if not $api.Enable}}<font color=red>{{end}}{{$api.Enable}}{{if not $api.Enable}}</font>{{end}}</td>
     <td>
     <a href="{{$.base_url}}{{$api.Path}}" target="_blank">{{$.base_url}}{{$api.Path}}
-    &nbsp;<span class="glyphicon glyphicon-new-window"></span>
     </a>
     </td>   
     <td>

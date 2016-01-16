@@ -648,6 +648,21 @@ func (wr *webReq) apiBaseSave() {
 	api.Path = apiPath
 	api.HostAsProxy = req.FormValue("host_as_proxy") == "1"
 	api.Users = make(users, 0)
+	
+	proxy:=strings.TrimSpace(req.FormValue("proxy"))
+	if(proxy!=""){
+		if(api.HostAsProxy){
+			wr.alert("后端服务使用代理模式时不能设置二级HTTP代理!")
+			return
+		}
+		_u,err:=url.Parse(proxy)
+		if(err!=nil || _u.Scheme!="http"){
+			wr.alert("二级HTTP代理配置错误")
+			return
+		}
+		api.Proxy=proxy
+	}
+	
 
 	uids := strings.Split(req.FormValue("uids"), "|")
 	if wr.user != nil {
@@ -659,7 +674,9 @@ func (wr *webReq) apiBaseSave() {
 	for _, v := range uids {
 		v = strings.TrimSpace(v)
 		if v != "" && !InStringSlice(v, api.Users) {
-			api.Users = append(api.Users, v)
+			if !wr.web.apiServer.hasUser(v){
+				api.Users = append(api.Users, v)
+			}
 		}
 	}
 
@@ -671,6 +688,7 @@ func (wr *webReq) apiBaseSave() {
 	wr.web.apiServer.loadAPI(apiName)
 	wr.alertAndGo("已经保存！", "/_/api?name="+apiName)
 }
+
 
 func (wr *webReq) apiCallerSave() {
 	req := wr.req

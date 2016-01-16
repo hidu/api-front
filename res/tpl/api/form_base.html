@@ -67,13 +67,6 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
     </div>
 </div>
 
-<div class="form-group">
-    <label class="col-sm-2 control-label">管理员列表:</label>
-    <div class="col-sm-8">
-        <div><input class="form-control" type="text" name="uids" value="{{.api.Users|html}}"></div>
-        <div class="">多个使用竖线[ <font color="blue">|</font> ]连接,若包含[&nbsp;<font color="blue">:any</font>&nbsp;]则任意用户都有权限!</div>
-    </div>
-</div>
 
 <div class="form-group">
     <label class="col-sm-2 control-label">状态:</label>
@@ -83,14 +76,33 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
         启用
         </label>
     </div>
+    <div class="col-sm-3"><label class="checkbox" style="font-weight: normal;"><input type="checkbox" id="check_box_adv">高级设置</label></div>
 </div>
+
+<div id="form_base_adv" style="display: none">
+    <div class="form-group">
+        <label class="col-sm-2 control-label">管理员列表:</label>
+        <div class="col-sm-8">
+            <div><input class="form-control" type="text" name="uids" value="{{.api.Users|html}}"></div>
+            <div class="help">多个使用竖线[ <font color="blue">|</font> ]连接,若包含[&nbsp;<font color="blue">:any</font>&nbsp;]则任意用户都有权限!</div>
+        </div>
+    </div>
+    
+    <div class="form-group">
+        <label class="col-sm-2 control-label">二级HTTP代理:</label>
+        <div class="col-sm-3">
+            <div><input class="form-control" type="text" name="proxy" value="{{.api.Proxy|html}}" pattern="^http:\/\/.*" placeholder="http://u:p@127.0.0.1:3308" title="目前只支持http代理,使用二级代理则后端服务不能是代理模式"></div>
+        </div>
+    </div>
+</div>
+
 </fieldset>
 
 <fieldset id="fieldset_hosts">
 <legend>后端服务  {{if .userCanEdit}}<a onclick="proxy_api_host_add();return false;" href="#">+</a>{{end}}
 &nbsp;
 <span class="legend_note">
- <label title="后端当作代理服务器，程序读到的HTTP_HOST将是{{.req_host}}">
+ <label title="后端当作代理服务器&#10;程序读到的HTTP_HOST将是{{.req_host}}&#10;当系统登陆跳转异常时可打开此选项">
       <input  type="checkbox" name="host_as_proxy" value="1" {{if .api.HostAsProxy}}checked=checked{{end}}>
       代理模式
  </label>
@@ -112,18 +124,13 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
 {{end}}
  </div>
 </fieldset>
-{{/*}}
 <script>
 $().ready(function(){
-    $("#div_hosts").sortable({
-    	update:function(e, ui){
-            var index = $(ui.element).children().index(ui.item);
-            $(ui.item).find("[name=sort_index]").val(index);
-        }    	
+    $("#check_box_adv").change(function(){
+        $("#form_base_adv").toggle();
     });
 });
 </script>
-{{*/}}
  {%my_include "api/submit.html"%}
 </form>
 
