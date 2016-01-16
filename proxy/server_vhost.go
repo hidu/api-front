@@ -1,5 +1,6 @@
 package proxy
-import(
+
+import (
 	"fmt"
 )
 
@@ -14,10 +15,10 @@ type serverVhost struct {
 	Users        users  `json:"users"`
 }
 
-func (sv *serverVhost)HomeUrl(serverName string)string{
-	host:=serverName
-	if(sv.SubDoamin!=""){
-		host=fmt.Sprintf("%s.%s",sv.SubDoamin,serverName)
+func (sv *serverVhost) HomeUrl(serverName string) string {
+	host := serverName
+	if sv.SubDoamin != "" {
+		host = fmt.Sprintf("%s.%s", sv.SubDoamin, serverName)
 	}
-	return fmt.Sprintf("http://%s:%d",host,sv.Port)
+	return fmt.Sprintf("http://%s:%d", host, sv.Port)
 }

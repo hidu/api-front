@@ -16,9 +16,9 @@ func init() {
 
 // APIServerManager server manager
 type APIServerManager struct {
-	ps         *portServer
-	ConfPath   string
-	LogFile    *os.File
+	ps       *portServer
+	ConfPath string
+	LogFile  *os.File
 	mainConf *mainConf
 }
 

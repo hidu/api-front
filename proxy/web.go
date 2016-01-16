@@ -189,13 +189,13 @@ func (wr *webReq) execute() {
 	}
 	wr.values["req_host"] = wr.req.Host
 	wr.values["host_name"] = hostInfo[0]
-	
-	serverName:=wr.web.apiServer.manager.mainConf.ServerName
-	if(serverName==""){
-		serverName=hostInfo[0]
+
+	serverName := wr.web.apiServer.manager.mainConf.ServerName
+	if serverName == "" {
+		serverName = hostInfo[0]
 	}
 	wr.values["server_name"] = serverName
-	
+
 	port, _ := strconv.ParseInt(hostInfo[1], 10, 64)
 	wr.values["host_port"] = int(port)
 	wr.values["conf"] = wr.web.apiServer.ServerVhostConf
@@ -648,21 +648,20 @@ func (wr *webReq) apiBaseSave() {
 	api.Path = apiPath
 	api.HostAsProxy = req.FormValue("host_as_proxy") == "1"
 	api.Users = make(users, 0)
-	
-	proxy:=strings.TrimSpace(req.FormValue("proxy"))
-	if(proxy!=""){
-		if(api.HostAsProxy){
+
+	proxy := strings.TrimSpace(req.FormValue("proxy"))
+	if proxy != "" {
+		if api.HostAsProxy {
 			wr.alert("后端服务使用代理模式时不能设置二级HTTP代理!")
 			return
 		}
-		_u,err:=url.Parse(proxy)
-		if(err!=nil || _u.Scheme!="http"){
+		_u, err := url.Parse(proxy)
+		if err != nil || _u.Scheme != "http" {
 			wr.alert("二级HTTP代理配置错误")
 			return
 		}
-		api.Proxy=proxy
+		api.Proxy = proxy
 	}
-	
 
 	uids := strings.Split(req.FormValue("uids"), "|")
 	if wr.user != nil {
@@ -674,7 +673,7 @@ func (wr *webReq) apiBaseSave() {
 	for _, v := range uids {
 		v = strings.TrimSpace(v)
 		if v != "" && !InStringSlice(v, api.Users) {
-			if !wr.web.apiServer.hasUser(v){
+			if !wr.web.apiServer.hasUser(v) {
 				api.Users = append(api.Users, v)
 			}
 		}
@@ -688,7 +687,6 @@ func (wr *webReq) apiBaseSave() {
 	wr.web.apiServer.loadAPI(apiName)
 	wr.alertAndGo("已经保存！", "/_/api?name="+apiName)
 }
-
 
 func (wr *webReq) apiCallerSave() {
 	req := wr.req
@@ -736,18 +734,18 @@ func (wr *webReq) apiCallerSave() {
 }
 
 func (wr *webReq) serviceList() {
-	vhosts:=make(map[string][]*serverVhost)
-	for _,vhost:=range wr.web.apiServer.manager.mainConf.VhostConfs{
-		group:=vhost.Group
-		if(group==""){
-			group="default"
+	vhosts := make(map[string][]*serverVhost)
+	for _, vhost := range wr.web.apiServer.manager.mainConf.VhostConfs {
+		group := vhost.Group
+		if group == "" {
+			group = "default"
 		}
-		if _,has:=vhosts[group];!has{
-			vhosts[group]=make([]*serverVhost,0)
-		} 
-		vhosts[group]=append(vhosts[group],vhost)
+		if _, has := vhosts[group]; !has {
+			vhosts[group] = make([]*serverVhost, 0)
+		}
+		vhosts[group] = append(vhosts[group], vhost)
 	}
-	wr.values["vhosts"]=vhosts
-	
+	wr.values["vhosts"] = vhosts
+
 	wr.render("services.html", true)
 }

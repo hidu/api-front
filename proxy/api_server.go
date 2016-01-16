@@ -16,12 +16,12 @@ type APIServer struct {
 	Apis    map[string]*apiStruct
 	manager *APIServerManager
 	//current apiServer's conf dir
-	ConfDir    string
-	Rw         sync.RWMutex
-	routers    *routers
-	web        *webAdmin
+	ConfDir         string
+	Rw              sync.RWMutex
+	routers         *routers
+	web             *webAdmin
 	ServerVhostConf *serverVhost
-	counter    *Counter
+	counter         *Counter
 }
 
 func newAPIServer(conf *serverVhost, manager *APIServerManager) *APIServer {

@@ -12,7 +12,7 @@ import (
 
 type mainConf struct {
 	ServerName  string         `json:"server_name"`
-	VhostConfs      []*serverVhost `json:"vhost"`
+	VhostConfs  []*serverVhost `json:"vhost"`
 	confPath    string         `json:"-"`
 	Users       users          `json:"users"`
 	Oauth2Conf  *oauth2Conf    `json:"oauth2"`
@@ -26,7 +26,6 @@ type mainConf struct {
 const LOGIN_TYPE_FILE string = "file"
 
 const LOGIN_TYPE_OAUTH string = "oauth"
-
 
 func loadMainConf(confPath string) *mainConf {
 	data, err := ioutil.ReadFile(confPath)

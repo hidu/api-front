@@ -178,13 +178,13 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 					}
 				})(apiHost.URLStr)
 			}
-			
-			if api.proxyURL!=nil{
-				transport.Proxy=func(req *http.Request)(*url.URL, error) {
-					return api.proxyURL,nil
+
+			if api.proxyURL != nil {
+				transport.Proxy = func(req *http.Request) (*url.URL, error) {
+					return api.proxyURL, nil
 				}
 			}
-			
+
 			apiReq := &apiHostRequest{
 				req:       reqNew,
 				transport: transport,
