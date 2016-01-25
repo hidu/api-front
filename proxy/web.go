@@ -259,6 +259,9 @@ func (wr *webReq) execute() {
 	case "/oauth2_callback":
 		wr.oauth2CallBack()
 		return
+	case "/server_add":
+		wr.serverAdd()
+		return
 	}
 
 	//	wr.saveSession()
@@ -296,7 +299,7 @@ func (wr *webReq) oauth2CallBack() {
 	wr.session.Values["user"] = user
 	wr.saveSession()
 
-	http.Redirect(wr.rw, wr.req, "/_/apis", 302)
+	http.Redirect(wr.rw, wr.req, "/_/index", 302)
 }
 
 func (wr *webReq) getUser() {

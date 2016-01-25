@@ -12,16 +12,17 @@ import (
 )
 
 type oauth2Conf struct {
-	Type         string                `json:"type"`
-	Enable       bool                  `json:"enable"`
-	ClientID     string                `json:"client_id"`
-	ClientSecret string                `json:"client_sk"`
-	Scopes       []string              `json:"scopes"`
-	AuthURL      string                `json:"auth_url"`
-	TokenURL     string                `json:"token_url"`
-	Apis         map[string]*oauth2Api `json:"apis"`
-	FieldMap     map[string]string     `json:"field_map"`
-	config       *oauth2.Config
+	Type             string                `json:"type"`
+	Enable           bool                  `json:"enable"`
+	ClientID         string                `json:"client_id"`
+	ClientSecret     string                `json:"client_sk"`
+	Scopes           []string              `json:"scopes"`
+	AuthURL          string                `json:"auth_url"`
+	BrokenAuthHeader bool                  `json:"broken_auth_header"` //获取token时是否不支持header模式
+	TokenURL         string                `json:"token_url"`
+	Apis             map[string]*oauth2Api `json:"apis"`
+	FieldMap         map[string]string     `json:"field_map"`
+	config           *oauth2.Config
 }
 
 type oauth2Api struct {
@@ -74,6 +75,11 @@ func (conf *oauth2Conf) getOauthUrl(redirectURL string) string {
 	//		u.RawQuery=qs.Encode()
 	//		urlStr=u.String()
 	//	}
+
+	if conf.BrokenAuthHeader {
+		oauth2.RegisterBrokenAuthHeaderProvider(conf.TokenURL)
+	}
+
 	conf.config = config
 	return urlStr
 }
@@ -93,6 +99,7 @@ func (conf *oauth2Conf) checkConf() {
 
 func (conf *oauth2Conf) getAccessToken(req *http.Request) (*oauth2.Token, error) {
 	code := req.FormValue("code")
+
 	tok, err := conf.config.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		log.Println("Exchange failed,tok:", tok, "error:", err)

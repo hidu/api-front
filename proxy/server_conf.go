@@ -18,6 +18,12 @@ type mainConf struct {
 	Oauth2Conf  *oauth2Conf    `json:"oauth2"`
 	SessionName string         `json:"session_name"` //cookie name
 	SessionSk   string         `json:"session_sk"`   //secret
+	PortRange   *PortRange     `json:"port_range"`
+}
+
+type PortRange struct {
+	Min int `json:"min"`
+	Max int `json:"max"`
 }
 
 /**
