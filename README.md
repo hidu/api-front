@@ -28,7 +28,7 @@ api-front作为对外统一api入口。
 ## 安装
 
 ### 下载二进制文件 
-[网盘下载:windows、linux、darwin版本](http://pan.baidu.com/s/1pJJ5RHT)
+[网盘下载:windows、linux、darwin版本](http://pan.baidu.com/s/1jH1sX8M)
 
 
 ### 使用源码安装
