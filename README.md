@@ -1,6 +1,6 @@
 # api-front
 
-version :0.6.6
+version :0.6.7
 
 ## 概述
 api front是HTTP API统一前端，用于测试环境api统一管理，主要功能是`请求代理转发`、`协议抓包分析`、`流量复制`。 

@@ -72,7 +72,7 @@ function showReqTr(req){
 	var tr="<tr class='req_tr' data-reqid='"+req.id+"'>" +
 			"<td>"+req.id+"</td>" +
 			"<td>"+req.data.method+"</td>" +
-			"<td>"+h(req.data["path"]||"unknow")+"</td>" +
+			"<td><input type='text' readonly class='td_url_input' value='"+req.data["path"]+"'></td>" +
 			"<td>"+h(req.data["resp_status"]||502)+"</td>" +
 			"<td>"+req.data.remote+"</td>"+
 			"<td>"+h(req.data.master)+"</td>"+
@@ -116,7 +116,11 @@ function formatReqData(str,path){
 			result+="\n<--------GET-Params---format-------\n"
 			var arr=query.split("&")
 			for(var i=0;i<arr.length;i++){
-				result+=urldecode(arr[i])+"\n"
+				result+=arr[i]+"\n";
+				var t=urldecode(arr[i]);
+				if(t!==arr[i]){
+				    result+="    <param url decode-->\n"+t+"\n    <---decode\n";
+				}
 			}
 		}
 		

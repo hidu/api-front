@@ -101,11 +101,12 @@ func StrSliceIntersectGetOne(a, b []string) string {
 
 // URLPathClean clean url path
 func URLPathClean(urlPath string) string {
-	str := path.Clean(fmt.Sprintf("/%s/", urlPath))
-	if strings.HasSuffix(str, "/") {
-		return str
+	flag := strings.HasSuffix(urlPath, "/")
+	str := path.Clean(fmt.Sprintf("/%s", urlPath))
+	if flag && str != "/" {
+		return fmt.Sprintf("%s/", str)
 	}
-	return fmt.Sprintf("%s/", str)
+	return str
 }
 
 var textContentTypes = []string{"text", "javascript", "json"}
