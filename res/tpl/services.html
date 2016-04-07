@@ -11,9 +11,9 @@
       <th>备注</th>
    </tr>
    </thead>
-  <tdboy>
+  <tbody>
   {{range $index,$vhost:=$vvs}}
-  {{$_hostUrl:=$vhost.HomeUrl $.server_name}}
+  {{$_hostUrl:=$vhost.HomeUrl $.host_name}}
      <tr>
      <td>{{$vhost.Name|html}}</td>
      <td>
@@ -23,8 +23,8 @@
      <td>{{$vhost.Note|html}}</td>
      </tr>
   {{end}}
-  </tdboy>
-   </table>
+  </tbody>
+  </table>
 </div>
 </div>
 {{end}}

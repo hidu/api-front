@@ -16,20 +16,18 @@ type APIServer struct {
 	Apis    map[string]*apiStruct
 	manager *APIServerManager
 	//current apiServer's conf dir
-	ConfDir         string
+	ConfDir         string //接口配置文件存放目录
 	Rw              sync.RWMutex
 	routers         *routers
 	web             *webAdmin
 	ServerVhostConf *serverVhost
-	counter         *Counter
+	counter         *Counter //j接口计数器
 }
 
 func newAPIServer(conf *serverVhost, manager *APIServerManager) *APIServer {
 	apiServer := &APIServer{ServerVhostConf: conf, manager: manager}
-	apiServer.ConfDir = fmt.Sprintf("%sapi_%d", manager.rootConfDir(), conf.Port)
-	if conf.SubDoamin != "" {
-		apiServer.ConfDir += "_" + conf.SubDoamin
-	}
+
+	apiServer.ConfDir = filepath.Join(manager.rootConfDir(), fmt.Sprintf("api_%s", conf.Id))
 	apiServer.ConfDir += string(filepath.Separator)
 
 	apiServer.Apis = make(map[string]*apiStruct)
@@ -57,7 +55,6 @@ func (apiServer *APIServer) loadAllApis() {
 	fileNames, _ := filepath.Glob(apiServer.ConfDir + string(filepath.Separator) + "*.json")
 	for _, fileName := range fileNames {
 		log.Println("start load conf file:", fileName)
-
 		_, baseName := filepath.Split(fileName)
 
 		if baseName == "" {
@@ -74,6 +71,11 @@ func (apiServer *APIServer) loadAllApis() {
 
 		apiServer.loadAPI(apiName)
 	}
+}
+
+//api服务的唯一id
+func (apiServer *APIServer) GetServerID() string {
+	return apiServer.ServerVhostConf.Id
 }
 
 //func (apiServer *APIServer) deleteAPI(apiName string) {
@@ -137,11 +139,16 @@ func (apiServer *APIServer) uniqReqID(id uint64) string {
 	return fmt.Sprintf("%s_%d", time.Now().Format("20060102_150405"), id)
 }
 
-func (apiServer *APIServer) serverName() string {
-	return fmt.Sprintf("%s:%d", apiServer.ServerVhostConf.SubDoamin, apiServer.ServerVhostConf.Port)
+func (apiServer *APIServer) serverNames() []string {
+	var names []string
+	for _, domain := range apiServer.ServerVhostConf.Doamins {
+		names = append(names, fmt.Sprintf("%s:%d", domain, apiServer.ServerVhostConf.Port))
+	}
+	return names
 }
-func (apiServer *APIServer) subDomain() string {
-	return apiServer.ServerVhostConf.SubDoamin
+
+func (apiServer *APIServer) domains() []string {
+	return apiServer.ServerVhostConf.Doamins
 }
 
 func (apiServer *APIServer) getAPIByName(name string) *apiStruct {

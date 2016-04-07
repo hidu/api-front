@@ -1,1 +1,1 @@
- {"port":8180,"enable":true,"name":"eeee","note":"this is other","hidden_cookie":true}
+ {"port":8180,"enable":true,"name":"eeee","note":"this is other","hidden_cookie":true,"domain":["a.b.c"]}

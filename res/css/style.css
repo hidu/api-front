@@ -15,7 +15,7 @@ a{text-decoration: none}
   height:40px;
 }
 #nav select{color:#333}
-#nav .right{padding-top:5px}
+/*#nav .right{padding-top:5px}*/
 #menu{  width: 80%; margin: 0 auto}
 #nav ul { margin: 0px auto;padding: 0px; list-style-type: none;}
 #nav ul li {

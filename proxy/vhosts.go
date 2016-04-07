@@ -33,12 +33,12 @@ func newPortServer(manager *APIServerManager) *portServer {
 func (ps *portServer) addServer(itemConf *serverVhost) bool {
 	apiServer := newAPIServer(itemConf, ps.manager)
 
-	log.Println("[info]add server", apiServer.serverName())
+	log.Println("[info]add server", apiServer.serverNames())
 
 	if _, has := ps.apiServers[itemConf.Port]; !has {
 		ps.apiServers[itemConf.Port] = make(map[string]*APIServer)
 	}
-	ps.apiServers[itemConf.Port][apiServer.subDomain()] = apiServer
+	ps.apiServers[itemConf.Port][apiServer.GetServerID()] = apiServer
 	return true
 }
 
@@ -65,7 +65,7 @@ func (ps *portServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		rw.Write([]byte("app not found\n----------------\npowered by api-front"))
 		return
 	}
-	log.Println("[info]", logMsg, "server is:", apiServer.serverName())
+	log.Println("[info]", logMsg, "server is:", apiServer.serverNames())
 	apiServer.ServeHTTP(rw, req)
 }
 
@@ -74,30 +74,20 @@ func (ps *portServer) getAPIServer(port int, hostName string) *APIServer {
 	if !has || len(as) == 0 {
 		return nil
 	}
+	//只有一个域名的情况
 	hasOneServer := len(as) == 1
-	//no server name or has just one server
-	//return the default server
-	if ps.manager.mainConf.ServerName == "" || hasOneServer {
-		for _, item := range as {
-			domain := item.subDomain()
-			if domain == "" {
-				return item
-			}
-		}
-		if !hasOneServer {
-			return nil
+	if hasOneServer {
+		for _, s := range as {
+			return s
 		}
 	}
-	if !strings.HasSuffix(hostName, "."+ps.manager.mainConf.ServerName) {
-		return nil
+	//域名匹配
+	for _, item := range as {
+		if item.ServerVhostConf.hasDomain(hostName) || item.ServerVhostConf.hasDomain("default") {
+			return item
+		}
 	}
-	i := len(hostName) - len(ps.manager.mainConf.ServerName) - 1
-	subDoamin := hostName[:i]
-	server, has := as[subDoamin]
-	if !has {
-		return nil
-	}
-	return server
+	return nil
 }
 
 func (ps *portServer) start() {

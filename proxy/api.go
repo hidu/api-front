@@ -234,7 +234,7 @@ func (api *apiStruct) GetPv() uint64 {
 
 func (api *apiStruct) uniqID() string {
 	sc := api.apiServer.ServerVhostConf
-	return fmt.Sprintf("api|%s|%d|%s", sc.SubDoamin, sc.Port, api.Name)
+	return fmt.Sprintf("api|%s|%d|%s", sc.Id, sc.Port, api.Name)
 }
 
 func apiCookieName(apiName string) string {

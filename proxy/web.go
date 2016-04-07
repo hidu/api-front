@@ -190,11 +190,7 @@ func (wr *webReq) execute() {
 	wr.values["req_host"] = wr.req.Host
 	wr.values["host_name"] = hostInfo[0]
 
-	serverName := wr.web.apiServer.manager.mainConf.ServerName
-	if serverName == "" {
-		serverName = hostInfo[0]
-	}
-	wr.values["server_name"] = serverName
+	//	wr.values["server_name"] = serverName
 
 	port, _ := strconv.ParseInt(hostInfo[1], 10, 64)
 	wr.values["host_port"] = int(port)

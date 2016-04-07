@@ -2,17 +2,14 @@ package proxy
 
 import (
 	"encoding/json"
-	"fmt"
+	//	"fmt"
 	"io/ioutil"
 	"log"
 	"path/filepath"
-	"regexp"
-	"strconv"
 )
 
 type mainConf struct {
-	ServerName  string         `json:"server_name"`
-	VhostConfs  []*serverVhost `json:"vhost"`
+	VhostConfs  []*serverVhost `json:"-"`
 	confPath    string         `json:"-"`
 	Users       users          `json:"users"`
 	Oauth2Conf  *oauth2Conf    `json:"oauth2"`
@@ -49,7 +46,7 @@ func loadMainConf(confPath string) *mainConf {
 	}
 	conf.loadVhosts()
 	conf.parseOauthConf()
-	fmt.Println("conf", conf)
+	log.Println(confPath, conf)
 	return conf
 }
 
@@ -59,28 +56,17 @@ func (conf *mainConf) confDir() string {
 
 func (conf *mainConf) loadVhosts() {
 	vhostConfDir := conf.confDir() + "vhost" + string(filepath.Separator)
-	fileNames, err := filepath.Glob(vhostConfDir + "*.json")
+	fileNames, err := filepath.Glob(vhostConfDir + string(filepath.Separator) + "*.json")
 	if err != nil {
 		log.Println("load vhost conf failed:", err)
 		return
 	}
 	log.Println("vhost files total:", len(fileNames))
 
-	vhostNameReg := regexp.MustCompile(`(([a-z][a-z0-9]*)_)?(\d+)\.json`)
 	for _, fileName := range fileNames {
 		_, confName := filepath.Split(fileName)
+		log.Println("start load file ", fileName, "fileName=", confName)
 		if confName == "" {
-			continue
-		}
-		matchs := vhostNameReg.FindStringSubmatch(confName)
-		if len(matchs) < 1 {
-			log.Println("skip vhost conf:", confName)
-			continue
-		}
-		subDomain := matchs[2]
-		port, err := strconv.Atoi(matchs[3])
-		if err != nil || port > 65535 {
-			log.Println("skip vhost conf:", confName, ",port wrong")
 			continue
 		}
 		var item *serverVhost
@@ -89,9 +75,20 @@ func (conf *mainConf) loadVhosts() {
 			log.Println("load vhost conf [", confName, "]", "failed,err:", err)
 			continue
 		}
-		item.SubDoamin = subDomain
-		item.Port = port
+
+		if item.Port > 65535 || item.Port < 1 {
+			log.Println("skip vhost conf:", confName, ",port wrong")
+			continue
+		}
+		if item.Doamins == nil {
+			item.Doamins = []string{}
+		}
+		if item.Users == nil {
+			item.Users = NewUsers()
+		}
+		item.Id = confName[:len(confName)-len(".json")]
 		conf.VhostConfs = append(conf.VhostConfs, item)
+		log.Println("loaded vhosts file:", fileName, item)
 	}
 	for _, item := range conf.VhostConfs {
 		if item.Users == nil {
