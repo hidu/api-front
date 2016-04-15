@@ -71,8 +71,14 @@ function showReqTr(req){
 	}
 	var _method=req.data.method
 	if(_method=="GET"){
-		_method="<a target='_blank' href='"+h(req.data["path"])+"' >"+req.data.method+"</a>"
+		_method="<a target='_blank' href='"+h(req.data["path"])+"' title='重新请求(cookie和其他header将丢失)' >"+req.data.method+"</a>"
+	}else if (_method=="POST"){
+		var form_str=buildReplayForm(req.data["req_detail"]||"",uri,"POST")
+		if(form_str!==false){
+			_method=form_str
+		}
 	}	
+	
 	var tr="<tr class='req_tr' data-reqid='"+req.id+"'>" +
 			"<td>"+req.id+"</td>" +
 			"<td>"+_method+"</td>" +
@@ -98,6 +104,28 @@ function showReqTr(req){
 			data.remove();
 		}
 	})
+}
+
+function buildReplayForm(str,uri,button_txt){
+	var pos=str.indexOf("\r\n\r\n");
+	var hd=str.substr(0,pos+4)+""
+	var bd=str.substr(pos+4)+""
+	var isForm=hd.indexOf("x-www-form-urlencoded")>0
+	if(!isForm){
+		return false;
+	}
+	var form="<form method='post' action='"+uri+"' target='_blank'>"
+	
+	var arr=bd.split("&")
+	for(var i=0;i<arr.length;i++){
+		var item=arr[i].split("=")
+		var k=item[0],v=urldecode(item[1]||"")
+		form+="<input type='hidden' name='"+k+"' value='"+h(v)+"'>"
+	}
+	
+	form+="<input type='submit' class='btn btn-link my-btn-post' value='"+button_txt+"' title='重放表单（cookie和其他header将丢失）'>"
+	form+="</form>"
+	return form
 }
 
 function formatReqData(str,path){
