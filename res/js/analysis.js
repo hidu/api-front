@@ -69,10 +69,14 @@ function showReqTr(req){
 	    console && console.log("filter,uri",uri);
 	    return;
 	}
+	var _method=req.data.method
+	if(_method=="GET"){
+		_method="<a target='_blank' href='"+h(req.data["path"])+"' >"+req.data.method+"</a>"
+	}	
 	var tr="<tr class='req_tr' data-reqid='"+req.id+"'>" +
 			"<td>"+req.id+"</td>" +
-			"<td>"+req.data.method+"</td>" +
-			"<td><input type='text' readonly class='td_url_input' value='"+req.data["path"]+"'></td>" +
+			"<td>"+_method+"</td>" +
+			"<td><input type='text' readonly class='td_url_input' value='"+h(req.data["path"])+"' title='"+h(req.data["path"])+"'></td>" +
 			"<td>"+h(req.data["resp_status"]||502)+"</td>" +
 			"<td>"+req.data.remote+"</td>"+
 			"<td>"+h(req.data.master)+"</td>"+
@@ -80,7 +84,7 @@ function showReqTr(req){
 			"</tr>";
 	
 	tr+="<tr class='hidden'><td colspan=7>" +
-			"<pre>"+h(formatReqData(req.data["req_detail"]||"",req.data["path"]||""))+"</pre>" +
+			"<pre>"+(formatReqData(req.data["req_detail"]||"",req.data["path"]||""))+"</pre>" +
 			"<pre>"+
 			(req.data.err?h(req.data.err||""):"")+
 			h(showDumpData(req.data["res_detail"]||""))+"</pre>" +
@@ -113,15 +117,16 @@ function formatReqData(str,path){
 	if(pos_query && pos_query>0){
 		var query=path.substr(pos_query+1)+""
 		if(query!=""){
-			result+="\n<--------GET-Params---format-------\n"
+		    result+="<table class='table table-hover'><caption>GET Params</caption>" +
+		    		"<thead><tr><th width='50px'>no</th><th>key</th><th>value</th><th>value_encode</th></tr></thead>" +
+		    		"<tbody>"
 			var arr=query.split("&")
 			for(var i=0;i<arr.length;i++){
-				result+=arr[i]+"\n";
-				var t=urldecode(arr[i]);
-				if(t!==arr[i]){
-				    result+="    <param url decode-->\n"+t+"\n    <---decode\n";
-				}
+				var p=arr[i].split("=")
+				var v=p[1]||''
+				result+="<tr><td>"+(i+1)+"</td><td>"+h(p[0])+"</td><td>"+urldecode(v)+"</td><td>"+h(v)+"</td></tr>"
 			}
+			result+="</tbody></table>"
 		}
 		
 		
@@ -131,19 +136,24 @@ function formatReqData(str,path){
 	if(jsonBd!=false){
 		bodyFormat=jsonBd
 	}else if(isForm){
+		bodyFormat+="<table class='table table-hover'><caption>Body Params</caption>" +
+ 		"<thead><tr><th width='50px'>no</th><th>key</th><th>value pretty</th><th>value_encode</th></tr></thead>" +
+ 		"<tbody>"
 		var arr=bd.split("&")
 		for(var i=0;i<arr.length;i++){
 			var item=arr[i].split("=")
-			var k=item[0],v=urldecode(item[1]||"")
-			bodyFormat+=(i+1)+" ) "+k+" : "+v+"\n";
-			var vjosn=parseAsjson(v)
+			var k=item[0],v=item[1]||""
+			var v_raw=urldecode(v)
+			var vjosn=parseAsjson(v_raw)
+			var v_format=v_raw;
 			if(false!=vjosn){
-				bodyFormat+=line+k+"_json_indent : \n"+vjosn+"\n"+line;
+				v_format="<pre>"+vjosn+"</pre>"
 			}
+			bodyFormat+="<tr><td>"+(i+1)+"</td><td>"+h(k)+"</td><td>"+v_format+"</td><td>"+v+"</td></tr>"
 		}
+		bodyFormat+="</tbody></table>"
 	}
 	if(bodyFormat.length>0){
-		result+="\n<--------body---format------------------\n"
 		result+=bodyFormat
 	}
 	

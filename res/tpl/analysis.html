@@ -13,7 +13,7 @@
     </div>
     <div class="col-lg-4">
         <form class="form form-inline" id="form_analysis_filter">
-        filter uri:<input type="text" name="uri_prex" class="form-control" value="{{.uri_prex}}">
+        filter by uri:<input type="text" name="uri_prex" class="form-control" value="{{.uri_prex}}">
         </form>
     </div>
 </div>
@@ -25,13 +25,13 @@
 <table class="table table-condensed">
 <thead>
 <tr>
-    <th width="180px"># &nbsp;<a href="#" onclick="req_clean();return false;">clean</a></th>
-    <th>Method</th>
-    <th>Path</th>
-    <th>Status</th>
-    <th>Remote</th>
-    <th>Master</th>
-    <th>Used</th>
+    <th width="150px"># &nbsp;<a href="#" onclick="req_clean();return false;">clean</a></th>
+    <th width="60px">Method</th>
+    <th>Uri</th>
+    <th width="60px">Status</th>
+    <th width="120px">Remote</th>
+    <th width="80px">Master</th>
+    <th width="70px">Used</th>
 </tr>
 </thead>
 <tbody id="req_list">
