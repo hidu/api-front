@@ -12,7 +12,7 @@ function sendServiceNotice(){
 socket.on("connect",function(msg){
 	console && console.log("socket.io connect",msg)
 	sendServiceNotice();
-	$("#connect_status").html("<font color=green>online</font>");
+	$("#connect_status").html("<font color=green>listening</font>");
 })
 
 socket.on("disconnect",function(msg){
@@ -93,7 +93,7 @@ function showReqTr(req){
 			"<pre>"+(formatReqData(req.data["req_detail"]||"",req.data["path"]||""))+"</pre>" +
 			"<pre>"+
 			(req.data.err?h(req.data.err||""):"")+
-			h(showDumpData(req.data["res_detail"]||""))+"</pre>" +
+			showDumpData(req.data["res_detail"]||"")+"</pre>" +
 			"</td>" +
 			"</tr>"
 	$("#req_list").prepend(tr)
@@ -192,12 +192,48 @@ function formatReqData(str,path){
 function showDumpData(str){
 	var pos=str.indexOf("\r\n\r\n");
 	var hd=str.substr(0,pos+4)
-	var bd=str.substr(pos+4)
+	var bd=$.trim(str.substr(pos+4))
 	var jsonBd=parseAsjson(bd)
+	
+	var result=hd
+	var flag_body=false
 	if(jsonBd!=false){
-		str+="\n<---------body---format------------------\n"+jsonBd
+		result+="\n<---------body---format------------------\n"+jsonBd
+		flag_body=true
 	}
-	return str
+	var header=parserHttpHeader(hd)
+	var ct=header["Content-Type"]||""
+	
+	if(!flag_body && bd.length>10 &&ct.match(/image\//)){
+		result+='<img src="data:'+ct+';base64,'+base64_encode(bd)+'">'
+		flag_body=true
+	}
+	
+	if(!flag_body){
+		result+=bd
+		
+	}
+	return result
+}
+
+
+function parserHttpHeader(str){
+	var lines=str.split("\r\n")
+	var obj={}
+	for(var i=0;i<lines.length;i++){
+		var line=lines[i];
+		var pos=line.indexOf(":")
+		if(pos<1){
+			continue
+		}
+		var k=$.trim(line.substring(0,pos))
+		if(k==""){
+			continue
+		}
+		var v=$.trim(line.substring(pos+1))
+		obj[k]=v
+	}
+	return obj
 }
 
 function parseAsjson(str) {

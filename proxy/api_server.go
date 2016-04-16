@@ -141,14 +141,14 @@ func (apiServer *APIServer) uniqReqID(id uint64) string {
 
 func (apiServer *APIServer) serverNames() []string {
 	var names []string
-	for _, domain := range apiServer.ServerVhostConf.Doamins {
+	for _, domain := range apiServer.ServerVhostConf.Domains {
 		names = append(names, fmt.Sprintf("%s:%d", domain, apiServer.ServerVhostConf.Port))
 	}
 	return names
 }
 
 func (apiServer *APIServer) domains() []string {
-	return apiServer.ServerVhostConf.Doamins
+	return apiServer.ServerVhostConf.Domains
 }
 
 func (apiServer *APIServer) getAPIByName(name string) *apiStruct {

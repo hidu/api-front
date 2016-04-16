@@ -8,7 +8,7 @@ import (
 type serverVhost struct {
 	Id           string   `json:"id"`     //配置文件名称，全局唯一
 	Group        string   `json:"group"`  //服务分组，展现用
-	Doamins       []string `json:"domain"` //域名，支持多个
+	Domains       []string `json:"domain"` //域名，支持多个
 	Port         int      `json:"port"`
 	Name         string   `json:"name"` //名称，描述信息
 	Enable       bool     `json:"enable"`
@@ -19,7 +19,7 @@ type serverVhost struct {
 
 func (sv *serverVhost) HomeUrl(serverName string) string {
 	host := serverName
-	for _, name := range sv.Doamins {
+	for _, name := range sv.Domains {
 		if name != "default" {
 			host = name
 			break
@@ -34,7 +34,7 @@ func (sv *serverVhost) String() string {
 }
 
 func (sv *serverVhost) hasDomain(domain string) bool {
-	for _, name := range sv.Doamins {
+	for _, name := range sv.Domains {
 		if name == domain {
 			return true
 		}

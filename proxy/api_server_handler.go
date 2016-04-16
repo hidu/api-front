@@ -322,8 +322,11 @@ var resCookieDumpLine = regexp.MustCompile(`Set-Cookie: .+\r\n`)
 
 func (apiServer *APIServer) addBroadCastDataResponse(broadData *BroadCastData, resp *http.Response) {
 	dumpBody := true
+	ct:=resp.Header.Get("Content-Type")
+	broadData.setData("content-type",ct)
 	if resp.StatusCode == http.StatusOK {
-		dumpBody = IsContentTypeText(resp.Header.Get("Content-Type"))
+		dumpBody = IsContentTypeText(ct) || strings.HasPrefix(ct,"image/");
+		//内容太长的也不广播
 		if dumpBody && resp.ContentLength > 0 && resp.ContentLength > 1e6 {
 			dumpBody = false
 		}
@@ -369,6 +372,7 @@ func (apiServer *APIServer) broadcastAPIReq(api *apiStruct, data *BroadCastData)
 	apiServer.web.broadcastAPI(api, "req", data)
 }
 
+//判断是否需要将数据广播出去：有用户打开了页面在进行查看才广播
 func (apiServer *APIServer) needBroadcast(api *apiStruct) bool {
 	if apiServer.web.wsServer.Count() < 1 {
 		return false

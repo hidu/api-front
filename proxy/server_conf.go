@@ -80,8 +80,8 @@ func (conf *mainConf) loadVhosts() {
 			log.Println("skip vhost conf:", confName, ",port wrong")
 			continue
 		}
-		if item.Doamins == nil {
-			item.Doamins = []string{}
+		if item.Domains == nil {
+			item.Domains = []string{}
 		}
 		if item.Users == nil {
 			item.Users = NewUsers()
