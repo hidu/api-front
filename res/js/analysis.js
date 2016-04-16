@@ -136,7 +136,7 @@ function formatReqData(str,path){
 	var pos=str.indexOf("\r\n\r\n");
 	var hd=str.substr(0,pos+4)+""
 	var bd=str.substr(pos+4)+""
-	var result=str
+	var result=h(str)
 
 	var isForm=hd.indexOf("x-www-form-urlencoded")>0
 	var line="<----------------------------------\n"
@@ -156,14 +156,12 @@ function formatReqData(str,path){
 			}
 			result+="</tbody></table>"
 		}
-		
-		
 	}
 	
-	var bodyFormat=""
 	if(jsonBd!=false){
-		bodyFormat=jsonBd
+		result+=jsonBd
 	}else if(isForm){
+		var bodyFormat=""
 		bodyFormat+="<table class='table table-hover'><caption>Body Params</caption>" +
  		"<thead><tr><th width='50px'>no</th><th>key</th><th>value pretty</th><th>value_encode</th></tr></thead>" +
  		"<tbody>"
@@ -180,10 +178,11 @@ function formatReqData(str,path){
 			bodyFormat+="<tr><td>"+(i+1)+"</td><td>"+h(k)+"</td><td>"+v_format+"</td><td>"+v+"</td></tr>"
 		}
 		bodyFormat+="</tbody></table>"
-	}
-	if(bodyFormat.length>0){
 		result+=bodyFormat
+	}else{
+		result+=h(bd)
 	}
+	
 	
 	
 	return result
@@ -195,7 +194,7 @@ function showDumpData(str){
 	var bd=$.trim(str.substr(pos+4))
 	var jsonBd=parseAsjson(bd)
 	
-	var result=hd
+	var result=h(hd)
 	var flag_body=false
 	if(jsonBd!=false){
 		result+="\n<---------body---format------------------\n"+jsonBd
@@ -210,7 +209,7 @@ function showDumpData(str){
 	}
 	
 	if(!flag_body){
-		result+=bd
+		result+=h(bd)
 		
 	}
 	return result

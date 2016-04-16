@@ -258,6 +258,9 @@ func (wr *webReq) execute() {
 	case "/server_add":
 		wr.serverAdd()
 		return
+	case "/vhost":
+		wr.vhostInfo()
+		return
 	}
 
 	//	wr.saveSession()

@@ -1,0 +1,49 @@
+<form method="post" action="/_/vhost" class="form-horizontal" target="ifr_form">
+<input type="hidden" name="do" value="base">
+<fieldset>
+<legend>服务配置信息</legend>
+<div>
+
+<input type="hidden" name="id" value="{{.vhost.Id}}">
+
+<div class="form-group">
+    <label class="col-sm-2 control-label required">端口:</label>
+    <div class="col-sm-3">
+       <input type="text" name="note" value="{{.vhost.Port}}" class="form-control" >
+    </div>
+</div>
+
+<div class="form-group">
+    <label class="col-sm-2 control-label required">名称:</label>
+    <div class="col-sm-3">
+	   <input type="text" name="name" value="{{.vhost.Name|html}}" class="form-control" >
+	</div>
+</div>
+
+
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">备注:</label>
+    <div class="col-sm-3">
+       <input type="text" name="note" value="{{.vhost.Note|html}}" class="form-control" >
+    </div>
+</div>
+
+
+
+<div class="form-group">
+    <label class="col-sm-2 control-label">域名:</label>
+    <div class="col-sm-3">
+        <textarea  name="domain" class="form-control" >{{.vhost.Domains|join}}</textarea>
+    </div>
+</div>
+
+
+
+</div>
+ {%my_include "api/submit.html"%}
+ 
+</fieldset>
+</form>
+
+<iframe name="ifr_form" style="display:none;"></iframe>  

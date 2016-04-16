@@ -184,12 +184,15 @@ func (apiServer *APIServer) GetCounter() *Counter {
 	return apiServer.counter
 }
 
-func (apiServer *APIServer) hasUser(name string) bool {
-	if apiServer.ServerVhostConf.Users != nil && apiServer.ServerVhostConf.Users.hasUser(name) {
+func (apiServer *APIServer) hasUser(id string) bool {
+	if apiServer.ServerVhostConf.Users != nil && apiServer.ServerVhostConf.Users.hasUser(id) {
 		return true
 	}
-	if apiServer.manager.mainConf.Users != nil && apiServer.manager.mainConf.Users.hasUser(name) {
+	if apiServer.manager.mainConf.Users != nil && apiServer.manager.mainConf.Users.hasUser(id) {
 		return true
 	}
 	return false
+}
+
+func (apiServer *APIServer) UpdateVhostConf(vhost *serverVhost) error {
 }

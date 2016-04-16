@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/hidu/goutils"
 	"html"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -55,6 +56,9 @@ func renderHTML(fileName string, values map[string]interface{}, layout bool) str
 		},
 		"h": func(str string) string {
 			return html.EscapeString(str)
+		},
+		"join": func(arr []string) string {
+			return strings.Join(arr, "\n")
 		},
 	}
 

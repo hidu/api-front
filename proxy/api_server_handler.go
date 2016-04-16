@@ -322,10 +322,10 @@ var resCookieDumpLine = regexp.MustCompile(`Set-Cookie: .+\r\n`)
 
 func (apiServer *APIServer) addBroadCastDataResponse(broadData *BroadCastData, resp *http.Response) {
 	dumpBody := true
-	ct:=resp.Header.Get("Content-Type")
-	broadData.setData("content-type",ct)
+	ct := resp.Header.Get("Content-Type")
+	broadData.setData("content-type", ct)
 	if resp.StatusCode == http.StatusOK {
-		dumpBody = IsContentTypeText(ct) || strings.HasPrefix(ct,"image/");
+		dumpBody = IsContentTypeText(ct) || strings.HasPrefix(ct, "image/")
 		//内容太长的也不广播
 		if dumpBody && resp.ContentLength > 0 && resp.ContentLength > 1e6 {
 			dumpBody = false

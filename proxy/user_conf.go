@@ -51,9 +51,9 @@ type usersConf struct {
 	users map[string]*User
 }
 
-func (us users) hasUser(name string) bool {
+func (us users) hasUser(id string) bool {
 	for _, n := range us {
-		if n == name || n == ":any" {
+		if n == id || n == ":any" {
 			return true
 		}
 	}
