@@ -110,7 +110,7 @@ function buildReplayForm(str,uri,button_txt){
 	var pos=str.indexOf("\r\n\r\n");
 	var hd=str.substr(0,pos+4)+""
 	var bd=str.substr(pos+4)+""
-	var isForm=hd.indexOf("x-www-form-urlencoded")>0
+	var isForm=hd.indexOf("x-www-form-urlencoded")>0||(bd=="")
 	if(!isForm){
 		return false;
 	}

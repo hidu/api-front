@@ -194,5 +194,5 @@ func (apiServer *APIServer) hasUser(id string) bool {
 	return false
 }
 
-func (apiServer *APIServer) UpdateVhostConf(vhost *serverVhost) error {
-}
+//func (apiServer *APIServer) UpdateVhostConf(vhost *serverVhost) error {
+//}

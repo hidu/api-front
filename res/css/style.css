@@ -116,7 +116,7 @@ tr.redo{color:blue;}
 #analysis_toggle_btn{
 	position: fixed;
 	right:2%;
-	top:160px;
+	top:50px;
 }
 
 .required:after{

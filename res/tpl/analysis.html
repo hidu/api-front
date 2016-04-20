@@ -1,15 +1,18 @@
+<style>
+.my_container{width:100%}
+</style>
 <div style="margin:10px">
  <h3><span>{{.api.Path}}</span> &nbsp;抓包分析</h3>
-<div class='pull-right text-info'>进行抓包分析时，请保持当前页面打开。</div>
+<div class='pull-right text-info' style='padding-right:100px'>进行抓包分析时，请保持当前页面打开。</div>
 
 <div class="row">
-    <div class="col-lg-4">
+    <div class="col-sm-4">
         <span id="connect_status">offline</span>
         <a href="/_/api?name={{.api.Name}}">管理</a>
         &nbsp;pv:<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>
         &nbsp;user:<span id="api_ana_user_{{.api.Name}}">1</span>
     </div>
-    <div class="col-lg-4">
+    <div class="col-sm-4">
         <form class="form form-inline" id="form_analysis_filter">
         filter by uri:<input type="text" name="uri_prex" class="form-control" value="{{.uri_prex}}">
         </form>
@@ -47,17 +50,17 @@ var api_front_apiName="{{.api.Name}}";
 <script type="text/javascript" src="/_/res/js/analysis.js?_v={{.version}}"></script>
 <script>
 (function(){
-	var w=$(window).width()*0.78;
+	var w=$(window).width()*0.98;
     document.write("<style>#req_list pre{max-width:"+w+"px}</style>");
 })()
 </script>
 
 <ul class="list-group" id="analysis_toggle_btn">
-  <li class="list-group-item" id="item_open_all"><a href="#">Open All</a></li>
-  <li class="list-group-item" id="item_close_all"><a href="#">Close All</a></li>
-  <li>
+  <li class="list-group-item" id="item_open_all"><a href="#">展开所有</a></li>
+  <li class="list-group-item" id="item_close_all"><a href="#">关闭所有</a></li>
+  <li class="list-group-item">
   <div class="checkbox">
-    <label><input type="checkbox" id="item_checkbox_receive" checked=checked autocomplete="off">receive</label>
+    <label><input type="checkbox" id="item_checkbox_receive" checked=checked autocomplete="off">接收</label>
   </div>
   </li>
 </ul>
