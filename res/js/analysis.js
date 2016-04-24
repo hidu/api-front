@@ -53,22 +53,17 @@ try{
 
 function req_clean(){
 	req_list=[]
-	$("#req_list").empty()
+	$("#req_list_filter_body").empty()
 }
 
 $().ready(function(){
 	for(var i=0;i<req_list.length;i++){
-		showReqTr(req_list[i])
+		addReqFilter(req_list[i])
 	}
 })
 
-function showReqTr(req){
+function addReqFilter(req){
 	var uri=req.data["path"]||"";
-	var uri_prex=$.trim($("#form_analysis_filter").find("[name=uri_prex]").val())
-	if(uri_prex!="" && uri.match(uri_prex)!=uri_prex ){
-	    console && console.log("filter,uri",uri);
-	    return;
-	}
 	var _method=req.data.method
 	if(_method=="GET"){
 		_method="<a target='_blank' href='"+h(req.data["path"])+"' title='重新请求(cookie和其他header将丢失)' >"+req.data.method+"</a>"
@@ -78,32 +73,58 @@ function showReqTr(req){
 			_method=form_str
 		}
 	}	
-	
-	var tr="<tr class='req_tr' data-reqid='"+req.id+"'>" +
-			"<td>"+req.id+"</td>" +
+	var tr=$("<tr id='tr_"+h(req.id)+"'><th>"+short_id(req.id)+"</th>" +
 			"<td>"+_method+"</td>" +
-			"<td><input type='text' readonly class='td_url_input' value='"+h(req.data["path"])+"' title='"+h(req.data["path"])+"'></td>" +
-			"<td>"+h(req.data["resp_status"]||502)+"</td>" +
-			"<td>"+req.data.remote+"</td>"+
-			"<td>"+h(req.data.master)+"</td>"+
-			"<td title='ms'>"+(req.data.used && req.data.used.toFixed(2))+"</td>"
-			"</tr>";
+		    "<td title='" +h(req.data.path)+"'> <input type='text' value='" +h(req.data.path)+"' readonly>"+
+			"</td><td>"+h(req.data.resp_status)+"</td></tr>");
+	tr.data("req",req)
+	tr.click((function(req){
+		return function(){
+			showReqTr(req)
+			$("#req_list_filter_body tr").removeClass("success")
+			tr.addClass("success")
+		}
+	})(req));
+	filterReqsTr(tr)
+	$("#req_list_filter_body").prepend(tr)
+}
+
+function showReqTr(req){
+	location.hash=req.id
+	var uri=req.data["path"]||"";
+//	var uri_prex=$.trim($("#form_analysis_filter").find("[name=uri_prex]").val())
+//	if(uri_prex!="" && uri.match(uri_prex)!=uri_prex ){
+//	    console && console.log("filter,uri",uri);
+//	    return;
+//	}
 	
-	tr+="<tr class='hidden'><td colspan=7>" +
+	var tr="<div class='panel panel-default'>" +
+			"<div class='panel-heading'>" +
+			req.data.method+"&nbsp;&nbsp;"+h(req.data["path"])+
+			"</div>" +
+			"<div class='panel-body'>" +
+			"<ul class='list-inline'>" +
+			"<li>id: "+req.id+"</li>" +
+			"<li>status: "+h(req.data["resp_status"]||502)+"</li>" +
+			"<li>remote: "+req.data.remote+"</li>"+
+			"<li>master: "+h(req.data.master)+"</li>"+
+			"<li>used: "+(req.data.used && req.data.used.toFixed(2))+" ms</li>"+
+			"</ul></div></div>";
+	
+	tr+="<div>" +
 			"<pre>"+(formatReqData(req.data["req_detail"]||"",req.data["path"]||""))+"</pre>" +
 			"<pre>"+
 			(req.data.err?h(req.data.err||""):"")+
 			showDumpData(req.data["res_detail"]||"")+"</pre>" +
-			"</td>" +
-			"</tr>"
-	$("#req_list").prepend(tr)
+			"</div>"
+	$("#div_resp_detail").empty().html(tr).slideDown()
 	
-	$("#req_list tr.req_tr").each(function(index,data){
-		if(index>=req_max_length){
-			data.next("tr").remove();
-			data.remove();
-		}
-	})
+//	$("#req_list tr.req_tr").each(function(index,data){
+//		if(index>=req_max_length){
+//			data.next("tr").remove();
+//			data.remove();
+//		}
+//	})
 }
 
 function buildReplayForm(str,uri,button_txt){
@@ -283,7 +304,7 @@ function showReqDetail(req){
 	   req.data.req_detail=base64_decode(req.data.req_detail)
 	   req.data.res_detail=base64_decode(req.data.res_detail)
 	}
-	showReqTr(req)
+	addReqFilter(req)
 	req_list.push(req)
 	while(req_max_length>0 && req_list.length>req_max_length){
 		req_list.shift();
@@ -296,11 +317,37 @@ window.onbeforeunload=function(){
 	}
 }
 
+function filterReqsTr(tr,uri_prex){
+	var req=$(tr).data("req")
+	if(!uri_prex){
+		uri_prex=$("#form_analysis_filter").find("[name=uri_prex]").val()
+	}
+	if(!req){
+		return;
+	}
+	var uri=req.data.path
+	var show=uri.match(uri_prex)
+	if(!show){
+		show=uri.indexOf(uri_prex)>=0
+	}
+	if(show){
+		$(tr).removeClass("hide")
+	}else{
+		$(tr).addClass("hide")
+	}
+}
+
+function filterReqs(uri_prex){
+	if(uri_prex==""){
+		$("#req_list_filter_body tr").removeClass("hide")
+		return;
+	}
+	$("#req_list_filter_body tr").each(function(){
+		filterReqsTr($(this),uri_prex)
+	});
+}
+
 $().ready(function(){
-	$("#req_list").on("click","tr.req_tr",function(){
-		$(this).next("tr").toggleClass("hidden");
-		location.hash=$(this).data("reqid")+""
-	})
 	$("#item_open_all").click(function(){
 		$("#req_list tr").not(".req_tr").removeClass("hidden")
 		return false;
@@ -314,10 +361,10 @@ $().ready(function(){
 	});
 	
 	if(location.hash!="" && location.hash.length>8){
-		$("#req_list tr.req_tr").each(function(){
-			if("#"+$(this).data("reqid")==location.hash){
-				$(this).next("tr").toggleClass("hidden");
-			}
-		});
+		$("#tr_"+location.hash.substr(1)).click();
 	}
+	
+	$("#form_analysis_filter").find("[name=uri_prex]").keyup(function(){
+		filterReqs($(this).val())
+	})
 });

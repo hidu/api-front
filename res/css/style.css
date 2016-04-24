@@ -112,12 +112,15 @@ tr.redo{color:blue;}
 .my_container{width: 80%}
 
 .req_tr{cursor: pointer;}
+#req_list_filter_body input{border:none}
+#req_list_filter_body tr{cursor: pointer;}
 
 #analysis_toggle_btn{
 	position: fixed;
 	right:2%;
 	top:50px;
 }
+#form_analysis_filter{margin-bottom: 10px;display: inline;}
 
 .required:after{
 content:' *';

@@ -27,6 +27,11 @@ $().ready(function(){
 	});
 });
 
+function short_id(val){
+	var arr=val.split("_")
+	return arr.pop()
+}
+
 var socket = io("",{path:"/_socket.io/"});
 socket.on('hello', function(msg){
 	console && console.log(msg)

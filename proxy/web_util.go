@@ -54,6 +54,9 @@ func renderHTML(fileName string, values map[string]interface{}, layout bool) str
 		"my_include": func(fileName string) string {
 			return "include (" + fileName + ") with Delims {%my_include %}"
 		},
+		"my_include_html": func(fileName string) string {
+			return Assest.GetContent("/res/tpl/" + fileName)
+		},
 		"h": func(str string) string {
 			return html.EscapeString(str)
 		},
