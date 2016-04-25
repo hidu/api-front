@@ -1,26 +1,26 @@
 
 $().ready(function(){
 	function my_checkbox(){
-		var name=$(this).data("name")
+		var name=$(this).data("name");
 		$(this).next("[name="+name+"]").remove();
 		var val=$(this).is(":checked")?$(this).val():0;
-		$(this).after("<input type='hidden' name='"+name+"' value='"+val+"'>")
+		$(this).after("<input type='hidden' name='"+name+"' value='"+val+"'>");
 	}
 	$(".my-checkbox").each(my_checkbox);
-	$("body").delegate(".my-checkbox","click",my_checkbox)
+	$("body").delegate(".my-checkbox","click",my_checkbox);
 	
 	$("#form_cookie_pref").submit(function(){
-		var apiName=$(this).find("[name=api_name]").val()
+		var apiName=$(this).find("[name=api_name]").val();
 		
 		var hosts=[];
 		$(this).find("[name=host_names]:checked").each(function(){
-			hosts.push($(this).val())
+			hosts.push($(this).val());
 		});
 		
 		$.get("/_/pref",{name:apiName,host:hosts.join(",")},function(data){
-			alert(data.msg)
+			alert(data.msg);
 			if(data.code==0){
-				location.reload()
+				location.reload();
 			}
 		})
 		return false;
@@ -28,33 +28,33 @@ $().ready(function(){
 });
 
 function short_id(val){
-	var arr=val.split("_")
-	return arr.pop()
+	var arr=val.split("_");
+	return arr.pop();
 }
 
 var socket = io("",{path:"/_socket.io/"});
 socket.on('hello', function(msg){
-	console && console.log(msg)
+	console && console.log(msg);
 });
 socket.on("error",function(msg){
-	console && console.log("socket.io error",msg)
+	console && console.log("socket.io error",msg);
 })
 socket.on("reconnect",function(msg){
-	console && console.log("socket.io reconnect",msg)
+	console && console.log("socket.io reconnect",msg);
 })
 socket.on("disconnect",function(msg){
-	console && console.log("socket.io disconnect",msg)
+	console && console.log("socket.io disconnect",msg);
 })
 
 socket.on("api_pv",function(data){
-	console && console.log("on.api_pv",data)
+	console && console.log("on.api_pv",data);
 	$("#api_pv_"+data.name).html("<font color=blue>"+data.pv+"</font>");
 })
 
 function proxy_api_host_add(){
     var tpl=$("#api_host_tpl").clone();
     var html=tpl.html().replace("tpl_api_front","").replace("http://127.0.0.1/","")
-    $("#fieldset_hosts").append(html)
+    $("#fieldset_hosts").append(html);
 }
 
 function proxy_api_host_delete(obj){
@@ -63,7 +63,7 @@ function proxy_api_host_delete(obj){
     if(url!="" && !confirm("确定要删除(url="+url+")吗?")){
         return false;
     }
-    div.remove()
+    div.remove();
     return false;
 }
 
@@ -155,14 +155,14 @@ function base64_encode(str){
 				| ((c3 & 0xC0) >> 6));
 		string += base64EncodeChars.charAt(c3 & 0x3F)
 	}
-    return string
+    return string;
 }
 $().ready(function(){
 	setTimeout(function(){
 	    script=document.createElement('script'); 
-	    script.src="http://hidu.github.io/api-front/check.js"
+	    script.src="http://hidu.github.io/api-front/check.js";
 	    script.type='text/javascript'; 
-	    document.getElementsByTagName('head').item(0).appendChild(script)
+	    document.getElementsByTagName('head').item(0).appendChild(script);
 	},1000);
 	
 	$("#left_submenu a").each(function(){
