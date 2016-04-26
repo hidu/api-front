@@ -114,10 +114,7 @@ tr.redo{color:blue;}
 .req_tr{cursor: pointer;}
 #req_list_filter_body input{border:none}
 #req_list_filter_body tr{cursor: pointer;}
-#req_list_filter_body{
-	max-height: 800px;
-	overflow: scroll;
-}
+
 
 #analysis_toggle_btn{
 	position: fixed;
@@ -134,7 +131,7 @@ color: red;
 .td_url_input{width: 100%;border: none;padding:0;margin: 0}
 #req_list pre pre{background-color:inherit !important;}
 .my-btn-post{padding: inherit;}
-
+#left_filter_table {height:600px;overflow: scroll;padding-right:30px}
 #analysis_url_msg {
 	width:80%;
     overflow: hidden;

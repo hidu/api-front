@@ -38,18 +38,18 @@ socket.on('hello', function(msg){
 });
 socket.on("error",function(msg){
 	console && console.log("socket.io error",msg);
-})
+});
 socket.on("reconnect",function(msg){
 	console && console.log("socket.io reconnect",msg);
-})
+});
 socket.on("disconnect",function(msg){
 	console && console.log("socket.io disconnect",msg);
-})
+});
 
 socket.on("api_pv",function(data){
 	console && console.log("on.api_pv",data);
 	$("#api_pv_"+data.name).html("<font color=blue>"+data.pv+"</font>");
-})
+});
 
 function proxy_api_host_add(){
     var tpl=$("#api_host_tpl").clone();

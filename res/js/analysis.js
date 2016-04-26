@@ -13,18 +13,18 @@ socket.on("connect",function(msg){
 	console && console.log("socket.io connect",msg);
 	sendServiceNotice();
 	$("#connect_status").html("<font color=green>listening</font>");
-})
+});
 
 socket.on("disconnect",function(msg){
     $("#connect_status").html("<font color=red>offline</font>");
-})
+});
 
 
 socket.on("s_http_analysis",function(msg){
     console && console.log("socket.io http_analysis",msg,new Date());
     var id="api_ana_user_"+api_front_apiName;
     $("#"+id).html("<font color=blue>"+msg.client_num+"</font>");
-})
+});
 
 socket.on("req",function(req){
 	if(!allow_receive_req){
@@ -39,7 +39,7 @@ socket.on("req",function(req){
 			console && console.log("showReqDetail err:",e);
 		}
 	}
-})
+});
 var req_max_length=500;
 var req_list=[];
 var localStrName="ap_front_reqs_"+api_front_apiName;
@@ -60,7 +60,7 @@ $().ready(function(){
 	for(var i=0;i<req_list.length;i++){
 		addReqFilter(req_list[i]);
 	}
-})
+});
 function addReqFilter(req){
 	var uri=req.data["path"]||"";
 	var _method=req.data.method;
@@ -82,8 +82,8 @@ function addReqFilter(req){
 	tr.click((function(req){
 		return function(){
 			showReqTr(req);
-			$("#req_list_filter_body tr").removeClass("success");
-			tr.addClass("success");
+			$("#req_list_filter_body tr.success").addClass("warning").removeClass("success")
+			tr.addClass("success").removeClass("warning");
 		}
 	})(req));
 	filterReqsTr(tr);
@@ -99,7 +99,7 @@ function showReqTr(req){
 //	    return;
 //	}
 	
-	var tr="<div class='panel panel-default'>" +
+	var tr="<div style='display:none'><div class='panel panel-default'>" +
 			"<div class='panel-heading'>" +
 			"<input type='text' value='"+h(req.data["path"])+"' style='width:99%;border:none' readonly>"+
 			"</div>" +
@@ -118,8 +118,10 @@ function showReqTr(req){
 			"<pre>"+
 			(req.data.err?h(req.data.err||""):"")+
 			showDumpData(req.data["res_detail"]||"")+"</pre>" +
-			"</div>";
-	$("#div_resp_detail").empty().html(tr).slideDown();
+			"</div></div>";
+	var trh=$(tr)
+	$("#div_resp_detail").empty().html(trh);
+	trh.slideDown("slow");
 	
 //	$("#req_list tr.req_tr").each(function(index,data){
 //		if(index>=req_max_length){
@@ -297,7 +299,7 @@ function revParseJson(obj){
 			}catch(e){
 			}
 		}
-	})
+	});
 	return objNew;
 }
 	
@@ -369,5 +371,7 @@ $().ready(function(){
 	$("#form_analysis_filter").find("[name=uri_prex]").keyup(function(){
 		filterReqs($(this).val());
 	});
-	$("#analysis_url_msg").offset({top:$("#sub_title").offset().top})
+	$("#analysis_url_msg").offset({top:$("#sub_title").offset().top});
+	
+	$("#left_filter_table").height($(window).height()*1.5);
 });
