@@ -17,6 +17,7 @@ type serverVhost struct {
 	HiddenCookie bool         `json:"hidden_cookie"` //是否在http协议分析的时候隐藏cookie的具体值
 	Users        users        `json:"users"`         //具有管理权限的用户列表
 	rw           sync.RWMutex `json:"-"`
+	StoreAble    bool         `json:"store"` //是否需要保存-远程保存
 }
 
 func (sv *serverVhost) HomeUrl(serverName string) string {

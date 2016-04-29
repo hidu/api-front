@@ -1,6 +1,6 @@
 # api-front
 
-version :0.7.2
+version :0.7.3
 
 ## 概述
 api front是HTTP API统一前端，用于测试环境api统一管理，主要功能是`请求代理转发`、`协议抓包分析`、`流量复制`。 
@@ -10,6 +10,7 @@ api front是HTTP API统一前端，用于测试环境api统一管理，主要功
 1. HTTP API大行其道,开发调试（特别是联调）花费的时间、人力成本很高。
 2. 后端的API调用是一个黑盒，特别是有问题的时候，基本是抓瞎(目前一般是把请求信息记录到日志中去)。
 3. 线下联调测试环境复杂多变，配置文件经常变动，经常其中一个环境好了另外一个又坏了。
+4. 可将接口的请求历史记录全部记录方便排查问题  
      
 ## 两种典型应用场景：
 
@@ -55,10 +56,15 @@ api-front -conf ./conf/server.json
 <p>conf/server.json</p>
 ```
 {
-  "users":["admin"]
+  "users":["admin"],
+  "store_api_url":"http://127.0.0.1/test/store.php",
+  "store_view_url":"http://127.0.0.1/test/view.php?host_id={host_id}&api_name={api_name}"
 }
 ```
-注：admin用户有所有权限。
+注：admin用户有所有权限。  
+store_api_url: 远程保存请求详情的地址，发送post请求（同时需要下列子服务配置中的store=true才会生效）  
+store_view_url: 查看接口历史数据的页面地址  
+
 
 ### 子服务配置
 <p>conf/vhost/8080.json</p>
@@ -73,6 +79,7 @@ api-front -conf ./conf/server.json
     "users": [
         "test"
     ]
+    "store":true
 }
 ```
 访问 http://127.0.0.1:8080/ 即可进入管理页面。  

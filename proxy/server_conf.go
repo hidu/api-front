@@ -9,13 +9,15 @@ import (
 )
 
 type mainConf struct {
-	VhostConfs  []*serverVhost `json:"-"`
-	confPath    string         `json:"-"`
-	Users       users          `json:"users"`
-	Oauth2Conf  *oauth2Conf    `json:"oauth2"`
-	SessionName string         `json:"session_name"` //cookie name
-	SessionSk   string         `json:"session_sk"`   //secret
-	PortRange   *PortRange     `json:"port_range"`
+	VhostConfs   []*serverVhost `json:"-"`
+	confPath     string         `json:"-"`
+	Users        users          `json:"users"`
+	Oauth2Conf   *oauth2Conf    `json:"oauth2"`
+	SessionName  string         `json:"session_name"` //cookie name
+	SessionSk    string         `json:"session_sk"`   //secret
+	PortRange    *PortRange     `json:"port_range"`
+	StoreApiUrl  string         `json:"store_api_url"`
+	StoreViewUrl string         `json:"store_view_url"`
 }
 
 type PortRange struct {

@@ -1,4 +1,6 @@
 {
 "server_name":"",
-"users":["admin"]
+"users":["admin"],
+"store_api_url":"",
+"store_view_url":""
 }

@@ -1,1 +1,9 @@
- {"port":8080,"enable":true,"name":"","note":"this is other","hidden_cookie":true,"domain":["a.com","b.com"]}
+ {
+ "port":8080,
+ "enable":true,
+ "name":"",
+ "note":"this is other",
+ "hidden_cookie":true,
+ "domain":["a.com","b.com"],
+ "store":true
+ }

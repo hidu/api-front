@@ -31,6 +31,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		if needBroad {
 			broadData = apiServer.initBroadCastData(req)
 			broadData.ID = uniqID
+			broadData.setData("api_name", api.Name)
 			defer func() {
 				used := float64(time.Now().Sub(start).Nanoseconds()) / 1e6
 				broadData.setData("used", used)
@@ -370,12 +371,37 @@ func (apiServer *APIServer) addBroadCastDataResponse(broadData *BroadCastData, r
 
 func (apiServer *APIServer) broadcastAPIReq(api *apiStruct, data *BroadCastData) {
 	apiServer.web.broadcastAPI(api, "req", data)
+
+	if apiServer.needStore() {
+		go (func() {
+			client := &http.Client{}
+			client.Timeout = 300 * time.Millisecond
+			postData := make(url.Values)
+			postData.Add("host_id", apiServer.ServerVhostConf.Id)
+			postData.Add("data", data.String())
+			resp, err := client.PostForm(apiServer.manager.mainConf.StoreApiUrl, postData)
+			log.Println("call_store_api,err:", err, "resp_status:", resp.StatusCode)
+		})()
+	}
 }
 
 //判断是否需要将数据广播出去：有用户打开了页面在进行查看才广播
 func (apiServer *APIServer) needBroadcast(api *apiStruct) bool {
+	if apiServer.needStore() {
+		return true
+	}
 	if apiServer.web.wsServer.Count() < 1 {
 		return false
 	}
 	return api.analysisClientNum > 0
+}
+
+func (apiServer *APIServer) needStore() bool {
+	if !apiServer.ServerVhostConf.StoreAble {
+		return false
+	}
+	if apiServer.manager.mainConf.StoreApiUrl == "" {
+		return false
+	}
+	return true
 }

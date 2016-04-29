@@ -422,6 +422,15 @@ func (wr *webReq) apiAnalysis() {
 		return
 	}
 	wr.values["api"] = api
+
+	//查看远程存储的地址
+	store_view_url := ""
+	if wr.web.apiServer.needStore() {
+		store_view_url = strings.Replace(wr.web.apiServer.manager.mainConf.StoreViewUrl, "{host_id}", wr.web.apiServer.ServerVhostConf.Id, -1)
+		store_view_url = strings.Replace(store_view_url, "{api_name}", api.Name, -1)
+	}
+	wr.values["store_view_url"] = store_view_url
+
 	wr.render("analysis.html", true)
 }
 
