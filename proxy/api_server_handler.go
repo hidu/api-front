@@ -379,8 +379,8 @@ func (apiServer *APIServer) broadcastAPIReq(api *apiStruct, data *BroadCastData)
 			postData := make(url.Values)
 			postData.Add("host_id", apiServer.ServerVhostConf.Id)
 			postData.Add("data", data.String())
-			resp, err := client.PostForm(apiServer.manager.mainConf.StoreApiUrl, postData)
-			log.Println("call_store_api,err:", err, "resp_status:", resp.StatusCode)
+			_, err := client.PostForm(apiServer.manager.mainConf.StoreApiUrl, postData)
+			log.Println("call_store_api,err:", err)
 		})()
 	}
 }

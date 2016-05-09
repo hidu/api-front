@@ -16,7 +16,31 @@
         &nbsp;<a href="javascript:;" onclick="req_clean()">清空</a>
          &nbsp;
         <div class="form form-inline" id="form_analysis_filter">
-         <input type="text" name="uri_prex" class="form-control" value="{{.uri_prex}}" placeholder="Uri">
+         <input type="text" id="filter_uri" class="form-control" value="{{.uri_prex}}" placeholder="Uri">
+        Method:
+        <select class="form-control" id="filter_method">
+            <option value="">All</option>
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="HEAD">HEAD</option>
+            <option value="TRACE">TRACE</option>
+            <option value="PUT">PUT</option>
+            <option value="DELETE">DELETE</option>
+            <option value="OPTIONS">OPTIONS</option>
+            <option value="CONNECT">CONNECT</option>
+        </select>
+         Status:
+         <select class="form-control" id="filter_status">
+           <option value="">All</option>
+           <option value="200">200</option>
+           <option value="2xx">2xx</option>
+           <option value="!200">!=200</option>
+           <option value="3xx">3xx</option>
+           <option value="4xx">4xx</option>
+           <option value="5xx">5xx</option>
+           <option value="1xx">1xx</option>
+           <option value="6xx">6xx</option>
+         </select>
         </div>
     </div>
 </div>

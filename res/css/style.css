@@ -131,7 +131,7 @@ color: red;
 .td_url_input{width: 100%;border: none;padding:0;margin: 0}
 #req_list pre pre{background-color:inherit !important;}
 .my-btn-post{padding: inherit;}
-#left_filter_table {height:600px;overflow: scroll;padding-right:30px}
+#left_filter_table {max-height:600px;overflow: scroll;}
 #analysis_url_msg {
 	width:80%;
     overflow: hidden;

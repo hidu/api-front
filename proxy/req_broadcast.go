@@ -16,7 +16,7 @@ func newReqBroadCastData(req *http.Request) *BroadCastData {
 	data := &BroadCastData{
 		Data: make(map[string]interface{}),
 	}
-	data.Data["path"] = req.URL.RequestURI()
+	data.Data["request_uri"] = req.URL.RequestURI()
 	remote := strings.Split(req.RemoteAddr, ":")
 	data.Data["remote_last"] = remote[0]
 	data.Data["method"] = req.Method

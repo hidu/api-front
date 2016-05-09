@@ -61,22 +61,23 @@ $().ready(function(){
 		addReqFilter(req_list[i]);
 	}
 });
+
 function addReqFilter(req){
-	var uri=req.data["path"]||"";
+	var uri=req.data["request_uri"]||"";
 	var _method=req.data.method;
 	if(_method=="GET"){
-		_method="<a target='_blank' href='"+h(req.data["path"])+"' title='重新请求(cookie和其他header将丢失)' >"+req.data.method+"</a>";
+		_method="<a target='_blank' href='"+h(req.data["request_uri"]||"")+"' title='重新请求(cookie和其他header将丢失)' >"+req.data.method+"</a>";
 	}else if (_method=="POST"){
 		var form_str=buildReplayForm(req.data["req_detail"]||"",uri,"POST");
 		if(form_str!==false){
 			_method=form_str;
 		}
 	}	
-	$("#analysis_url_msg").show().html("<pre class='pre_1 text-muted'>"+req.data.method+"  "+h(req.data["path"])+"</pre>").fadeOut(3000);
+	$("#analysis_url_msg").show().html("<pre class='pre_1 text-muted'>"+req.data.method+"  "+h(req.data["request_uri"]||"")+"</pre>").fadeOut(3000);
 	
 	var tr=$("<tr id='tr_"+h(req.id)+"'><th>"+short_id(req.id)+"</th>" +
 			"<td>"+_method+"</td>" +
-		    "<td title='" +h(req.data.path)+"'> <input type='text' value='" +h(req.data.path)+"' readonly>"+
+		    "<td title='" +h(req.data.request_uri||"")+"'> <input type='text' value='" +h(req.data.request_uri||"")+"' readonly>"+
 			"</td><td>"+h(req.data.resp_status)+"</td></tr>");
 	tr.data("req",req);
 	tr.click((function(req){
@@ -92,7 +93,7 @@ function addReqFilter(req){
 
 function showReqTr(req){
 	location.hash=req.id;
-	var uri=req.data["path"]||"";
+	var uri=req.data["request_uri"]||"";
 //	var uri_prex=$.trim($("#form_analysis_filter").find("[name=uri_prex]").val())
 //	if(uri_prex!="" && uri.match(uri_prex)!=uri_prex ){
 //	    console && console.log("filter,uri",uri);
@@ -101,7 +102,7 @@ function showReqTr(req){
 	
 	var tr="<div style='display:none'><div class='panel panel-default'>" +
 			"<div class='panel-heading'>" +
-			"<input type='text' value='"+h(req.data["path"])+"' style='width:99%;border:none' readonly>"+
+			"<input type='text' value='"+h(req.data["request_uri"])+"' style='width:99%;border:none' readonly>"+
 			"</div>" +
 			"<div class='panel-body'>" +
 			"<ul class='list-inline'>" +
@@ -114,7 +115,7 @@ function showReqTr(req){
 			"</ul></div></div>";
 	
 	tr+="<div>" +
-			"<pre>"+(formatReqData(req.data["req_detail"]||"",req.data["path"]||""))+"</pre>" +
+			"<pre>"+(formatReqData(req.data["req_detail"]||"",req.data["request_uri"]||""))+"</pre>" +
 			"<pre>"+
 			(req.data.err?h(req.data.err||""):"")+
 			showDumpData(req.data["res_detail"]||"")+"</pre>" +
@@ -324,16 +325,36 @@ window.onbeforeunload=function(){
 function filterReqsTr(tr,uri_prex){
 	var req=$(tr).data("req");
 	if(!uri_prex){
-		uri_prex=$("#form_analysis_filter").find("[name=uri_prex]").val();
+		uri_prex=$("#filter_uri").val();
 	}
+	var method=$("#filter_method").val();
+	var status=$("#filter_status").val();
+	
 	if(!req){
 		return;
 	}
-	var uri=req.data.path;
-	var show=uri.match(uri_prex);
-	if(!show){
-		show=uri.indexOf(uri_prex)>=0;
+	var uri=req.data.request_uri||"";
+	
+	var show=true;
+	if(uri_prex!=""){
+		show=uri.match(uri_prex) || uri.indexOf(uri_prex)>=0;
 	}
+	
+	if(show && method!="" && method!=req.data.method){
+		show=false;
+	}
+	
+	if(show && status!=""){
+		var _status=req.data.resp_status+"";
+		if(_status==status || _status.substr(0,1)+"xx"==status){
+			show=true;
+		}else if(status.substr(0,1)=="!"){
+			show=status.substr(1)!=_status;
+		}else{
+			show=false;
+		}
+	}
+	
 	if(show){
 		$(tr).removeClass("hide");
 	}else{
@@ -344,10 +365,9 @@ function filterReqsTr(tr,uri_prex){
 function filterReqs(uri_prex){
 	if(uri_prex==""){
 		$("#req_list_filter_body tr").removeClass("hide");
-		return;
 	}
 	$("#req_list_filter_body tr").each(function(){
-		filterReqsTr($(this),uri_prex);
+		filterReqsTr($(this));
 	});
 }
 
@@ -368,9 +388,16 @@ $().ready(function(){
 		$("#tr_"+location.hash.substr(1)).click();
 	}
 	
-	$("#form_analysis_filter").find("[name=uri_prex]").keyup(function(){
+	$("#filter_uri").keyup(function(){
 		filterReqs($(this).val());
 	});
+	$("#filter_method").change(function(){
+		filterReqs();
+	});
+	$("#filter_status").change(function(){
+		filterReqs();
+	});
+	
 	$("#analysis_url_msg").offset({top:$("#sub_title").offset().top});
 	
 	$("#left_filter_table").height($(window).height()*1.5);
