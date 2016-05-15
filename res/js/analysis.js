@@ -77,7 +77,7 @@ function addReqFilter(req){
 	
 	var tr=$("<tr id='tr_"+h(req.id)+"'><th>"+short_id(req.id)+"</th>" +
 			"<td>"+_method+"</td>" +
-		    "<td title='" +h(req.data.request_uri||"")+"'> <input type='text' value='" +h(req.data.request_uri||"")+"' readonly>"+
+		    "<td title='" +h(req.data.request_uri||"")+"'> <input type='text' value='" +h(req.data.request_uri||"")+"' readonly style='width:99%'>"+
 			"</td><td>"+h(req.data.resp_status)+"</td></tr>");
 	tr.data("req",req);
 	tr.click((function(req){
@@ -108,10 +108,10 @@ function showReqTr(req){
 			"<ul class='list-inline'>" +
 			"<li>"+req.data.method+"</li>" +
 			"<li>id: "+req.id+"</li>" +
-			"<li>status: "+h(req.data["resp_status"]||502)+"</li>" +
-			"<li>remote: "+req.data.remote+"</li>"+
+			"<li>status: <b>"+h(req.data["resp_status"]||502)+"</b></li>" +
+			"<li>remote: <b>"+req.data.remote+"</b></li>"+
 			"<li>master: "+h(req.data.master)+"</li>"+
-			"<li>used: "+(req.data.used && req.data.used.toFixed(2))+" ms</li>"+
+			"<li>used: <b>"+(req.data.used && req.data.used.toFixed(2))+"</b> ms</li>"+
 			"</ul></div></div>";
 	
 	tr+="<div>" +
@@ -398,7 +398,8 @@ $().ready(function(){
 		filterReqs();
 	});
 	
+	/*
 	$("#analysis_url_msg").offset({top:$("#sub_title").offset().top});
-	
+	*/
 	$("#left_filter_table").height($(window).height()*1.5);
 });

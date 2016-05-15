@@ -17,6 +17,7 @@ import (
 	"time"
 )
 
+
 func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter, *http.Request) {
 	bindPath := api.Path
 	log.Println(apiServer.ServerVhostConf.Port, api.Name, "bind path [", bindPath, "]")
@@ -70,6 +71,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		if needBroad {
 			broadData.setData("master", masterHost)
 			broadData.setData("remote", cpf.GetIP())
+			broadData.setData("resp_status", 502)//default
 		}
 
 		_uri := req.URL.Path
@@ -164,13 +166,16 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
 			}
 
+			timeoutMs := time.Duration(api.TimeoutMs) * time.Millisecond
+
 			transport := &http.Transport{
 				Proxy: http.ProxyFromEnvironment,
 				Dial: (&net.Dialer{
-					Timeout:   time.Duration(api.TimeoutMs) * time.Millisecond,
-					KeepAlive: 30 * time.Second,
+					Timeout:   timeoutMs,
+					KeepAlive: 0,
 				}).Dial,
-				TLSHandshakeTimeout: 10 * time.Second,
+				TLSHandshakeTimeout: timeoutMs,
+				DisableKeepAlives:   true,
 			}
 			if api.HostAsProxy {
 				transport.Proxy = (func(u string) func(*http.Request) (*url.URL, error) {
@@ -193,6 +198,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				isMaster:  isMaster,
 				urlNew:    urlNew,
 				urlRaw:    rawURL,
+				Timeout:   timeoutMs,
 			}
 			reqs = append(reqs, apiReq)
 		}
@@ -209,11 +215,26 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				logData[fmt.Sprintf("host_%s_%d", apiReq.apiHost.Name, index)] = backLog
 				logRw.Unlock()
 			})()
-
+			//			http.DefaultClient.Do();
 			hostStart := time.Now()
 			backLog["isMaster"] = apiReq.isMaster
 			backLog["start"] = fmt.Sprintf("%.4f", float64(hostStart.UnixNano())/1e9)
-			resp, err := apiReq.transport.RoundTrip(apiReq.req)
+			backLog["status"] = 502 //as default
+
+			cc := rw.(http.CloseNotifier).CloseNotify()
+			
+			go (func() {
+				select {
+				case <-cc:
+					if(!apiReq.isDone){
+						apiReq.transport.CancelRequest(apiReq.req)
+						backLog["status"] = 499
+						broadData.setData("resp_status", 499)
+					}
+				}
+			})()
+			resp, err := apiReq.RoundTrip()
+
 			if err != nil {
 				log.Println("[error]call_master_sync "+apiReq.urlNew, err)
 				rw.WriteHeader(http.StatusBadGateway)
@@ -273,7 +294,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 						backLog["isMaster"] = apiReq.isMaster
 						backLog["start"] = fmt.Sprintf("%.4f", float64(hostStart.UnixNano())/1e9)
 						backLog["isMaster"] = apiReq.isMaster
-						resp, err := apiReq.transport.RoundTrip(apiReq.req)
+						resp, err := apiReq.RoundTrip()
 						if err != nil {
 							log.Println("[error]call_other_async,fetch "+apiReq.urlNew, err)
 							return
@@ -301,6 +322,25 @@ type apiHostRequest struct {
 	transport *http.Transport
 	apiHost   *Host
 	isMaster  bool
+	Timeout   time.Duration
+	isDone  bool
+}
+
+func (ar *apiHostRequest) RoundTrip() (resp *http.Response, err error) {
+	isTimeout := false
+	time.AfterFunc(ar.Timeout, func() {
+		if ar.isDone {
+			return
+		}
+		ar.transport.CancelRequest(ar.req)
+		isTimeout = true
+	})
+	resp, err = ar.transport.RoundTrip(ar.req)
+	ar.isDone = true
+	if isTimeout {
+		err = fmt.Errorf("reuest timeout after:%s ", ar.Timeout)
+	}
+	return
 }
 
 var reqCookieDumpLine = regexp.MustCompile(`Cookie: .+\r\n`)

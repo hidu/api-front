@@ -133,14 +133,8 @@ color: red;
 .my-btn-post{padding: inherit;}
 #left_filter_table {max-height:600px;overflow: scroll;}
 #analysis_url_msg {
-	width:80%;
+	max-width:80%;
     overflow: hidden;
-    height:30px;
-    line-height:30px;
-    text-align: center;
-    position: absolute;
-    top:50px;
-    left:20%;
 }
 .pre_1{
 	border: none;

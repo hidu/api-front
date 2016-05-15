@@ -410,7 +410,7 @@ func (wr *webReq) apiAnalysis() {
 	}
 	apiName := strings.TrimSpace(name)
 
-	wr.values["Title"] = "Analysis-" + apiName
+	wr.values["Title"] = apiName + " -Analysis"
 	if apiName == "" {
 		wr.showError("param empty")
 		return
