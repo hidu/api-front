@@ -149,8 +149,7 @@ func (web *webAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 func (web *webAdmin) serveHTTP(rw http.ResponseWriter, req *http.Request) {
 	if strings.HasPrefix(req.URL.Path, "/_/res/") {
-		req.URL.Path = "/res/" + req.URL.Path[6:]
-		Assest.HTTPHandler("/").ServeHTTP(rw, req)
+		http.StripPrefix("/_/res/",Assest.HTTPHandler("/res/")).ServeHTTP(rw,req)
 		return
 	}
 	if strings.HasPrefix(req.URL.Path, "/_socket.io/") {

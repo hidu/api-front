@@ -17,7 +17,6 @@ import (
 	"time"
 )
 
-
 func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter, *http.Request) {
 	bindPath := api.Path
 	log.Println(apiServer.ServerVhostConf.Port, api.Name, "bind path [", bindPath, "]")
@@ -71,7 +70,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		if needBroad {
 			broadData.setData("master", masterHost)
 			broadData.setData("remote", cpf.GetIP())
-			broadData.setData("resp_status", 502)//default
+			broadData.setData("resp_status", 502) //default
 		}
 
 		_uri := req.URL.Path
@@ -222,14 +221,16 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			backLog["status"] = 502 //as default
 
 			cc := rw.(http.CloseNotifier).CloseNotify()
-			
+
 			go (func() {
 				select {
 				case <-cc:
-					if(!apiReq.isDone){
+					if !apiReq.isDone {
 						apiReq.transport.CancelRequest(apiReq.req)
 						backLog["status"] = 499
-						broadData.setData("resp_status", 499)
+						if needBroad {
+							broadData.setData("resp_status", 499)
+						}
 					}
 				}
 			})()
@@ -323,7 +324,7 @@ type apiHostRequest struct {
 	apiHost   *Host
 	isMaster  bool
 	Timeout   time.Duration
-	isDone  bool
+	isDone    bool
 }
 
 func (ar *apiHostRequest) RoundTrip() (resp *http.Response, err error) {
