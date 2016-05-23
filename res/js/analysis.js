@@ -285,7 +285,8 @@ function parseAsjson(str) {
 
 function revParseJson(obj){
 	var t=typeof obj;
-	if(!$.isArray(obj) && t!="object"){
+	//是object 而且不是null值
+	if( (!$.isArray(obj) && t!="object") || !obj ){
 		return obj;
 	}
 	var objNew=$.isArray(obj)?[]:{};
