@@ -1,32 +1,32 @@
 <form method="post" action="/_/api" class="form-horizontal" target="ifr_form" autocomplete="off">
 <input type="hidden" name="do" value="base">
 <fieldset>
-<legend>模块基础信息
+<legend>API Base Info
 
  {{if .api.Exists}}
 <div class="legend_note">
-访问地址：<a href="{{.api_url}}" target="_blank">{{.api_url}}</a>
+Address：<a href="{{.api_url}}" target="_blank">{{.api_url}}</a>
 &nbsp;<span class="glyphicon glyphicon-new-window"></span>
 </div>
 {{end}}
 
 <span class="legend_note pull-right">
 {{if .api.Exists}}
-<a href="/_/analysis?name={{.api.Name}}">协议分析</a>&nbsp;
+<a href="/_/analysis?id={{.api.Name}}">Analysis</a>&nbsp;
 {{end}}
 pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
 </span>
 </legend>
 
 <div class="form-group">
-    <label class="col-sm-2 control-label required">英文名称:</label>
+    <label class="col-sm-2 control-label required">ID:</label>
     <div class="col-sm-3">
         {{if .api.Exists}}
         <input type="hidden" name="api_name" value="{{.api.Name|html}}">
         <input type="hidden" name="mod" value="update">
         <div >{{.api.Name|html}}
          {{if .userCanEdit}}
-            <button type="button" class="btn btn-link" data-toggle="modal" data-target="#modifyApiNameModal" data-whatever="{{.api.Name|html}}">修改</button>
+            <button type="button" class="btn btn-link" data-toggle="modal" data-target="#modifyApiNameModal" data-whatever="{{.api.Name|html}}">Rename</button>
          {{end}}
         </div>
         {{else}}
@@ -35,14 +35,14 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
         {{end}}
     </div>
     <div class="help-block">
-       模块唯一标识，由英文、数字组成。
+       唯一标志，允许字母和数字
     </div>
 </div>
 
 <div class="form-group">
-    <label class="col-sm-2 control-label required">绑定目录:</label>
+    <label class="col-sm-2 control-label required">Location:</label>
     <div class="col-sm-3">
-     <input class="form-control" type="text" name="path" value="{{.api.Path}}" pattern="/([\w-]+/?)*" placeholder="需满足/([\w-]+/)*">
+     <input class="form-control" type="text" name="path" value="{{.api.Path}}" pattern="/.*" placeholder="需满足/.*">
     </div>
     <div class="help">
        接口URI的目录部分，如原接口<b>http://a.com/<font color="blue">action</font>/info.php</b>,
@@ -51,14 +51,14 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
     </div>
 </div>
 <div class="form-group">
-    <label class="col-sm-2 control-label">备注:</label>
+    <label class="col-sm-2 control-label">Note:</label>
     <div class="col-sm-8">
      <input class="form-control" type="text" name="note" value="{{.api.Note|html}}">
     </div>
 </div>
 
 <div class="form-group">
-    <label class="col-sm-2 control-label">超时:</label>
+    <label class="col-sm-2 control-label">Timeout:</label>
     <div class="col-sm-3">
 	    <div class="input-group">
 	        <input class="form-control text-right" type="text" name="timeout" value="{{.api.TimeoutMs}}">
@@ -69,19 +69,19 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
 
 
 <div class="form-group">
-    <label class="col-sm-2 control-label">状态:</label>
+    <label class="col-sm-2 control-label">Enable:</label>
     <div class="col-sm-3 checkbox">
         <label>
         <input  type="checkbox" name="enable" value="1" {{if .api.Enable}}checked=checked{{end}}>
-        启用
+        Yes
         </label>
     </div>
-    <div class="col-sm-3"><label class="checkbox" style="font-weight: normal;"><input type="checkbox" id="check_box_adv">高级设置</label></div>
+    <div class="col-sm-3"><label class="checkbox" style="font-weight: normal;"><input type="checkbox" id="check_box_adv">Advanced</label></div>
 </div>
 
 <div id="form_base_adv" style="display: none">
     <div class="form-group">
-        <label class="col-sm-2 control-label">管理员列表:</label>
+        <label class="col-sm-2 control-label">Admin Users:</label>
         <div class="col-sm-8">
             <div><input class="form-control" type="text" name="uids" value="{{.api.Users|html}}"></div>
             <div class="help">多个使用竖线[ <font color="blue">|</font> ]连接,若包含[&nbsp;<font color="blue">:any</font>&nbsp;]则任意用户都有权限!</div>
@@ -89,7 +89,7 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
     </div>
     
     <div class="form-group">
-        <label class="col-sm-2 control-label">二级HTTP代理:</label>
+        <label class="col-sm-2 control-label">Parent HTTP Proxy:</label>
         <div class="col-sm-3">
             <div><input class="form-control" type="text" name="proxy" value="{{.api.Proxy|html}}" pattern="^http:\/\/.*" placeholder="http://u:p@127.0.0.1:3308" title="目前只支持http代理,使用二级代理则后端服务不能是代理模式"></div>
         </div>

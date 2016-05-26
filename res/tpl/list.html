@@ -1,32 +1,32 @@
-<h2>模块列表</h2>
+<h2>API List</h2>
 <table class="table table-hover">
 <thead>
 <tr>
 <th>ID</th>
-<th>模块路径</th>
-<th>备注</th>
-<th>超时</th>
+<th>Location</th>
+<th>Note</th>
+<th>Timeout</th>
 <th>PV</th>
-<th nowrap="nowrap">启用</th>
-<th>模块访问地址</th>
-<th nowrap="nowrap">抓包分析</th>
+<th nowrap="nowrap">Enable</th>
+<th>Visit Address</th>
+<th nowrap="nowrap">Analysis</th>
 </tr>
 </thead>
 <tbody>
-{{range $name,$api:=.apis}}
+{{range $id,$api:=.apis}}
 <tr>
-    <td><a href="/_/api?name={{$name}}">{{$name}}</a></td>
-    <td><a href="/_/api?name={{$name}}">{{$api.Path|html}}</a></td>   
+    <td><a href="/_/api?id={{$id}}">{{$id}}</a></td>
+    <td><a href="/_/api?id={{$id}}">{{$api.Path|html}}</a></td>   
     <td>{{$api.Note|html}}</td>   
     <td>{{$api.TimeoutMs}}</td>
-    <td><span id="api_pv_{{$name}}">{{$api.GetPv}}</span></td>
+    <td><span id="api_pv_{{$id}}">{{$api.GetPv}}</span></td>
     <td>{{if not $api.Enable}}<font color=red>{{end}}{{$api.Enable}}{{if not $api.Enable}}</font>{{end}}</td>
     <td>
     <a href="{{$.base_url}}{{$api.Path}}" target="_blank">{{$.base_url}}{{$api.Path}}
     </a>
     </td>   
     <td>
-    <a href="/_/analysis?name={{$name}}" target="_blank">抓包
+    <a href="/_/analysis?id={{$id}}" target="_blank">Parse
     &nbsp;<span class="glyphicon glyphicon-new-window"></span>
     </a>
     </td>   

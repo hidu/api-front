@@ -219,7 +219,7 @@ func (wr *webReq) execute() {
 	}
 	switch req_path {
 	case "/index":
-		wr.values["Title"] = "模块列表"
+		wr.values["Title"] = "API List"
 		wr.apiList()
 		return
 	case "/api":
@@ -227,7 +227,7 @@ func (wr *webReq) execute() {
 		wr.apiEdit()
 		return
 	case "/services":
-		wr.values["Title"] = "服务列表"
+		wr.values["Title"] = "Service List"
 		wr.serviceList()
 		return
 	case "/about":
@@ -399,7 +399,7 @@ func (wr *webReq) apiPv() {
 }
 
 func (wr *webReq) apiAnalysis() {
-	name := wr.req.FormValue("name")
+	name := wr.req.FormValue("id")
 
 	uri := wr.req.FormValue("uri")
 	wr.values["uri_prex"] = uri
@@ -469,12 +469,12 @@ var webTmpName = "tpl_api_front"
 
 func (wr *webReq) apiEdit() {
 	req := wr.req
-	name := req.FormValue("name")
+	id := req.FormValue("id")
 	if req.Method != "POST" {
 		var api *apiStruct
 		addNew := false
-		if name != "" {
-			apiOld := wr.web.apiServer.getAPIByName(name)
+		if id != "" {
+			apiOld := wr.web.apiServer.getAPIByName(id)
 			if apiOld == nil {
 				wr.values["error"] = "api not exists!  <a href='/_/api'>add new</a>"
 				wr.render("error.html", true)
@@ -571,13 +571,13 @@ func (wr *webReq) apiBaseSave() {
 	mod := req.FormValue("mod")
 
 	if mod == "new" && !wr.web.apiServer.hasUser(wr.getUserID()) {
-		wr.alert("没有权限!")
+		wr.alert("No permissions!")
 		return
 	}
 
 	timeout, err := strconv.ParseInt(req.FormValue("timeout"), 10, 64)
 	if err != nil {
-		wr.alert("超时时间错误,不是int")
+		wr.alert("wrong Timeout value,not int")
 		return
 	}
 	apiName := req.FormValue("api_name")
@@ -586,18 +586,18 @@ func (wr *webReq) apiBaseSave() {
 	apiPath := URLPathClean(req.FormValue("path"))
 
 	if !apiNameReg.MatchString(apiName) {
-		wr.alert(fmt.Sprintf(`模块名称(%s)不满足规则：^[\w-]+$`, apiName))
+		wr.alert(fmt.Sprintf(`api Id not allow`, apiName))
 		return
 	}
 
 	api := wr.web.apiServer.getAPIByName(apiName)
 	if api != nil && mod == "new" {
-		wr.alert(fmt.Sprintf(`模块(%s)已经存在`, apiName))
+		wr.alert(fmt.Sprintf(`api(%s) already exist`, apiName))
 		return
 	}
 
 	if api != nil && !api.userCanEdit(wr.user) {
-		wr.alert("没有权限")
+		wr.alert("No permissions!")
 		return
 	}
 
@@ -606,7 +606,7 @@ func (wr *webReq) apiBaseSave() {
 
 	if apiByPath != nil {
 		if api == nil || (api != nil && api.Name != apiByPath.Name) {
-			wr.alert(fmt.Sprintf("绑定的路径(%s)和api(%s:%s)重复", apiPath, apiByPath.Name, apiByPath.Note))
+			wr.alert(fmt.Sprintf("same location (%s) as api(%s:%s)", apiPath, apiByPath.Name, apiByPath.Note))
 			return
 		}
 	}
@@ -621,7 +621,7 @@ func (wr *webReq) apiBaseSave() {
 	hostEnables := req.PostForm["host_enable"]
 
 	if len(hostNames) != len(hostUrls) || len(hostNames) != len(hostNotes) || len(hostNames) != len(hostEnables) {
-		wr.alert("保存失败：数据格式错误")
+		wr.alert("save failed")
 		return
 	}
 
@@ -660,17 +660,17 @@ func (wr *webReq) apiBaseSave() {
 	api.Users = make(users, 0)
 
 	proxy := strings.TrimSpace(req.FormValue("proxy"))
+	api.Proxy=proxy
 	if proxy != "" {
 		if api.HostAsProxy {
-			wr.alert("后端服务使用代理模式时不能设置二级HTTP代理!")
+			wr.alert("Can not use parent proxy when run as proxy model")
 			return
 		}
 		_u, err := url.Parse(proxy)
 		if err != nil || _u.Scheme != "http" {
-			wr.alert("二级HTTP代理配置错误")
+			wr.alert("Parent HTTP proxy wrong")
 			return
 		}
-		api.Proxy = proxy
 	}
 
 	uids := strings.Split(req.FormValue("uids"), "|")
@@ -691,11 +691,11 @@ func (wr *webReq) apiBaseSave() {
 
 	err = api.save()
 	if err != nil {
-		wr.alert("保存失败：" + err.Error())
+		wr.alert("Save failed：" + err.Error())
 		return
 	}
 	wr.web.apiServer.loadAPI(apiName)
-	wr.alertAndGo("已经保存！", "/_/api?name="+apiName)
+	wr.alertAndGo("Save Success！", "/_/api?id="+apiName)
 }
 
 func (wr *webReq) apiCallerSave() {

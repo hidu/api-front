@@ -1,19 +1,19 @@
 <br/>
 <div>
- <span class="h3" id="sub_title"><span>{{.api.Path}}</span> &nbsp;协议分析
+ <span class="h3" id="sub_title">Analysis  &nbsp;<span>{{.api.Path}}</span>
  {{with .store_view_url}}
   <a href="{{$.store_view_url}}" target="_blank">历史记录</a>
  {{end}}
  </span>
- <span id="analysis_url_msg" class="text-info">aa</span>
+ <span id="analysis_url_msg" class="text-info">&nbsp;</span>
 <div class='pull-right text-info' style='padding-right:100px'>进行分析时，请保持当前页面打开。</div>
 <div class="row">
     <div style="margin:10px">
         <span id="connect_status">offline</span>
-        <a href="/_/api?name={{.api.Name}}">管理</a>
+        <a href="/_/api?id={{.api.Name}}">Edit</a>
         &nbsp;pv:<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>
         &nbsp;user:<span id="api_ana_user_{{.api.Name}}">1</span>
-        &nbsp;<a href="javascript:;" onclick="req_clean()">清空</a>
+        &nbsp;<a href="javascript:;" onclick="req_clean()">Clean</a>
          &nbsp;
         <div class="form form-inline" id="form_analysis_filter">
          <input type="text" id="filter_uri" class="form-control" value="{{.uri_prex}}" placeholder="Uri">
