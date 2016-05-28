@@ -28,7 +28,7 @@ $().ready(function(){
 });
 
 function short_id(val){
-	return (val+"").substr(-2);
+	return (val+"").substr(-3);
 }
 
 var socket = io("",{path:"/_socket.io/"});

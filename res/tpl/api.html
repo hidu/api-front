@@ -2,6 +2,9 @@
 {%my_include "api/form_base.html"%}
 
 {{if $.api.Exists}}
+   {%my_include "api/form_resp_modifier.html"%}
+    <br/><br/>
+
    {%my_include "api/form_caller.html"%}
 
     <br/><br/>
@@ -10,5 +13,7 @@
 <iframe name="ifr_form" style="display:none;"></iframe> 
 <script src="/_/res/js/jquery-ui.min.js"></script>
 <script>
+$().ready(function(){
     $('.sortable').sortable();
+});
 </script>

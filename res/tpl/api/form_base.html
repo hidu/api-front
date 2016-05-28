@@ -12,9 +12,9 @@ Address：<a href="{{.api_url}}" target="_blank">{{.api_url}}</a>
 
 <span class="legend_note pull-right">
 {{if .api.Exists}}
-<a href="/_/analysis?id={{.api.Name}}">Analysis</a>&nbsp;
+<a href="/_/analysis?id={{.api.ID}}">Analysis</a>&nbsp;
 {{end}}
-pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
+pv: &nbsp;<span id="api_pv_{{.api.ID}}">{{.api.GetPv}}</span>&nbsp;
 </span>
 </legend>
 
@@ -22,16 +22,16 @@ pv: &nbsp;<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>&nbsp;
     <label class="col-sm-2 control-label required">ID:</label>
     <div class="col-sm-3">
         {{if .api.Exists}}
-        <input type="hidden" name="api_name" value="{{.api.Name|html}}">
+        <input type="hidden" name="api_id" value="{{.api.ID|html}}">
         <input type="hidden" name="mod" value="update">
-        <div >{{.api.Name|html}}
+        <div >{{.api.ID|html}}
          {{if .userCanEdit}}
-            <button type="button" class="btn btn-link" data-toggle="modal" data-target="#modifyApiNameModal" data-whatever="{{.api.Name|html}}">Rename</button>
+            <button type="button" class="btn btn-link" data-toggle="modal" data-target="#modifyApiIDModal" data-whatever="{{.api.ID|html}}">修改</button>
          {{end}}
         </div>
         {{else}}
         <input type="hidden" name="mod" value="new">
-         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="api_name" value="{{.api.Name|html}}" placeholder="需满足 [\w-]+，全局唯一"> 
+         <input class="form-control" type="text" required="required" pattern="[\w-]+" name="api_id" value="{{.api.ID|html}}" placeholder="需满足 [\w-]+，全局唯一"> 
         {{end}}
     </div>
     <div class="help-block">
@@ -142,5 +142,5 @@ $().ready(function(){
 
 
 {{if and .api.Exists .userCanEdit}}
-    {%my_include "api/form_rename_modal.html"%}
+    {%my_include "api/form_changeid_modal.html"%}
 {{end}}

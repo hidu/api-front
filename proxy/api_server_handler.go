@@ -19,7 +19,7 @@ import (
 
 func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter, *http.Request) {
 	bindPath := api.Path
-	log.Println(apiServer.ServerVhostConf.Port, api.Name, "bind path [", bindPath, "]")
+	log.Println(apiServer.ServerVhostConf.Port, api.ID, "bind path [", bindPath, "]")
 	return func(rw http.ResponseWriter, req *http.Request) {
 		id := api.pvInc()
 		uniqID := apiServer.uniqReqID(id)
@@ -31,7 +31,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		if needBroad {
 			broadData = apiServer.initBroadCastData(req)
 			broadData.ID = uniqID
-			broadData.setData("api_name", api.Name)
+			broadData.setData("api_id", api.ID)
 			defer func() {
 				used := float64(time.Now().Sub(start).Nanoseconds()) / 1e6
 				broadData.setData("used", used)

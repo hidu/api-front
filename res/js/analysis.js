@@ -3,7 +3,7 @@ var allow_receive_req=true;
 
 //每5秒ping一次,后端则>5秒去check存活
 function sendServiceNotice(){
-    socket.emit("http_analysis",api_front_apiName);
+    socket.emit("http_analysis",api_front_api_id);
     setTimeout(function(){
         sendServiceNotice();
     },5000);
@@ -22,7 +22,7 @@ socket.on("disconnect",function(msg){
 
 socket.on("s_http_analysis",function(msg){
     console && console.log("socket.io http_analysis",msg,new Date());
-    var id="api_ana_user_"+api_front_apiName;
+    var id="api_ana_user_"+api_front_api_id;
     $("#"+id).html("<font color=blue>"+msg.client_num+"</font>");
 });
 
@@ -42,7 +42,7 @@ socket.on("req",function(req){
 });
 var req_max_length=500;
 var req_list=[];
-var localStrName="ap_front_reqs_"+api_front_apiName;
+var localStrName="ap_front_reqs_"+api_front_api_id;
 try{
 	if(window.localStorage && window.localStorage[localStrName]){
 		req_list=$.parseJSON(window.localStorage[localStrName]||"[]");

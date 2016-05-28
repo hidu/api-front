@@ -1,6 +1,6 @@
  <form method="post" action="/_/api" target="ifr_form" autocomplete="off" id="form_api_caller">
      <input type="hidden" name="do" value="caller">
-     <input type="hidden" name="api_name" value="{{$.api.Name}}">
+     <input type="hidden" name="api_id" value="{{$.api.ID}}">
             
     <fieldset>
     <legend>
@@ -44,7 +44,7 @@
 	            datas.push($(this).find("input").serialize())
 	        });
 	        var params={
-	                "api_name":caller_form.find("input[name=api_name]").val(),
+	                "api_id":caller_form.find("input[name=api_id]").val(),
 	                 "do":"caller",
 	                 "datas":datas
 	        }

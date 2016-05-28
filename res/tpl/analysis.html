@@ -10,9 +10,9 @@
 <div class="row">
     <div style="margin:10px">
         <span id="connect_status">offline</span>
-        <a href="/_/api?id={{.api.Name}}">Edit</a>
-        &nbsp;pv:<span id="api_pv_{{.api.Name}}">{{.api.GetPv}}</span>
-        &nbsp;user:<span id="api_ana_user_{{.api.Name}}">1</span>
+        <a href="/_/api?id={{.api.ID}}">Edit</a>
+        &nbsp;pv:<span id="api_pv_{{.api.ID}}">{{.api.GetPv}}</span>
+        &nbsp;user:<span id="api_ana_user_{{.api.ID}}">1</span>
         &nbsp;<a href="javascript:;" onclick="req_clean()">Clean</a>
          &nbsp;
         <div class="form form-inline" id="form_analysis_filter">
@@ -60,7 +60,7 @@
 
 <script>
 
-var api_front_apiName="{{.api.Name}}";
+var api_front_api_id="{{.api.ID}}";
 
 </script>
 

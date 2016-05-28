@@ -1,0 +1,77 @@
+ <form method="post" action="/_/api" target="ifr_form" autocomplete="off" id="form_api_resp_modifier">
+     <input type="hidden" name="api_id" value="{{$.api.ID}}">
+    <fieldset>
+    <legend>
+    Response 修改<a onclick="return proxy_api_resp_modifier_add();" href="#">+</a>
+    <div class="legend_note">对待返回的Response进行动态修改</div>
+    </legend>
+    
+    <div class="form-body">
+    {{range $index,$modifier:=$.api.RespModifier}}
+        {%my_include "api/form_resp_modifier_row.html"%}
+    {{end}}
+    </div>
+    
+    </fieldset>
+    {%my_include "api/submit.html"%}
+ </form>
+ 
+<div style='display:none' id='api_resp_modifier_row_tpl'>
+{{with $modifier:=$.respModifiler}}
+    {%my_include "api/form_resp_modifier_row.html"%}
+{{end}}
+</div>
+ 
+{{if .userCanEdit}}
+    <script>
+    function proxy_api_resp_modifier_del(obj){
+        var div=$(obj).parents("div.api_resp_modifier_row");
+        var val=div.find("input[name=note]").val();
+        if(val!="" && !confirm("确定要删除("+val+")吗?")){
+            return false;
+        }
+        div.remove();
+        return false;
+    }
+    function proxy_api_resp_modifier_add(){
+        var tpl=$("#api_resp_modifier_row_tpl").clone();
+        tpl.find(":input").removeAttr("disabled");
+        var html=tpl.html();
+        $("#form_api_resp_modifier .form-body").append(html);
+        $('.sortable').sortable();
+        return false;
+    }
+    
+    $().ready(function(){
+        var form=$("#form_api_resp_modifier");
+        form.submit(function(){
+            var datas=[]
+            form.find("div.api_resp_modifier_row:visible").each(function(index){
+            	var itemVal={
+                    "note":$(this).find("input[name=note]").val(),
+                    "index":index,
+                    "enable":$(this).find("input[name=enable]").is(":checked")?1:0,
+                    "rule":$(this).find("[name=rule]").val()
+                };
+            	if(itemVal["note"]=="" || itemVal["rule"]==""){
+            		alert("Cannot empty");
+            		return false;
+            	}
+                datas.push($.param(itemVal))
+            });
+            var params={
+                    "api_id":form.find("input[name=api_id]").val(),
+                     "do":"resp_modifier",
+                     "datas":datas
+            }
+           $.post("/_/api",params,function(data){
+                alert(data.msg)
+                if(data.code==0){
+                    location.reload()
+                }
+            });
+            return false;
+        });
+    });
+    </script>
+{{end}}

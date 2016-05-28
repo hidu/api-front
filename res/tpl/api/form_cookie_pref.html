@@ -1,10 +1,10 @@
  <form method="post" target="ifr_form" autocomplete="off" id="form_cookie_pref">
- <input type="hidden" name="api_name" value="{{.api.Name}}">
+ <input type="hidden" name="api_id" value="{{.api.ID}}">
  <fieldset>
     <legend>Cookie标记转发规则 &nbsp;<sub class="text-muted">直接使用浏览器访问接口时有效</sub></legend>
 {{range $host_name,$host:=$.api.Hosts}} 
     {{if $host.Enable}} 
-    <label  class="checkbox-inline" title="{{$host.Note|html}} {{$host.URLStr|html}} &#10;Cookie(api_pref_{{$.api.Name}}={{$host_name|html}}) ">
+    <label  class="checkbox-inline" title="{{$host.Note|html}} {{$host.URLStr|html}} &#10;Cookie(api_pref_{{$.api.ID}}={{$host_name|html}}) ">
         <input   type="checkbox" name="host_names" {{if  in_array $host_name $.cookiePref}}checked='checked' {{end}} value="{{$host_name|html}}"> 
         {{$host_name|html}} &nbsp;<span class="text-info">{{$host.Note|html}}</span>
     </label>

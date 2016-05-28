@@ -151,11 +151,11 @@ func (apiServer *APIServer) domains() []string {
 	return apiServer.ServerVhostConf.Domains
 }
 
-func (apiServer *APIServer) getAPIByName(name string) *apiStruct {
-	if name == "" {
+func (apiServer *APIServer) getAPIByID(id string) *apiStruct {
+	if id == "" {
 		return nil
 	}
-	if api, has := apiServer.Apis[name]; has {
+	if api, has := apiServer.Apis[id]; has {
 		return api
 	}
 	return nil

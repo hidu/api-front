@@ -1,18 +1,18 @@
-<div class="modal fade" id="modifyApiNameModal" tabindex="-1" role="dialog">
+<div class="modal fade" id="modifyApiIDModal" tabindex="-1" role="dialog">
   <div class="modal-dialog" role="document" style="width:500px">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">修改模块名称</h4>
+        <h4 class="modal-title">修改API ID</h4>
       </div>
       <form method="post" class="form-horizontal">
-      <input  name="do" type="hidden" value="rename">
+      <input  name="do" type="hidden" value="changeid">
       <div class="modal-body">
           <div class="form-group">
-            <label for="recipient-name" class="col-sm-3 control-label">模块名称：</label>
+            <label for="recipient-name" class="col-sm-3 control-label">接口ID：</label>
             <div class="col-sm-4">
-                <input name="orig_name" type="hidden" value="">
-                <input type="text" class="form-control" value="" name="new_name">
+                <input name="orig_id" type="hidden" value="">
+                <input type="text" class="form-control" value="" name="new_id">
             </div>
                <span class="form-control-static emsg" id="mod_help" style='color:red;'></span>
           </div>
@@ -35,7 +35,7 @@ $('#modifyApiNameModal').on('show.bs.modal', function (event) {
     })
 $("#modifyApiNameModal form").ajaxForm(function(data){
     if(data.code==0){
-        location.href="/_/api?name="+data.data
+        location.href="/_/api?id="+data.data
     }else{
         $("#mod_help").text(data.msg)
     }

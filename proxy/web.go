@@ -9,7 +9,6 @@ import (
 	"github.com/hidu/goutils"
 	"log"
 	"net/http"
-	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -74,9 +73,9 @@ func (web *webAdmin) wsInit() {
 		})
 		web.wsSocket = so
 		so.Join("api_pv")
-		so.On("http_analysis", func(name string) {
-			api := web.apiServer.getAPIByName(name)
-			log.Println("socket.io on http_analysis", name)
+		so.On("http_analysis", func(api_id string) {
+			api := web.apiServer.getAPIByID(api_id)
+			log.Println("socket.io on http_analysis", api_id)
 			if api != nil {
 				uniqID := api.uniqID()
 
@@ -89,7 +88,7 @@ func (web *webAdmin) wsInit() {
 
 				msg := make(map[string]interface{})
 				msg["client_num"] = api.analysisClientNum
-				msg["api_name"] = api.Name
+				msg["api_id"] = api.ID
 
 				so.Emit("s_http_analysis", msg)
 			}
@@ -149,7 +148,7 @@ func (web *webAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 
 func (web *webAdmin) serveHTTP(rw http.ResponseWriter, req *http.Request) {
 	if strings.HasPrefix(req.URL.Path, "/_/res/") {
-		http.StripPrefix("/_/res/",Assest.HTTPHandler("/res/")).ServeHTTP(rw,req)
+		http.StripPrefix("/_/res/", Assest.HTTPHandler("/res/")).ServeHTTP(rw, req)
 		return
 	}
 	if strings.HasPrefix(req.URL.Path, "/_socket.io/") {
@@ -364,7 +363,7 @@ func (wr *webReq) apiPref() {
 	cookieName := apiCookieName(apiName)
 
 	if prefHost != "" {
-		api := wr.web.apiServer.getAPIByName(apiName)
+		api := wr.web.apiServer.getAPIByID(apiName)
 		if api == nil {
 			wr.json(400, "api not exists", nil)
 			return
@@ -390,7 +389,7 @@ func (wr *webReq) apiPv() {
 		wr.json(400, "param empty", nil)
 		return
 	}
-	api := wr.web.apiServer.getAPIByName(apiName)
+	api := wr.web.apiServer.getAPIByID(apiName)
 	if api == nil {
 		wr.json(400, "api not exists", nil)
 		return
@@ -414,7 +413,7 @@ func (wr *webReq) apiAnalysis() {
 		wr.showError("param empty")
 		return
 	}
-	api := wr.web.apiServer.getAPIByName(apiName)
+	api := wr.web.apiServer.getAPIByID(apiName)
 	if api == nil {
 		wr.values["error"] = "api not exists!  <a href='/_/api'>add new</a>"
 		wr.render("error.html", true)
@@ -426,7 +425,7 @@ func (wr *webReq) apiAnalysis() {
 	store_view_url := ""
 	if wr.web.apiServer.needStore() {
 		store_view_url = strings.Replace(wr.web.apiServer.manager.mainConf.StoreViewUrl, "{host_id}", wr.web.apiServer.ServerVhostConf.Id, -1)
-		store_view_url = strings.Replace(store_view_url, "{api_name}", api.Name, -1)
+		store_view_url = strings.Replace(store_view_url, "{api_id}", api.ID, -1)
 	}
 	wr.values["store_view_url"] = store_view_url
 
@@ -466,282 +465,6 @@ func (wr *webReq) render(tplName string, layout bool) {
 }
 
 var webTmpName = "tpl_api_front"
-
-func (wr *webReq) apiEdit() {
-	req := wr.req
-	id := req.FormValue("id")
-	if req.Method != "POST" {
-		var api *apiStruct
-		addNew := false
-		if id != "" {
-			apiOld := wr.web.apiServer.getAPIByName(id)
-			if apiOld == nil {
-				wr.values["error"] = "api not exists!  <a href='/_/api'>add new</a>"
-				wr.render("error.html", true)
-				return
-			}
-			api = apiOld.clone()
-		} else {
-			api = newAPI(wr.web.apiServer, "")
-			api.Enable = true
-			api.TimeoutMs = 5000
-			addNew = true
-		}
-		hostsTpl := newHosts()
-		hostsTpl.addNewHost(newHost(webTmpName, "http://127.0.0.1/", true))
-		if addNew {
-			api.Hosts["default"] = newHost("default", "", true)
-		}
-		citem, _ := newCallerItem("")
-		api.Caller.addNewCallerItem(citem)
-
-		wr.values["api"] = &api
-		wr.values["HostsTpl"] = hostsTpl
-		wr.values["api_url"] = "http://" + req.Host + api.Path
-
-		wr.values["userCanEdit"] = api.userCanEdit(wr.user)
-
-		prefCookie, err := wr.req.Cookie(api.cookieName())
-		cookiePref := ""
-		if err == nil {
-			cookiePref = prefCookie.Value
-		}
-		wr.values["cookiePref"] = strings.Split(cookiePref, ",")
-		wr.values["cookiePrefStr"] = cookiePref
-
-		wr.render("api.html", true)
-		return
-	}
-
-	do := req.FormValue("do")
-	switch do {
-	case "base":
-		wr.apiBaseSave()
-	case "caller":
-		wr.apiCallerSave()
-	case "rename":
-		wr.apiRename()
-	default:
-		wr.alert("unknow")
-	}
-}
-
-func (wr *webReq) apiRename() {
-	req := wr.req
-	origName := req.FormValue("orig_name")
-	newName := req.FormValue("new_name")
-
-	if origName == newName {
-		wr.json(304, "now change", nil)
-		return
-	}
-	if !apiNameReg.MatchString(newName) {
-		wr.json(400, "name wrong", nil)
-		return
-	}
-
-	origApi := wr.web.apiServer.getAPIByName(origName)
-	if origApi == nil {
-		wr.json(404, "api not found", nil)
-		return
-	}
-	if !origApi.userCanEdit(wr.user) {
-		wr.json(403, "没有编辑权限", nil)
-		return
-	}
-
-	newApi := wr.web.apiServer.getAPIByName(newName)
-	if newApi != nil {
-		wr.json(404, newName+" aready exists!", nil)
-		return
-	}
-
-	if err := origApi.reName(newName); err != nil {
-		wr.json(500, "rename failed", nil)
-		return
-	}
-	wr.web.apiServer.unRegisterAPI(origName)
-	wr.web.apiServer.loadAPI(newName)
-	wr.json(0, "success", newName)
-}
-
-func (wr *webReq) apiBaseSave() {
-	req := wr.req
-
-	mod := req.FormValue("mod")
-
-	if mod == "new" && !wr.web.apiServer.hasUser(wr.getUserID()) {
-		wr.alert("No permissions!")
-		return
-	}
-
-	timeout, err := strconv.ParseInt(req.FormValue("timeout"), 10, 64)
-	if err != nil {
-		wr.alert("wrong Timeout value,not int")
-		return
-	}
-	apiName := req.FormValue("api_name")
-
-	//绑定路径
-	apiPath := URLPathClean(req.FormValue("path"))
-
-	if !apiNameReg.MatchString(apiName) {
-		wr.alert(fmt.Sprintf(`api Id not allow`, apiName))
-		return
-	}
-
-	api := wr.web.apiServer.getAPIByName(apiName)
-	if api != nil && mod == "new" {
-		wr.alert(fmt.Sprintf(`api(%s) already exist`, apiName))
-		return
-	}
-
-	if api != nil && !api.userCanEdit(wr.user) {
-		wr.alert("No permissions!")
-		return
-	}
-
-	//按照路径查找得到的api
-	apiByPath := wr.web.apiServer.getAPIByPath(apiPath)
-
-	if apiByPath != nil {
-		if api == nil || (api != nil && api.Name != apiByPath.Name) {
-			wr.alert(fmt.Sprintf("same location (%s) as api(%s:%s)", apiPath, apiByPath.Name, apiByPath.Note))
-			return
-		}
-	}
-	if api == nil {
-		api = wr.web.apiServer.newAPI(apiName)
-	}
-
-	hostNames := req.PostForm["host_name"]
-	hostNameOrigs := req.PostForm["host_name_orig"]
-	hostUrls := req.PostForm["host_url"]
-	hostNotes := req.PostForm["host_note"]
-	hostEnables := req.PostForm["host_enable"]
-
-	if len(hostNames) != len(hostUrls) || len(hostNames) != len(hostNotes) || len(hostNames) != len(hostEnables) {
-		wr.alert("save failed")
-		return
-	}
-
-	tmp := make(map[string]string)
-	for _, val := range hostNames {
-		if _, has := tmp[val]; has {
-			wr.alert("别名:" + val + "，重复了")
-			return
-		}
-	}
-
-	for i, name := range hostNames {
-		if name == "" || name == webTmpName {
-			continue
-		}
-		host := newHost(name, hostUrls[i], true)
-		host.Note = hostNotes[i]
-		host.Enable = hostEnables[i] == "1"
-
-		//		wr.web.apiServer.
-		api.Hosts.addNewHost(host)
-		nameOrig := hostNameOrigs[i]
-		api.hostRename(nameOrig, name)
-	}
-	api.hostCheckDelete(hostNames)
-
-	if api == nil {
-		api = wr.web.apiServer.newAPI(apiName)
-	}
-
-	api.Note = req.FormValue("note")
-	api.TimeoutMs = int(timeout)
-	api.Enable = req.FormValue("enable") == "1"
-	api.Path = apiPath
-	api.HostAsProxy = req.FormValue("host_as_proxy") == "1"
-	api.Users = make(users, 0)
-
-	proxy := strings.TrimSpace(req.FormValue("proxy"))
-	api.Proxy=proxy
-	if proxy != "" {
-		if api.HostAsProxy {
-			wr.alert("Can not use parent proxy when run as proxy model")
-			return
-		}
-		_u, err := url.Parse(proxy)
-		if err != nil || _u.Scheme != "http" {
-			wr.alert("Parent HTTP proxy wrong")
-			return
-		}
-	}
-
-	uids := strings.Split(req.FormValue("uids"), "|")
-	if wr.user != nil {
-		uids = append(uids, wr.user.ID)
-	} else {
-		uids = append(uids, ":any")
-	}
-
-	for _, v := range uids {
-		v = strings.TrimSpace(v)
-		if v != "" && !InStringSlice(v, api.Users) {
-			if !wr.web.apiServer.hasUser(v) {
-				api.Users = append(api.Users, v)
-			}
-		}
-	}
-
-	err = api.save()
-	if err != nil {
-		wr.alert("Save failed：" + err.Error())
-		return
-	}
-	wr.web.apiServer.loadAPI(apiName)
-	wr.alertAndGo("Save Success！", "/_/api?id="+apiName)
-}
-
-func (wr *webReq) apiCallerSave() {
-	req := wr.req
-	apiName := req.FormValue("api_name")
-	api := wr.web.apiServer.getAPIByName(apiName)
-	if api == nil {
-		wr.alert("api模块不存在")
-		return
-	}
-	if !api.userCanEdit(wr.user) {
-		wr.alert("没有编辑权限")
-		return
-	}
-	datas := req.Form["datas[]"]
-	callers := newCaller()
-	for _, qs := range datas {
-		qv, _ := url.ParseQuery(qs)
-		item, _ := newCallerItem(qv.Get("ip"))
-		item.Note = qv.Get("note")
-		item.Enable = qv.Get("enable") == "1"
-		if qv.Get("host_names") != "" {
-			item.Pref = qv["host_names"]
-		}
-		if qv.Get("host_ignore") != "" {
-			item.Ignore = qv["host_ignore"]
-
-			for _, ignoreName := range item.Ignore {
-				if InStringSlice(ignoreName, item.Pref) {
-					wr.json(1, "配置冲突("+item.IP+")\n屏蔽:"+ignoreName, nil)
-					return
-				}
-			}
-		}
-		callers.addNewCallerItem(item)
-	}
-	api.Caller = callers
-
-	err := api.save()
-	if err != nil {
-		wr.json(1, "保存配置失败:"+err.Error(), nil)
-		return
-	}
-	wr.web.apiServer.loadAPI(apiName)
-	wr.json(0, "已经更新！", nil)
-}
 
 func (wr *webReq) serviceList() {
 	vhosts := make(map[string][]*serverVhost)

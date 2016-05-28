@@ -15,33 +15,34 @@ import (
 )
 
 type apiStruct struct {
-	Name        string       `json:"-"`
-	ConfPath    string       `json:"-"`
-	Path        string       `json:"path"`
-	Note        string       `json:"note"`
-	TimeoutMs   int          `json:"timeout_ms"`
-	Hosts       Hosts        `json:"hosts"`
-	Enable      bool         `json:"enable"`
-	Caller      Caller       `json:"caller"`
-	rw          sync.RWMutex `json:"-"`
-	Exists      bool         `json:"-"`
-	HostAsProxy bool         `json:"host_as_proxy"` //是否把后端当作代理
-	Pv          uint64       `json:"-"`
-	LastVisit   time.Time    `json:"-"`       //最后访问时间
-	Version     int64        `json:"version"` //配置文件的版本号
-	apiServer   *APIServer
-	Users       users  `json:"users"`
-	Proxy       string `json:"proxy"` //使用父代理
+	ID           string       `json:"-"`
+	ConfPath     string       `json:"-"`
+	Path         string       `json:"path"` //api 绑定地址 前缀
+	Note         string       `json:"note"`
+	TimeoutMs    int          `json:"timeout_ms"`
+	Hosts        Hosts        `json:"hosts"`
+	Enable       bool         `json:"enable"`
+	Caller       Caller       `json:"caller"`
+	rw           sync.RWMutex `json:"-"`
+	Exists       bool         `json:"-"`
+	HostAsProxy  bool         `json:"host_as_proxy"` //是否把后端当作代理
+	Pv           uint64       `json:"-"`
+	LastVisit    time.Time    `json:"-"`       //最后访问时间
+	Version      int64        `json:"version"` //配置文件的版本号
+	apiServer    *APIServer
+	Users        users        `json:"users"`
+	Proxy        string       `json:"proxy"`         //使用父代理
+	RespModifier RespModifier `json:"resp_modifier"` //
 
 	proxyURL *url.URL `json:"-"` //父代理的URL object
 
-	analysisClientNum int `json:"-"` //进行协议分析的客户端数量
+	analysisClientNum int `json:"-"` //正在进行协议分析的客户端数量
 }
 
 // init new api for server
-func newAPI(apiServer *APIServer, apiName string) *apiStruct {
+func newAPI(apiServer *APIServer, id string) *apiStruct {
 	api := &apiStruct{
-		Name:      apiName,
+		ID:        id,
 		Hosts:     newHosts(),
 		apiServer: apiServer,
 	}
@@ -50,11 +51,11 @@ func newAPI(apiServer *APIServer, apiName string) *apiStruct {
 }
 
 func (api *apiStruct) getConfPath() string {
-	return fmt.Sprintf("%s/%s.json", api.apiServer.getConfDir(), api.Name)
+	return fmt.Sprintf("%s/%s.json", api.apiServer.getConfDir(), api.ID)
 }
 
 func (api *apiStruct) init() (err error) {
-	log.Println("start load api [", api.Name, "] conf")
+	log.Println("start load api [", api.ID, "] conf")
 
 	if api.TimeoutMs < 1 {
 		api.TimeoutMs = 5000
@@ -74,6 +75,10 @@ func (api *apiStruct) init() (err error) {
 		api.proxyURL, _ = url.Parse(api.Proxy)
 	}
 
+	if api.RespModifier == nil {
+		api.RespModifier = newRespModifierSlice()
+	}
+
 	api.Caller.Sort()
 	err = api.Caller.init()
 
@@ -83,7 +88,7 @@ func (api *apiStruct) init() (err error) {
 
 var pathReg = regexp.MustCompile(`^/([\w-/]+/?)*$`)
 
-var apiNameReg = regexp.MustCompile(`^[\w-]+$`)
+var apiIDReg = regexp.MustCompile(`^[\w-]+$`)
 
 func (api *apiStruct) isValidPath(myPath string) bool {
 	return pathReg.MatchString(myPath)
@@ -118,16 +123,16 @@ func (api *apiStruct) delete() error {
 	return err
 }
 
-func (api *apiStruct) reName(newName string) error {
-	if api.Name == newName {
-		log.Println("rename skip,not change,newName:", newName)
+func (api *apiStruct) changeID(id string) error {
+	if api.ID == id {
+		log.Println("rename skip,not change,newName:", id)
 		return nil
 	}
 	err := api.delete()
 	if err != nil {
 		return err
 	}
-	api.Name = newName
+	api.ID = id
 	api.ConfPath = api.getConfPath()
 	return api.save()
 }
@@ -138,7 +143,7 @@ func (api *apiStruct) clone() *apiStruct {
 	data, _ := json.Marshal(api)
 	var newAPI *apiStruct
 	json.Unmarshal(data, &newAPI)
-	newAPI.Name = api.Name
+	newAPI.ID = api.ID
 	newAPI.ConfPath = api.ConfPath
 	newAPI.Exists = api.Exists
 	newAPI.init()
@@ -190,13 +195,13 @@ func (api *apiStruct) getMasterHostName(cpf *CallerPrefConf) string {
 }
 
 func (api *apiStruct) cookieName() string {
-	return apiCookieName(api.Name)
+	return apiCookieName(api.ID)
 }
 
-func loadAPIByConf(apiServer *APIServer, apiName string) (*apiStruct, error) {
-	api := newAPI(apiServer, apiName)
+func loadAPIByConf(apiServer *APIServer, apiID string) (*apiStruct, error) {
+	api := newAPI(apiServer, apiID)
 	relName, _ := filepath.Rel(filepath.Dir(apiServer.getConfDir()), api.ConfPath)
-	logMsg := fmt.Sprint("load api [", apiName, "],[", relName, "]")
+	logMsg := fmt.Sprint("load api [", apiID, "],[", relName, "]")
 
 	log.Println(logMsg, "start")
 
@@ -213,7 +218,7 @@ func loadAPIByConf(apiServer *APIServer, apiName string) (*apiStruct, error) {
 	api.Hosts.init()
 	log.Println(logMsg, "success")
 	if api.Path == "" {
-		api.Path = fmt.Sprintf("/%s/", apiName)
+		api.Path = fmt.Sprintf("/%s/", apiID)
 	}
 	if !api.isValidPath(api.Path) {
 		return api, fmt.Errorf("path wrong:%s", api.Path)
@@ -225,20 +230,20 @@ func loadAPIByConf(apiServer *APIServer, apiName string) (*apiStruct, error) {
 }
 
 func (api *apiStruct) pvInc() uint64 {
-	return api.apiServer.GetCounter().pvInc(api.Name)
+	return api.apiServer.GetCounter().pvInc(api.ID)
 }
 
 func (api *apiStruct) GetPv() uint64 {
-	return api.apiServer.GetCounter().GetPv(api.Name)
+	return api.apiServer.GetCounter().GetPv(api.ID)
 }
 
 func (api *apiStruct) uniqID() string {
 	sc := api.apiServer.ServerVhostConf
-	return fmt.Sprintf("api|%s|%d|%s", sc.Id, sc.Port, api.Name)
+	return fmt.Sprintf("api|%s|%d|%s", sc.Id, sc.Port, api.ID)
 }
 
-func apiCookieName(apiName string) string {
-	return fmt.Sprintf("%s_%s", apiPrefParamName, apiName)
+func apiCookieName(apiID string) string {
+	return fmt.Sprintf("%s_%s", apiPrefParamName, apiID)
 }
 
 /**
