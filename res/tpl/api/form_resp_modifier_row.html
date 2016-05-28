@@ -1,37 +1,35 @@
- <div class="panel panel-default api_resp_modifier_row sortable">
-    <div class="panel-body">
-         {{if $.userCanEdit}}
-            <div class="pull-right"><a href="#" onclick="proxy_api_resp_modifier_del(this);return false;">X</a></div>
-          {{end}}
+<div class="panel panel-default api_resp_modifier_row">
+  <div class="panel-body">
+     {{if $.userCanEdit}}
+        <div class="pull-right"><a href="#" onclick="proxy_api_resp_modifier_del(this);return false;">X</a></div>
+      {{end}}
+  
+      <div class="row form-group ">
+        <div class="col-sm-6">
+            <div class="input-group">
+              <label class="input-group-addon required">备注:</label>
+              <input type="text" class="form-control my_form_val" name='note'  value="{{$modifier.Note|html}}" required pattern="[\w-]+">
+            </div>
+        </div>
     
-		 <div class="row form-group ">
-		    <div class="col-sm-6">
-		        <div class="input-group">
-		            <label class="input-group-addon required">备注:</label>
-		            <input type="text" class="form-control my_form_val" name='note'  value="{{$modifier.Note|html}}" required pattern="[\w-]+">
-		        </div>
-		    </div>
-
-		   <div class="col-sm-1">
-		       <div class="input-group checkbox">
-		        <label>
-		            <input  type="checkbox" class="my-checkbox my_form_val" name="enable" value="1" {{if $modifier.Enable}}checked=checked{{end}}>
-		            启用
-		        </label>
-		       </div>
-		   </div>
-		   
-		   
-		 </div>
-		 <div class="row form-group">
-          <div class="col-sm-11">
-                <div class="input-group">
-                    <label class="input-group-addon required">规则:</label>
-                     <textarea class="form-control my_form_val" style='width:100%' name="rule" required placeholder="rule code">{{$modifier.Rule|html}}</textarea>
-                </div>
-           
-	      </div>
-	      <div class="col-sm-1"></div>
-		 </div>
- </div>
+        <div class="col-sm-1">
+          <div class="input-group checkbox">
+            <label>
+                <input  type="checkbox" class="my-checkbox my_form_val" name="enable" value="1" {{if $modifier.Enable}}checked=checked{{end}}>
+                启用
+            </label>
+          </div>
+        </div>
+      </div>
+     
+      <div class="row form-group">
+        <div class="col-sm-11">
+          <div class="input-group">
+            <label class="input-group-addon required">规则:</label>
+            <textarea class="form-control my_form_val" style='width:100%' name="rule" required placeholder="rule code">{{$modifier.Rule|html}}</textarea>
+          </div>
+         
+        </div>
+      </div>
+  </div>
 </div>

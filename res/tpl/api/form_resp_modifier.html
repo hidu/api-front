@@ -6,7 +6,7 @@
     <div class="legend_note">对待返回的Response进行动态修改</div>
     </legend>
     
-    <div class="form-body">
+    <div class="form-body sortable">
     {{range $index,$modifier:=$.api.RespModifier}}
         {%my_include "api/form_resp_modifier_row.html"%}
     {{end}}
@@ -38,7 +38,6 @@
         tpl.find(":input").removeAttr("disabled");
         var html=tpl.html();
         $("#form_api_resp_modifier .form-body").append(html);
-        $('.sortable').sortable();
         return false;
     }
     

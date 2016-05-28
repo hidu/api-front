@@ -307,6 +307,10 @@ func (wr *webReq) apiRespModifier() {
 			Enable: qv.Get("enable") == "1",
 			Rule:   qv.Get("rule"),
 		}
+		err:=item.Init()
+		if(err!=nil){
+			wr.json(1, "初始化失败:"+err.Error(), nil)
+		}
 		ms = append(ms, item)
 	}
 	api.RespModifier = ms

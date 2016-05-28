@@ -246,6 +246,24 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				return
 			}
 			defer resp.Body.Close()
+			
+			//--------------------------------------------------------------
+			//修改response 数据
+			_mod,_mod_err:=api.RespModifier.ModifierResp(apiReq.req,resp)
+			backLog["resp_mod"]=_mod;
+			backLog["resp_mod_err"]=_mod_err;
+			if _mod_err!=nil{
+				log.Println("[error]call_resp_mod "+apiReq.urlNew, _mod_err)
+				rw.WriteHeader(http.StatusBadGateway)
+				rw.Write([]byte("call_resp_mod error:"+_mod_err.Error()))
+				
+				if needBroad {
+					broadData.setError(_mod_err.Error())
+				}
+				return
+			}
+			//--------------------------------------------------------------
+			
 
 			if needBroad {
 				apiServer.addBroadCastDataResponse(broadData, resp)
