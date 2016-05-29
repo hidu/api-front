@@ -117,7 +117,7 @@ func (apiServer *APIServer) loadAPI(apiName string) error {
 
 	api, err := loadAPIByConf(apiServer, apiName)
 	if err != nil {
-		log.Println("load api failed,", apiName, err)
+		log.Printf("load api [%s] failed,err:%s", apiName, err)
 		return err
 	}
 

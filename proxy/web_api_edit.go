@@ -303,13 +303,14 @@ func (wr *webReq) apiRespModifier() {
 	for _, qs := range datas {
 		qv, _ := url.ParseQuery(qs)
 		item := &ApiRespModifier{
-			Note:   qv.Get("note"),
+			Note:   strings.TrimSpace(qv.Get("note")),
 			Enable: qv.Get("enable") == "1",
-			Rule:   qv.Get("rule"),
+			Rule:   strings.TrimSpace(qv.Get("rule")),
 		}
-		err:=item.Init()
-		if(err!=nil){
+		err := item.Init()
+		if err != nil {
 			wr.json(1, "初始化失败:"+err.Error(), nil)
+			return;
 		}
 		ms = append(ms, item)
 	}

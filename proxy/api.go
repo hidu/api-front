@@ -78,7 +78,7 @@ func (api *apiStruct) init() (err error) {
 	if api.RespModifier == nil {
 		api.RespModifier = newRespModifierSlice()
 	}
-	if e:=api.RespModifier.Init();e!=nil{
+	if e := api.RespModifier.Init(); e != nil {
 		return e
 	}
 
