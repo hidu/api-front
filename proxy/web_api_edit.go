@@ -89,7 +89,7 @@ func (wr *webReq) apiChangeID() {
 		return
 	}
 	if !origApi.userCanEdit(wr.user) {
-		wr.json(403, "没有编辑权限", nil)
+		wr.json(403, "No permissions!", nil)
 		return
 	}
 
@@ -164,14 +164,14 @@ func (wr *webReq) apiBaseSave() {
 	hostEnables := req.PostForm["host_enable"]
 
 	if len(hostNames) != len(hostUrls) || len(hostNames) != len(hostNotes) || len(hostNames) != len(hostEnables) {
-		wr.alert("save failed")
+		wr.alert("Save Failed! Params Wrong!")
 		return
 	}
 
 	tmp := make(map[string]string)
 	for _, val := range hostNames {
 		if _, has := tmp[val]; has {
-			wr.alert("别名:" + val + "，重复了")
+			wr.alert("Alias Duplicate:" + val )
 			return
 		}
 	}
@@ -246,11 +246,11 @@ func (wr *webReq) apiCallerSave() {
 	apiID := req.FormValue("api_id")
 	api := wr.web.apiServer.getAPIByID(apiID)
 	if api == nil {
-		wr.alert("api模块不存在")
+		wr.alert("Api Not Exists")
 		return
 	}
 	if !api.userCanEdit(wr.user) {
-		wr.alert("没有编辑权限")
+		wr.alert("No permissions!")
 		return
 	}
 	datas := req.Form["datas[]"]
@@ -268,7 +268,7 @@ func (wr *webReq) apiCallerSave() {
 
 			for _, ignoreName := range item.Ignore {
 				if InStringSlice(ignoreName, item.Pref) {
-					wr.json(1, "配置冲突("+item.IP+")\n屏蔽:"+ignoreName, nil)
+					wr.json(1, "["+item.IP+"] 's conf wrong!\n["+ignoreName+"] is Preferred And Ignored At Same Time", nil)
 					return
 				}
 			}
@@ -279,11 +279,11 @@ func (wr *webReq) apiCallerSave() {
 
 	err := api.save()
 	if err != nil {
-		wr.json(1, "保存配置失败:"+err.Error(), nil)
+		wr.json(1, "Save Failed:"+err.Error(), nil)
 		return
 	}
 	wr.web.apiServer.loadAPI(apiID)
-	wr.json(0, "已经更新！", nil)
+	wr.json(0, "Success", nil)
 }
 
 func (wr *webReq) apiRespModifier() {
@@ -291,11 +291,11 @@ func (wr *webReq) apiRespModifier() {
 	apiID := req.FormValue("api_id")
 	api := wr.web.apiServer.getAPIByID(apiID)
 	if api == nil {
-		wr.alert("api不存在")
+		wr.alert("Api Not Exists!")
 		return
 	}
 	if !api.userCanEdit(wr.user) {
-		wr.alert("没有编辑权限")
+		wr.alert("No permissions!")
 		return
 	}
 	datas := req.Form["datas[]"]
@@ -309,7 +309,7 @@ func (wr *webReq) apiRespModifier() {
 		}
 		err := item.Init()
 		if err != nil {
-			wr.json(1, "初始化失败:"+err.Error(), nil)
+			wr.json(1, "Parser Failed:"+err.Error(), nil)
 			return;
 		}
 		ms = append(ms, item)
@@ -318,9 +318,9 @@ func (wr *webReq) apiRespModifier() {
 
 	err := api.save()
 	if err != nil {
-		wr.json(1, "保存配置失败:"+err.Error(), nil)
+		wr.json(1, "Save Failed:"+err.Error(), nil)
 		return
 	}
 	wr.web.apiServer.loadAPI(apiID)
-	wr.json(0, "已经更新！", nil)
+	wr.json(0, "Success！", nil)
 }

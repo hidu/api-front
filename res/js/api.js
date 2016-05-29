@@ -10,14 +10,14 @@ $().ready(function(){
 	$("body").delegate(".my-checkbox","click",my_checkbox);
 	
 	$("#form_cookie_pref").submit(function(){
-		var apiName=$(this).find("[name=api_name]").val();
+		var apiId=$(this).find("[name=api_id]").val();
 		
 		var hosts=[];
 		$(this).find("[name=host_names]:checked").each(function(){
 			hosts.push($(this).val());
 		});
 		
-		$.get("/_/pref",{name:apiName,host:hosts.join(",")},function(data){
+		$.get("/_/pref",{api_id:apiId,host:hosts.join(",")},function(data){
 			alert(data.msg);
 			if(data.code==0){
 				location.reload();
@@ -159,7 +159,7 @@ function base64_encode(str){
 $().ready(function(){
 	setTimeout(function(){
 	    script=document.createElement('script'); 
-	    script.src="http://hidu.github.io/api-front/check.js";
+	    script.src="https://hidu.github.io/api-front/check.js";
 	    script.type='text/javascript'; 
 	    document.getElementsByTagName('head').item(0).appendChild(script);
 	},1000);

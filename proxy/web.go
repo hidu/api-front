@@ -340,7 +340,7 @@ func (wr *webReq) login() {
 		user := wr.web.userConf.checkUser(id, psw)
 		if user == nil {
 			log.Println("[warning]login failed;user:", id)
-			wr.alert("login failed")
+			wr.alert("Login Failed")
 			return
 		}
 		wr.session.Values["user"] = user
@@ -352,20 +352,20 @@ func (wr *webReq) login() {
 }
 
 func (wr *webReq) apiPref() {
-	apiName := strings.TrimSpace(wr.req.FormValue("name"))
+	apiID := strings.TrimSpace(wr.req.FormValue("api_id"))
 	prefHost := strings.TrimSpace(wr.req.FormValue("host"))
 
-	if apiName == "" {
+	if apiID == "" {
 		wr.json(400, "param empty", nil)
 		return
 	}
 
-	cookieName := apiCookieName(apiName)
+	cookieName := apiCookieName(apiID)
 
 	if prefHost != "" {
-		api := wr.web.apiServer.getAPIByID(apiName)
+		api := wr.web.apiServer.getAPIByID(apiID)
 		if api == nil {
-			wr.json(400, "api not exists", nil)
+			wr.json(400, "Api Not Exists", nil)
 			return
 		}
 	}
@@ -380,21 +380,21 @@ func (wr *webReq) apiPref() {
 
 	http.SetCookie(wr.rw, cookie)
 
-	wr.json(0, "success", prefHost)
+	wr.json(0, "Success", prefHost)
 }
 
 func (wr *webReq) apiPv() {
-	apiName := strings.TrimSpace(wr.req.FormValue("name"))
-	if apiName == "" {
+	apiID := strings.TrimSpace(wr.req.FormValue("api_id"))
+	if apiID == "" {
 		wr.json(400, "param empty", nil)
 		return
 	}
-	api := wr.web.apiServer.getAPIByID(apiName)
+	api := wr.web.apiServer.getAPIByID(apiID)
 	if api == nil {
-		wr.json(400, "api not exists", nil)
+		wr.json(400, "Api Not Exists", nil)
 		return
 	}
-	wr.json(0, "suc", api.GetPv())
+	wr.json(0, "Success", api.GetPv())
 }
 
 func (wr *webReq) apiAnalysis() {

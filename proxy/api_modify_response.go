@@ -150,11 +150,20 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 		if err != nil {
 			return true, err
 		}
+		msg:=newRes.Header.Get("Api-Front-Modify-Response-Msg")
+		//强制性要求必须返回该header头部，以确保返回的内容确实是经过处理的，符合预期的
+		if(msg==""){
+			return true,fmt.Errorf("Response Header Miss 'Api-Front-Modify-Response-Msg'")
+		}
+		//透传该字段,以方便对实际修改有所了解
+		resp.Header.Add("Api-Front-Modify-Response-Msg",msg);
+		
 		buf := bytes.NewBuffer(newBodyBs)
 
 		if buf.Len() != len(notChangeRespStr) && buf.String() != notChangeRespStr {
 			resp.Header.Add("resp_modifier_body_len", fmt.Sprintf("%d|%d", rawBodyBf.Len(), len(newBodyBs)))
-
+			
+			//直接对原始的response Body 进行替换
 			resp.Body = ioutil.NopCloser(buf).(io.ReadCloser)
 			resp.ContentLength = int64(buf.Len())
 			if resp.Header.Get("Content-Length") != "" {
