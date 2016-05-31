@@ -171,7 +171,7 @@ func (wr *webReq) apiBaseSave() {
 	tmp := make(map[string]string)
 	for _, val := range hostNames {
 		if _, has := tmp[val]; has {
-			wr.alert("Alias Duplicate:" + val )
+			wr.alert("Alias Duplicate:" + val)
 			return
 		}
 	}
@@ -310,7 +310,7 @@ func (wr *webReq) apiRespModifier() {
 		err := item.Init()
 		if err != nil {
 			wr.json(1, "Parser Failed:"+err.Error(), nil)
-			return;
+			return
 		}
 		ms = append(ms, item)
 	}

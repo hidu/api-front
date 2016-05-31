@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"net/http/httputil"
 )
 
 type portServer struct {
@@ -58,9 +59,10 @@ func (ps *portServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 	}
 	apiServer := ps.getAPIServer(port, host)
-	logMsg := req.RemoteAddr + " " + req.RequestURI + " " + req.Referer()
+	logMsg :=fmt.Sprintf("remote=%s uri=%s refer=%s host=%s port=%d",req.RemoteAddr, req.RequestURI ,req.Referer(),host,port)
 	if apiServer == nil {
-		log.Println("[warning]", logMsg, "app not found,404")
+		dump,_:=httputil.DumpRequest(req,false)
+		log.Println("[warning]", logMsg, "app not found,404,req.Host="+req.Host+","+req.URL.String(),req.Header,",req_dump:",string(dump))
 		rw.WriteHeader(http.StatusNotFound)
 		rw.Write([]byte("app not found\n----------------\npowered by api-front"))
 		return

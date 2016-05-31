@@ -40,13 +40,18 @@ socket.on("req",function(req){
 		}
 	}
 });
-var req_max_length=500;
+var req_max_length=1000;
 var req_list=[];
 var localStrName="ap_front_reqs_"+api_front_api_id;
+var localReceiveName="ap_front_not_rec_"+api_front_api_id;
 try{
-	if(window.localStorage && window.localStorage[localStrName]){
-		req_list=$.parseJSON(window.localStorage[localStrName]||"[]");
-	}
+    if(window.localStorage){
+    	if(window.localStorage[localStrName]){
+    		req_list=$.parseJSON(window.localStorage[localStrName]||"[]");
+    		req_list=req_list.slice(0,req_max_length);
+    	}
+    	allow_receive_req=window.localStorage[localReceiveName]!="n";
+    }
 }catch(e){
 	console&& console.log(e);
 }
@@ -88,17 +93,18 @@ function addReqFilter(req){
 		}
 	})(req));
 	filterReqsTr(tr);
+	
 	$("#req_list_filter_body").prepend(tr);
+	
+	var req_tr=$("#req_list_filter_body tr");
+    if(req_tr.size()>req_max_length){
+        req_tr.remove(":gt("+req_max_length+")")
+    }
 }
 
 function showReqTr(req){
 	location.hash=req.id;
 	var uri=req.data["request_uri"]||"";
-//	var uri_prex=$.trim($("#form_analysis_filter").find("[name=uri_prex]").val())
-//	if(uri_prex!="" && uri.match(uri_prex)!=uri_prex ){
-//	    console && console.log("filter,uri",uri);
-//	    return;
-//	}
 	
 	var tr="<div style='display:none'><div class='panel panel-default'>" +
 			"<div class='panel-heading'>" +
@@ -124,12 +130,6 @@ function showReqTr(req){
 	$("#div_resp_detail").empty().html(trh);
 	trh.slideDown("slow");
 	
-//	$("#req_list tr.req_tr").each(function(index,data){
-//		if(index>=req_max_length){
-//			data.next("tr").remove();
-//			data.remove();
-//		}
-//	})
 }
 
 function buildReplayForm(str,uri,button_txt){
@@ -318,9 +318,12 @@ function showReqDetail(req){
 }
 
 window.onbeforeunload=function(){
-	if(req_max_length>0){
-		window.localStorage[localStrName]=JSON.stringify(req_list);
-	}
+    if(window.localStorage){
+    	if(req_max_length>0){
+    		window.localStorage[localStrName]=JSON.stringify(req_list);
+    	}
+    	window.localStorage[localReceiveName]=allow_receive_req?"y":"n";
+    }
 }
 
 function filterReqsTr(tr,uri_prex){
@@ -373,15 +376,12 @@ function filterReqs(uri_prex){
 }
 
 $().ready(function(){
-	$("#item_open_all").click(function(){
-		$("#req_list tr").not(".req_tr").removeClass("hidden");
-		return false;
-	});
-	$("#item_close_all").click(function(){
-		$("#req_list tr").not(".req_tr").addClass("hidden");
-		return false;
-	});
-	$("#item_checkbox_receive").click(function(){
+    
+    if(allow_receive_req){
+        $("#input_receive").attr("checked","checked");
+    }
+    
+	$("#input_receive").click(function(){
 		allow_receive_req=$(this).is(":checked");
 	});
 	

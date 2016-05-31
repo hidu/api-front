@@ -9,7 +9,8 @@
 <div class='pull-right text-info' style='padding-right:100px'>进行分析时，请保持当前页面打开。</div>
 <div class="row">
     <div style="margin:10px">
-        <span id="connect_status">offline</span>
+        <span id="connect_status">offline</span>&nbsp;
+        <span><label><input type="checkbox" id="input_receive">Receive</label></span>&nbsp;
         <a href="/_/api?id={{.api.ID}}">Edit</a>
         &nbsp;pv:<span id="api_pv_{{.api.ID}}">{{.api.GetPv}}</span>
         &nbsp;user:<span id="api_ana_user_{{.api.ID}}">1</span>

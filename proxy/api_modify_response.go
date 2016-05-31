@@ -105,7 +105,7 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 			js_ret, err = fn.Call(fn, reqJsObj, resJsObj)
 		})()
 		item.jsRunTime <- fn
-		
+
 		if err != nil {
 			return true, err
 		}
@@ -113,7 +113,7 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 			continue
 		}
 		ret_str := js_ret.String()
-		ret_str=strings.TrimSpace(ret_str)
+		ret_str = strings.TrimSpace(ret_str)
 		if ret_str == "" {
 			continue
 		}
@@ -121,7 +121,7 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 			break
 		}
 
-		resp.Header.Set("resp_modifier", ret_str)
+		resp.Header.Set("Api-Front-Modify-Url", ret_str)
 
 		_, err = url.Parse(ret_str)
 		if err != nil {
@@ -150,19 +150,27 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 		if err != nil {
 			return true, err
 		}
-		msg:=newRes.Header.Get("Api-Front-Modify-Response-Msg")
+		msg := newRes.Header.Get("Api-Front-Modify-Response-Msg")
 		//强制性要求必须返回该header头部，以确保返回的内容确实是经过处理的，符合预期的
-		if(msg==""){
-			return true,fmt.Errorf("Response Header Miss 'Api-Front-Modify-Response-Msg'")
+		if msg == "" {
+			return true, fmt.Errorf("Response Header Miss 'Api-Front-Modify-Response-Msg'")
 		}
+
+		statusCodeStr := newRes.Header.Get("Api-Front-Modify-Status")
+		if statusCodeStr == "yes" {
+			msg += " ,raw Status:" + resp.Status
+			resp.StatusCode = newRes.StatusCode
+			resp.Status = newRes.Status
+		}
+
 		//透传该字段,以方便对实际修改有所了解
-		resp.Header.Add("Api-Front-Modify-Response-Msg",msg);
-		
+		resp.Header.Add("Api-Front-Modify-Response-Msg", msg)
+
 		buf := bytes.NewBuffer(newBodyBs)
 
 		if buf.Len() != len(notChangeRespStr) && buf.String() != notChangeRespStr {
-			resp.Header.Add("resp_modifier_body_len", fmt.Sprintf("%d|%d", rawBodyBf.Len(), len(newBodyBs)))
-			
+			resp.Header.Add("Api-Front-Modify-Body-Len", fmt.Sprintf("%d|%d", rawBodyBf.Len(), len(newBodyBs)))
+
 			//直接对原始的response Body 进行替换
 			resp.Body = ioutil.NopCloser(buf).(io.ReadCloser)
 			resp.ContentLength = int64(buf.Len())
@@ -181,7 +189,7 @@ func (item *ApiRespModifier) Init() error {
 		if err != nil {
 			return err
 		}
-	}else{
+	} else {
 		return nil
 	}
 	size := 10
@@ -204,9 +212,9 @@ func (item *ApiRespModifier) genVm() (fn *otto.Value, err error) {
 	vm.Run(jsStr)
 	fnv, e := vm.Get("get_modify_response_api_url")
 	if e != nil {
-		return &fnv,nil
+		return &fnv, nil
 	}
-	fn=&fnv
+	fn = &fnv
 	////=====================================================
 	//对用户的js 代码进行一个基本的测试
 	fn_test, e := vm.Get("test_get_modify_response_api_url")
@@ -227,10 +235,10 @@ func (item *ApiRespModifier) genVm() (fn *otto.Value, err error) {
 		}
 		return nil, fmt.Errorf("return value now allow [true]")
 	}
-	
+
 	if val.IsString() {
 		_sv, _ := val.ToString()
-		_sv=strings.TrimSpace(_sv)
+		_sv = strings.TrimSpace(_sv)
 		switch _sv {
 		case "not":
 		case "":
@@ -247,5 +255,5 @@ func (item *ApiRespModifier) genVm() (fn *otto.Value, err error) {
 		}
 	}
 	////=====================================================
-	return nil,fmt.Errorf("other return value not allowed:%s",val.String())
+	return nil, fmt.Errorf("other return value not allowed:%s", val.String())
 }

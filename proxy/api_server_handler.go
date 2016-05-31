@@ -256,7 +256,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			if _mod_err != nil {
 				log.Println("[error]call_resp_mod "+apiReq.urlNew, _mod_err)
 				rw.WriteHeader(http.StatusBadGateway)
-				rw.Write([]byte("call_resp_mod error:" + _mod_err.Error()))
+				rw.Write([]byte("response modify error:" + _mod_err.Error()))
 
 				if needBroad {
 					broadData.setError(_mod_err.Error())
