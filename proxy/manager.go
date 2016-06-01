@@ -16,7 +16,7 @@ func init() {
 
 // APIServerManager server manager
 type APIServerManager struct {
-	ps       *portServer
+	ps       *portServerManager
 	ConfPath string
 	LogFile  *os.File
 	mainConf *mainConf
@@ -28,7 +28,7 @@ func NewAPIServerManager(confPath string) *APIServerManager {
 	manager.mainConf = loadMainConf(confPath)
 	manager.ConfPath, _ = filepath.Abs(confPath)
 
-	manager.ps = newPortServer(manager)
+	manager.ps = newPortServerManager(manager)
 	return manager
 }
 
