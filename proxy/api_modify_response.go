@@ -130,7 +130,13 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 		if !hasReadBody {
 			rawBodyBf = forgetRead(&resp.Body)
 			hasReadBody = true
-			modReqBody.Add("resp_content", rawBodyBf.String())
+			var _respContent string
+			if resp.Header.Get("Content-Encoding") == "gzip"{
+				_respContent=gzipDocode(rawBodyBf)
+			}else{
+				_respContent=rawBodyBf.String()
+			}
+			modReqBody.Add("resp_content", _respContent)
 		}
 
 		myReq, err := http.NewRequest("POST", ret_str, strings.NewReader(modReqBody.Encode()))
@@ -170,7 +176,8 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 
 		if buf.Len() != len(notChangeRespStr) && buf.String() != notChangeRespStr {
 			resp.Header.Add("Api-Front-Modify-Body-Len", fmt.Sprintf("%d|%d", rawBodyBf.Len(), len(newBodyBs)))
-
+			
+			resp.Header.Del("Content-Encoding")
 			//直接对原始的response Body 进行替换
 			resp.Body = ioutil.NopCloser(buf).(io.ReadCloser)
 			resp.ContentLength = int64(buf.Len())
