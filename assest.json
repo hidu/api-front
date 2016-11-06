@@ -1,5 +1,5 @@
 {
   "src":"res",
-  "dest":"proxy/assest.go",
-  "package":"proxy"
+  "dest":"utils/assest.go",
+  "package":"utils"
 }

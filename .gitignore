@@ -27,3 +27,5 @@ _testmain.go
 .README*
 conf/_ser*
 api-front_*
+*.sqlite
+node_modules

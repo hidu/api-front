@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"github.com/astaxie/beego"
+	"github.com/hidu/api-front/utils"
 )
 
 type MainController struct {
@@ -9,7 +10,6 @@ type MainController struct {
 }
 
 func (c *MainController) Get() {
-	c.Data["Website"] = "beego.me"
-	c.Data["Email"] = "astaxie@gmail.com"
-	c.TplName = "index.tpl"
+	indexHtml := utils.Assest.GetContent("res/index.html")
+	c.Ctx.WriteString(indexHtml)
 }
