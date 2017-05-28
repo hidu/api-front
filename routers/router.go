@@ -3,9 +3,12 @@ package routers
 import (
 	"github.com/astaxie/beego"
 	"github.com/hidu/api-front/controllers"
+	"log"
 )
 
 func init() {
+	log.Println("router_init...")
+	
 	beego.Router("/", &controllers.MainController{})
 
 	beego.Router("/group/create", &controllers.GroupController{}, "get:Create")
@@ -20,5 +23,5 @@ func init() {
 	beego.Router(`/location/get/:id(\d+)`, &controllers.LocationController{}, "get:Get")
 	beego.Router(`/location/update/:id(\d+)`, &controllers.LocationController{}, "post:Update")
 
-	beego.Router("/_front_/*", &controllers.AssestController{})
+	beego.Router("/_res/*", &controllers.AssestController{})
 }

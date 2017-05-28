@@ -8,6 +8,8 @@ import (
 
 type Backend struct {
 	ID     int64  `orm:"pk;auto;column(id)"`
+	LocationId int       `orm:"column(location_id);index"`
+	
 	Status int    `orm:"column(status)"`
 	Name   string `orm:"size(64);column(name)"`
 	Intro  string `orm:"site(10000);column(intro)"`
@@ -15,7 +17,6 @@ type Backend struct {
 
 	CreateTime time.Time `orm:"auto_now_add;type(datetime);column(ctime)"`
 	UpdateTime time.Time `orm:"type(datetime);column(mtime)"`
-	LocationId int       `orm:"column(api_location_id);index"`
 
 	Location *Location `orm:"-"`
 }
@@ -55,12 +56,9 @@ func (g *Backend) Query() orm.QuerySeter {
 	return orm.NewOrm().QueryTable(g)
 }
 
-func ListAllBackend(cond *OrmCond) []*Backend {
+func ListAllBackend(cond *orm.Condition) []*Backend {
 	var ls []*Backend
-	query := new(Backend).Query()
-	if cond != nil {
-		cond.BuildQuery(query)
-	}
+	query := new(Backend).Query().SetCond(cond)
 	query.All(&ls)
 	return ls
 }

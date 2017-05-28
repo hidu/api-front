@@ -9,17 +9,19 @@ import (
 
 // Location  具体的一个api接口
 type Location struct {
-	ID       int64  `orm:"pk;auto;column(id)"`
+	ID       int64  `orm:"pk;auto;column(location_id)"`
+	NodeId   int64     `orm:"column(node_id)"`
+	
+	Location string `orm:"size(255);column(location)"` // 转发路径  eg / ，/api/ ， /myapi/subscribe
+	
 	Status   int    `orm:"column(status)"`
 	Name     string `orm:"size(64);column(name)"`
 	Intro    string `orm:"size(10000);column(intro)"`
-	Location string `orm:"size(255);column(location)"` // 转发路径  eg / ，/api/ ， /myapi/subscribe
 
 	CreateTime time.Time `orm:"auto_now_add;type(datetime);column(ctime)"`
 	UpdateTime time.Time `orm:"auto_now;type(datetime);column(mtime)"`
-	ServerID   int64     `orm:"column(server_id)"`
 
-	ServerHost *ServerHost `orm:"-"`
+	ServerNode *ServerNode `orm:"-"`
 
 	Backends []*Backend `orm:"-"`
 }
@@ -35,7 +37,7 @@ func (l *Location) String() string {
 
 func (l *Location) TableUnique() [][]string {
 	return [][]string{
-		{"ServerID", "Location"},
+		{"NodeId", "Location"},
 	}
 }
 
@@ -65,9 +67,8 @@ func (g *Location) Update() error {
 	}
 	return nil
 }
-func (g *Location) GetLocations() []*Backend {
-	cond := NewOrmCond()
-	cond.AddFilter("api_id", g.ID)
+func (g *Location) GetBackends() []*Backend {
+	cond := orm.NewCondition().And("location_id", g.ID)
 	ls := ListAllBackend(cond)
 	g.Backends = ls
 	return ls
@@ -77,12 +78,9 @@ func (g *Location) Query() orm.QuerySeter {
 	return orm.NewOrm().QueryTable(g)
 }
 
-func ListAllLocation(cond *OrmCond) []*Location {
+func ListAllLocation(cond *orm.Condition) []*Location {
 	var ls []*Location
-	query := new(Location).Query()
-	if cond != nil {
-		cond.BuildQuery(query)
-	}
+	query := new(Location).Query().SetCond(cond)
 	query.All(&ls)
 	return ls
 }

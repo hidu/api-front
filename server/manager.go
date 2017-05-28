@@ -11,7 +11,6 @@ type Manager struct {
 	Servers map[int64]*APIServer
 }
 
-//@TODO
 
 func (m *Manager) Init() {
 	m.Servers = make(map[int64]*APIServer)
@@ -52,11 +51,13 @@ func (m *Manager) LoadAllServer() {
 		m.RW.RLock()
 		defer m.RW.RUnlock()
 		for _, server_id := range ids {
-			if _, has := m.Servers[server_id]; !has {
+			node, has := m.Servers[server_id]
+			if has {
+				node.Reload()
+			}else{
 				idsNew = append(idsNew, server_id)
 			}
 		}
-
 	}()
 
 	for _, server_id := range idsNew {

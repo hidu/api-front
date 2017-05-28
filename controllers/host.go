@@ -15,7 +15,7 @@ func (c *HostController) Get() {
 		c.EchoJson(400, "Bad Request", nil)
 		return
 	}
-	group := new(models.ServerHost)
+	group := new(models.ServerNode)
 	group.ID = id
 	err := group.Read()
 	if err != nil {
@@ -26,7 +26,7 @@ func (c *HostController) Get() {
 }
 
 func (c *HostController) Create() {
-	server := new(models.ServerHost)
+	server := new(models.ServerNode)
 	var err error
 	server.Name = c.Input().Get("name")
 	server.Intro = c.Input().Get("intro")
@@ -50,7 +50,7 @@ func (c *HostController) Update() {
 		c.EchoJson(400, "Bad Request", nil)
 		return
 	}
-	server := new(models.ServerHost)
+	server := new(models.ServerNode)
 	server.ID = id
 	server.Name = c.Input().Get("name")
 	server.Intro = c.Input().Get("intro")

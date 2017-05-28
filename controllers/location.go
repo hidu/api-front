@@ -30,9 +30,9 @@ func (c *LocationController) Create() {
 	location.Name = c.Input().Get("name")
 	location.Intro = c.Input().Get("intro")
 	location.Location = c.Input().Get("location")
-	location.ServerID, _ = c.GetInt64("server_id", 0)
-	if location.ServerID < 1 {
-		c.EchoJson(400, "server_id required", nil)
+	location.NodeId, _ = c.GetInt64("node_id", 0)
+	if location.NodeId < 1 {
+		c.EchoJson(400, "node_id required", nil)
 		return
 	}
 	location.Status = 1

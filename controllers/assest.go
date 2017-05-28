@@ -13,7 +13,7 @@ type AssestController struct {
 
 func (c *AssestController) Get() {
 	fileName := c.Ctx.Input.Param(":splat")
-	indexHtml := utils.Assest.GetContent("res/_front_/" + fileName)
+	indexHtml := utils.Assest.GetContent("res/" + fileName)
 
 	mimeType := mime.TypeByExtension(filepath.Ext(fileName))
 	if mimeType != "" {

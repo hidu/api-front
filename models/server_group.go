@@ -7,7 +7,7 @@ import (
 )
 
 type ServerGroup struct {
-	ID     int64 `orm:"pk;auto;column(id)"`
+	ID     int64 `orm:"pk;auto;column(group_id)"`
 	Status int   `orm:"column(status);default(1)"`
 
 	Name     string `orm:"size(64);column(name)"`
@@ -16,11 +16,11 @@ type ServerGroup struct {
 
 	CreateTime  time.Time     `orm:"auto_now_add;type(datetime);column(ctime)"`
 	UpdateTime  time.Time     `orm:"auto_now;type(datetime);column(mtime)"`
-	ServerHosts []*ServerHost `orm:"-"`
+	ServerNodes []*ServerNode `orm:"-"`
 }
 
 func (g *ServerGroup) TableName() string {
-	return "api_server_group"
+	return "server_group"
 }
 
 func (g *ServerGroup) Create() (id int64, err error) {
@@ -31,7 +31,7 @@ func (g *ServerGroup) Create() (id int64, err error) {
 func (g *ServerGroup) Read() error {
 	o := orm.NewOrm()
 	err := o.Read(g)
-	g.GetServerHosts()
+	g.GetServerNodes()
 	return err
 }
 
@@ -52,11 +52,10 @@ func (g *ServerGroup) Update() error {
 	return nil
 }
 
-func (g *ServerGroup) GetServerHosts() []*ServerHost {
-	cond := orm.NewCondition()
-	cond.And("api_group_id__exact", g.ID)
-	ls := ListAllServerHost(cond)
-	g.ServerHosts = ls
+func (g *ServerGroup) GetServerNodes() []*ServerNode {
+	cond := orm.NewCondition().And("group_id", g.ID)
+	ls := ListAllServerNode(cond)
+	g.ServerNodes = ls
 	return ls
 }
 

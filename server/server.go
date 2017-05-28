@@ -17,21 +17,21 @@ type APIServer struct {
 	ReloadTimes uint64
 	ServerName  string
 
-	ModelServerHost *models.ServerHost
+	ModelServerNode *models.ServerNode
 	APILocations    map[int64]*APILocation
 
 	LocationRouter *LocationRouter
 }
 
 func NewAPIServer(id int64) (*APIServer, error) {
-	sm := &models.ServerHost{}
+	sm := &models.ServerNode{}
 	sm.ID = id
 	err := sm.Read()
 	if err != nil {
 		return nil, err
 	}
 	server := &APIServer{
-		ModelServerHost: sm,
+		ModelServerNode: sm,
 		APILocations:    make(map[int64]*APILocation),
 		LocationRouter:  newLocationRouter(),
 	}
@@ -46,6 +46,7 @@ func (sv *APIServer) LoadLocations() {
 	var delIds []int64
 
 	sv.Rw.RLock()
+	
 	for id, item := range sv.APILocations {
 		if newItem, has := ls[id]; has {
 			if item.Version() != newItem.Version() {
@@ -79,7 +80,7 @@ func (sv *APIServer) LoadLocations() {
 }
 
 func (sv *APIServer) GetLocations() map[int64]*APILocation {
-	locations := sv.ModelServerHost.GetLocations()
+	locations := sv.ModelServerNode.GetLocations()
 	result := make(map[int64]*APILocation)
 	for _, item := range locations {
 		result[item.ID] = &APILocation{
@@ -100,6 +101,7 @@ func (sv *APIServer) AddLocationByID(id int64) error {
 		return nil
 	}
 	sv.APILocations[id] = location
+	location.Reload()
 
 	router := newRouterItem(id, location.ModelLocation.Location)
 	sv.LocationRouter.BindRouter(router)
@@ -131,10 +133,10 @@ func (sv *APIServer) Reload() error {
 
 func (sv *APIServer) Start() error {
 	sv.Reload()
-	addr := fmt.Sprintf(":%d", sv.ModelServerHost.Port)
+	addr := fmt.Sprintf(":%d", sv.ModelServerNode.Port)
 	sv.IsRunning = true
 	sv.StartTime = time.Now()
-	log.Println("[trace] APIServer", addr, "start")
+	log.Println("[trace] APIServer_Start:", addr)
 	err := http.ListenAndServe(addr, sv)
 	log.Println("[fatal] http.ListenAndServe err", addr, err.Error())
 	return err
@@ -153,7 +155,6 @@ func (sv *APIServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	location.ServeHTTP(rw, req)
-
 }
 
 func (sv *APIServer) GetAPILocationByPath(p string) *APILocation {
@@ -174,7 +175,7 @@ func GetAllAPIServerIDs() []int64 {
 	groupList := models.ListAllServerGroup()
 	var result []int64
 	for _, group := range groupList {
-		hosts := group.GetServerHosts()
+		hosts := group.GetServerNodes()
 		for _, host := range hosts {
 			result = append(result, host.ID)
 		}
