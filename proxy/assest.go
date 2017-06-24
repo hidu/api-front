@@ -460,8 +460,8 @@ var Assest = &AssestStruct{
 
 		_assestBase64Decode("L3Jlcy92ZXJzaW9u"): &AssestFile{
 			Name:    _assestBase64Decode("L3Jlcy92ZXJzaW9u"),
-			Mtime:   1498273021,
-			Content: _assestGzipBase64decode("H4sIAAAJbogA/zLQM9cz0zMEAAAA//8BAAD//8UyeiEHAAAA"),
+			Mtime:   1498304187,
+			Content: _assestGzipBase64decode("H4sIAAAJbogA/zLQM9cz0zMCAAAA//8BAAD//39jc7gHAAAA"),
 		},
 	},
 }
