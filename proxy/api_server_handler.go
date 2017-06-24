@@ -149,6 +149,17 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 
 			}
 			copyHeaders(reqNew.Header, req.Header)
+			
+			setHeader:=apiHost.Headers()
+			if setHeader!=nil{
+				for _k,_v:=range setHeader{
+					reqNew.Header.Set(_k, _v)
+				}
+			}
+			
+			if _hostName,_has:=setHeader["host"];_has{
+				reqNew.Host = _hostName
+			}
 
 			//only accept gzip encode
 			acceptEncoding := reqNew.Header.Get("Accept-Encoding")

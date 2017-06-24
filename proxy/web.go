@@ -438,10 +438,10 @@ func (wr *webReq) showError(msg string) {
 }
 
 func (wr *webReq) alert(msg string) {
-	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s")</script>`, msg)))
+	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s")</script>`, StrQuote(msg))))
 }
 func (wr *webReq) alertAndGo(msg string, urlstr string) {
-	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s");top.location.href="%s";</script>`, msg, urlstr)))
+	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s");top.location.href="%s";</script>`, StrQuote(msg),urlstr)))
 }
 
 // JSONResult json result when ajax call

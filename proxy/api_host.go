@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"time"
+	"encoding/json"
 )
 
 // Host one api backend host
@@ -12,6 +13,8 @@ type Host struct {
 	Note      string `json:"note"`
 	SortIndex int    `json:"sort"`
 	Checked   bool   `json:"-"`
+	Header   map[string]string   `json:"-"`
+	HeaderStr   string   `json:"header"`
 }
 
 // Hosts api hosts
@@ -28,8 +31,24 @@ func (h *Host) copy() *Host {
 		Enable:    h.Enable,
 		Note:      h.Note,
 		SortIndex: h.SortIndex,
+		HeaderStr: h.HeaderStr,
 	}
 }
+
+func (h *Host) init() (err error) {
+	h.Header = make(map[string]string)
+	if h.HeaderStr!=""{
+		err=json.Unmarshal([]byte(h.HeaderStr), &h.Header)
+	}
+	
+	return
+}
+
+func (h *Host)Headers()map[string]string{
+	return h.Header
+}
+
+
 
 func (hs Hosts) addNewHost(host *Host) {
 	hs[host.Name] = host
@@ -38,8 +57,10 @@ func (hs Hosts) addNewHost(host *Host) {
 func (hs Hosts) init() {
 	for name, host := range hs {
 		host.Name = name
+		host.init()
 	}
 }
+
 
 func newHost(name string, url string, enable bool) *Host {
 	return &Host{

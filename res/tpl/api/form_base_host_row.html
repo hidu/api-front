@@ -7,17 +7,27 @@
         </div>
     </div>
     
-   <div class="col-sm-6">
+   <div class="col-sm-4">
     <div class="input-group" title="后端服务url地址,如: http://10.10.10.10/myapi/&#10;类似于 nginx的 proxy_pass 指令">
         <label class="input-group-addon required">网址:</label> 
         <input type="text" class="form-control" name="host_url" value="{{$host.URLStr|html}}" required="required"  pattern="^http(s?)://.+" >
     </div>
    </div>
+   
    <div class="col-sm-2">
     <div class="input-group">
         <label class="input-group-addon">备注:</label> 
         <input type="text" class="form-control" name="host_note" value="{{$host.Note|html}}" >
     </div>
+
+   </div>
+   
+   <div class="col-sm-2">
+    <div class="input-group">
+        <label class="input-group-addon" >Header:</label> 
+        <input type="text" class="form-control" name="host_header" value="{{$host.HeaderStr|html}}" title='http header,json string,eg:{"host":"www.baidu.com"}' >
+    </div>
+
    </div>
    
    <div class="col-sm-1">

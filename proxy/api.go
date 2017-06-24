@@ -89,7 +89,7 @@ func (api *apiStruct) init() (err error) {
 	return err
 }
 
-var pathReg = regexp.MustCompile(`^/([\w-/]+/?)*$`)
+var pathReg = regexp.MustCompile(`^/[^?]*$`)
 
 var apiIDReg = regexp.MustCompile(`^[\w-]+$`)
 

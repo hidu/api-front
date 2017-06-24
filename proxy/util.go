@@ -205,3 +205,7 @@ func JSONEncode(obj interface{}) string {
 	bs, _ := json.Marshal(obj)
 	return string(bs)
 }
+
+func StrQuote(str string)string{
+	return strings.Replace(str, `"`, "\\\"", -1)
+}

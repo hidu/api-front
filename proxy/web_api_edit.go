@@ -162,8 +162,9 @@ func (wr *webReq) apiBaseSave() {
 	hostUrls := req.PostForm["host_url"]
 	hostNotes := req.PostForm["host_note"]
 	hostEnables := req.PostForm["host_enable"]
+	hostHeaders := req.PostForm["host_header"]
 
-	if len(hostNames) != len(hostUrls) || len(hostNames) != len(hostNotes) || len(hostNames) != len(hostEnables) {
+	if len(hostNames) != len(hostUrls) || len(hostNames) != len(hostNotes) || len(hostNames) != len(hostEnables) || len(hostNames) != len(hostHeaders) {
 		wr.alert("Save Failed! Params Wrong!")
 		return
 	}
@@ -183,6 +184,12 @@ func (wr *webReq) apiBaseSave() {
 		host := newHost(name, hostUrls[i], true)
 		host.Note = hostNotes[i]
 		host.Enable = hostEnables[i] == "1"
+		
+		host.HeaderStr = hostHeaders[i]
+		if err=host.init();err!=nil{
+			wr.alert("host="+name+" init failed :"+err.Error())
+			return
+		}
 
 		//		wr.web.apiServer.
 		api.Hosts.addNewHost(host)
