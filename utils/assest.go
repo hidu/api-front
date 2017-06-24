@@ -184,8 +184,8 @@ var Assest = &AssestStruct{
 
 		_assestBase64Decode("L3Jlcy9pbmRleC5odG1s"): &AssestFile{
 			Name:    _assestBase64Decode("L3Jlcy9pbmRleC5odG1s"),
-			Mtime:   1495968256,
-			Content: _assestGzipBase64decode("H4sIAAAJbogA/1SRMW/jMAyFd/8KnuY4SrbDnWTgcHcFOjVDl04FIzM1W0oOJDqJUfS/F7ZTFJlEfXx8TxDdj38Pfx+fdv+h0yhN5b4OwrapAFwkRQgd5kLqzaCH+qf5biSM5M2J6XzssxoIfVJK6s2ZW+18SycOVM+XFQyFcl0CCu6FfOpXwImVUWZIfrverCDiheMQbxCnW7Q8QFmFmj+7+/ou90mdXcDUEk5vkEm8KToKlY5IDXSZDt7Y50zFCo4D21Cu1TqUYiBSy+gNiiwJ8/BUAez7dnyPmF84/YLt5nj5/TEp7FXi7PJhbtI1VeVKyHxUKDncJgqOtqWi11gUWb8W0zi7DExOi4Wz8yY+AQAA//8BAAD//xPrzNWgAQAA"),
+			Mtime:   1495979482,
+			Content: _assestGzipBase64decode("H4sIAAAJbogA/1SRMW/jMAyFd/8KnuY4SrbDnWTgcHcFOjVDl04FIzM1W0oOJDqJUfS/F7ZTFJlEfXx8TxDdj38Pfx+fdv+h0yhN5b4OwrapAFwkRQgd5kLqzaCH+qf5biSM5M2J6XzssxoIfVJK6s2ZW+18SycOVM+XFQyFcl0CCu6FfOpXwImVUWZIfrverCDiheMQbxCnW7Q8QFmFmj+7+/ou90mdXcDUEk5vkEm8KToKlY5IDXSZDt7Y50zFCo4D21Cu1TqUYiBSy+gNiiwJ8/BUAez7dnyPmF84/YLt5nj5/TEp7FXi7PJhbtI1FVauhMxHhZLDbaTgaFsqes1FkfVrMY2zy8BktXg4O6/iEwAA//8BAAD//y7J6DmhAQAA"),
 		},
 
 		_assestBase64Decode("L3Jlcy9sYXl1aS9jc3MvbGF5dWkuY3Nz"): &AssestFile{
