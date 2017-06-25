@@ -164,7 +164,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			}
 			
 			if _cookieAppend,_has:=setHeader[http.CanonicalHeaderKey("_cookie_append")];_has{
-				req.Header.Set("Cookie", req.Header.Get("Cookie")+"; "+_cookieAppend)
+				reqNew.Header.Set("Cookie", reqNew.Header.Get("Cookie")+"; "+_cookieAppend)
 			}
 
 			//only accept gzip encode
