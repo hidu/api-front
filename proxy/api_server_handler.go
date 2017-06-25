@@ -153,12 +153,18 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			setHeader:=apiHost.Headers()
 			if setHeader!=nil{
 				for _k,_v:=range setHeader{
-					reqNew.Header.Set(_k, _v)
+					if(!strings.HasPrefix(_k, "_")){
+						reqNew.Header.Set(_k, _v)
+					}
 				}
 			}
 			
-			if _hostName,_has:=setHeader["host"];_has{
+			if _hostName,_has:=setHeader[http.CanonicalHeaderKey("_host")];_has{
 				reqNew.Host = _hostName
+			}
+			
+			if _cookieAppend,_has:=setHeader[http.CanonicalHeaderKey("_cookie_append")];_has{
+				req.Header.Set("Cookie", req.Header.Get("Cookie")+"; "+_cookieAppend)
 			}
 
 			//only accept gzip encode

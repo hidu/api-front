@@ -3,6 +3,7 @@ package proxy
 import (
 	"time"
 	"encoding/json"
+	"net/http"
 )
 
 // Host one api backend host
@@ -37,8 +38,13 @@ func (h *Host) copy() *Host {
 
 func (h *Host) init() (err error) {
 	h.Header = make(map[string]string)
+	hs:=make(map[string]string)
 	if h.HeaderStr!=""{
-		err=json.Unmarshal([]byte(h.HeaderStr), &h.Header)
+		err=json.Unmarshal([]byte(h.HeaderStr), &hs)
+	}
+	
+	for k,v:=range hs{
+		h.Header[http.CanonicalHeaderKey(k)] = v
 	}
 	
 	return
