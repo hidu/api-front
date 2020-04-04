@@ -62,13 +62,13 @@ func newCallerPrefConfByHTTPRequest(req *http.Request, api *apiStruct) *CallerPr
 		prefConf.ip = xRealIP
 	}
 
-	//get from form data
+	// get from form data
 	prefConf.AddNewPrefHostRaw(apiPrefTypeReq, req.FormValue(apiPrefParamName), ",")
 
-	//get from http header
+	// get from http header
 	prefConf.AddNewPrefHostRaw(apiPrefTypeHeader, req.Header.Get(apiPrefParamName), ",")
 
-	//get from cookie
+	// get from cookie
 	cookie, err := req.Cookie(api.cookieName())
 	if err == nil {
 		prefConf.AddNewPrefHostRaw(apiPrefTypeCookie, cookie.Value, ",")

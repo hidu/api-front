@@ -1,14 +1,14 @@
 package proxy
 
 import (
-	"golang.org/x/oauth2"
-
-	"github.com/antonholmquist/jason"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	//	"net/url"
-	"fmt"
+	// "net/url"
+
+	"github.com/antonholmquist/jason"
+	"golang.org/x/oauth2"
 )
 
 type oauth2Conf struct {
@@ -18,7 +18,7 @@ type oauth2Conf struct {
 	ClientSecret     string                `json:"client_sk"`
 	Scopes           []string              `json:"scopes"`
 	AuthURL          string                `json:"auth_url"`
-	BrokenAuthHeader bool                  `json:"broken_auth_header"` //获取token时是否不支持header模式
+	BrokenAuthHeader bool                  `json:"broken_auth_header"` // 获取token时是否不支持header模式
 	TokenURL         string                `json:"token_url"`
 	Apis             map[string]*oauth2Api `json:"apis"`
 	FieldMap         map[string]string     `json:"field_map"`
@@ -36,7 +36,7 @@ type oauth2ApiFields map[string]string
 
 var oauth2ApiFieldsDefault = map[string]map[string]string{
 	OAUTH2_API_USER_INFO: {
-		//标准名字，当前名字
+		// 标准名字，当前名字
 		"id":        "id",
 		"nick_name": "name",
 		"email":     "email",
@@ -64,17 +64,17 @@ func (conf *oauth2Conf) getOauthUrl(redirectURL string) string {
 		},
 	}
 	urlStr := config.AuthCodeURL("state", oauth2.AccessTypeOffline)
-	//	if(conf.FieldMap!=nil){
-	//		u,_:=url.Parse(urlStr)
-	//		qs:=u.Query()
-	//		for key,keyNow:=range conf.FieldMap{
-	//			qs[keyNow]=qs[key]
-	//			delete(qs,key)
-	//		}
-	//		log.Println("qsqs",qs)
-	//		u.RawQuery=qs.Encode()
-	//		urlStr=u.String()
-	//	}
+	// 	if(conf.FieldMap!=nil){
+	// 		u,_:=url.Parse(urlStr)
+	// 		qs:=u.Query()
+	// 		for key,keyNow:=range conf.FieldMap{
+	// 			qs[keyNow]=qs[key]
+	// 			delete(qs,key)
+	// 		}
+	// 		log.Println("qsqs",qs)
+	// 		u.RawQuery=qs.Encode()
+	// 		urlStr=u.String()
+	// 	}
 
 	if conf.BrokenAuthHeader {
 		oauth2.RegisterBrokenAuthHeaderProvider(conf.TokenURL)

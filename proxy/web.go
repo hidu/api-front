@@ -1,18 +1,18 @@
 package proxy
 
 import (
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"github.com/googollee/go-socket.io"
-	"github.com/gorilla/sessions"
-	"github.com/hidu/goutils"
 	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/googollee/go-socket.io"
+	"github.com/gorilla/sessions"
+	"github.com/hidu/goutils/time_util"
 )
 
 // APIFrontVersion current server version
@@ -20,7 +20,7 @@ var APIFrontVersion string
 var sessionName string = "apifront"
 
 func init() {
-	APIFrontVersion = strings.TrimSpace(Assest.GetContent("/res/version"))
+	APIFrontVersion = strings.TrimSpace(string(Asset.GetContent("/resource/version")))
 }
 
 type webAdmin struct {
@@ -95,7 +95,7 @@ func (web *webAdmin) wsInit() {
 		})
 
 	})
-	utils.SetInterval(func() {
+	time_util.SetInterval(func() {
 		web.wsServer.BroadcastTo("api_pv", "hello", "hello,now:"+time.Now().String())
 	}, 30)
 
@@ -107,7 +107,7 @@ func (web *webAdmin) wsInit() {
 func (web *webAdmin) broadAPIPvs() {
 	pvs := make(map[string]uint64)
 
-	utils.SetInterval(func() {
+	time_util.SetInterval(func() {
 		var pv uint64
 		for name, api := range web.apiServer.Apis {
 			if _, has := pvs[name]; !has {
@@ -135,20 +135,20 @@ func (web *webAdmin) broadcastAPI(api *apiStruct, broadType string, reqData *Bro
 func (web *webAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	web.serveHTTP(rw, req)
 	return
-	if !strings.Contains(req.Header.Get("Accept-Encoding"), "gzip") || strings.HasPrefix(req.URL.Path, "/_socket.io/") {
-		web.serveHTTP(rw, req)
-		return
-	}
-	rw.Header().Set("Content-Encoding", "gzip")
-	gz := gzip.NewWriter(rw)
-	defer gz.Close()
-	gzr := gzipResponseWriter{Writer: gz, ResponseWriter: rw}
-	web.serveHTTP(gzr, req)
+	// if !strings.Contains(req.Header.Get("Accept-Encoding"), "gzip") || strings.HasPrefix(req.URL.Path, "/_socket.io/") {
+	// 	web.serveHTTP(rw, req)
+	// 	return
+	// }
+	// rw.Header().Set("Content-Encoding", "gzip")
+	// gz := gzip.NewWriter(rw)
+	// defer gz.Close()
+	// gzr := gzipResponseWriter{Writer: gz, ResponseWriter: rw}
+	// web.serveHTTP(gzr, req)
 }
 
 func (web *webAdmin) serveHTTP(rw http.ResponseWriter, req *http.Request) {
 	if strings.HasPrefix(req.URL.Path, "/_/res/") {
-		http.StripPrefix("/_/res/", Assest.HTTPHandler("/res/")).ServeHTTP(rw, req)
+		http.StripPrefix("/_/res/", Asset.HTTPHandler("/resource/")).ServeHTTP(rw, req)
 		return
 	}
 	if strings.HasPrefix(req.URL.Path, "/_socket.io/") {
@@ -188,25 +188,25 @@ func (wr *webReq) execute() {
 	wr.values["req_host"] = wr.req.Host
 	wr.values["host_name"] = hostInfo[0]
 
-	//	wr.values["server_name"] = serverName
+	// 	wr.values["server_name"] = serverName
 
 	port, _ := strconv.ParseInt(hostInfo[1], 10, 64)
 	wr.values["host_port"] = int(port)
 	wr.values["conf"] = wr.web.apiServer.ServerVhostConf
-	//	wr.session.Values["aaa"] = "aaa"
+	// 	wr.session.Values["aaa"] = "aaa"
 	wr.getUser()
 
-	//		fmt.Println("session", wr.session.Values)
+	// 		fmt.Println("session", wr.session.Values)
 	wr.values["isLogin"] = wr.user != nil
 	wr.values["user"] = wr.user
 	if wr.user != nil {
 		wr.values["uname"] = wr.user.DisplayName()
 	}
 
-	//	if wr.req.Method == "POST" && wr.req.URL.Path != "/_login" && wr.user == nil {
-	//		wr.alert("login required")
-	//		return
-	//	}
+	// 	if wr.req.Method == "POST" && wr.req.URL.Path != "/_login" && wr.user == nil {
+	// 		wr.alert("login required")
+	// 		return
+	// 	}
 	userIndexHTMLPath := wr.web.apiServer.rootConfDir() + "index.html"
 	wr.values["userIndex"] = loadFile(userIndexHTMLPath)
 
@@ -261,7 +261,7 @@ func (wr *webReq) execute() {
 		return
 	}
 
-	//	wr.saveSession()
+	// 	wr.saveSession()
 	wr.render("index.html", true)
 }
 func (wr *webReq) getServerVhostConf() *mainConf {
@@ -284,7 +284,7 @@ func (wr *webReq) oauth2CallBack() {
 		return
 	}
 
-	//	wr.session.Values["token"] = JSONEncode(tok)
+	// 	wr.session.Values["token"] = JSONEncode(tok)
 
 	user, err := oauthconf.getUserInfo(tok)
 	if err != nil {
@@ -421,7 +421,7 @@ func (wr *webReq) apiAnalysis() {
 	}
 	wr.values["api"] = api
 
-	//查看远程存储的地址
+	// 查看远程存储的地址
 	store_view_url := ""
 	if wr.web.apiServer.needStore() {
 		store_view_url = strings.Replace(wr.web.apiServer.manager.mainConf.StoreViewUrl, "{host_id}", wr.web.apiServer.ServerVhostConf.Id, -1)
@@ -441,7 +441,7 @@ func (wr *webReq) alert(msg string) {
 	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s")</script>`, StrQuote(msg))))
 }
 func (wr *webReq) alertAndGo(msg string, urlstr string) {
-	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s");top.location.href="%s";</script>`, StrQuote(msg),urlstr)))
+	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s");top.location.href="%s";</script>`, StrQuote(msg), urlstr)))
 }
 
 // JSONResult json result when ajax call

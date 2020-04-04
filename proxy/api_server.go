@@ -15,13 +15,13 @@ type APIServer struct {
 	Enable  bool
 	Apis    map[string]*apiStruct
 	manager *APIServerManager
-	//current apiServer's conf dir
-	ConfDir         string //接口配置文件存放目录
+	// current apiServer's conf dir
+	ConfDir         string // 接口配置文件存放目录
 	Rw              sync.RWMutex
 	routers         *routers
 	web             *webAdmin
 	ServerVhostConf *serverVhost
-	counter         *Counter //j接口计数器
+	counter         *Counter // j接口计数器
 }
 
 func newAPIServer(conf *serverVhost, manager *APIServerManager) *APIServer {
@@ -73,21 +73,21 @@ func (apiServer *APIServer) loadAllApis() {
 	}
 }
 
-//api服务的唯一id
+// api服务的唯一id
 func (apiServer *APIServer) GetServerID() string {
 	return apiServer.ServerVhostConf.Id
 }
 
-//func (apiServer *APIServer) deleteAPI(apiName string) {
-//	apiServer.Rw.Lock()
-//	defer apiServer.Rw.Unlock()
-//	api, has := apiServer.Apis[apiName]
-//	if !has {
-//		return
-//	}
-//	api.delete()
-//	delete(apiServer.Apis, apiName)
-//}
+// func (apiServer *APIServer) deleteAPI(apiName string) {
+// 	apiServer.Rw.Lock()
+// 	defer apiServer.Rw.Unlock()
+// 	api, has := apiServer.Apis[apiName]
+// 	if !has {
+// 		return
+// 	}
+// 	api.delete()
+// 	delete(apiServer.Apis, apiName)
+// }
 
 func (apiServer *APIServer) unRegisterAPI(apiName string) {
 	apiServer.Rw.Lock()
@@ -194,5 +194,5 @@ func (apiServer *APIServer) hasUser(id string) bool {
 	return false
 }
 
-//func (apiServer *APIServer) UpdateVhostConf(vhost *serverVhost) error {
-//}
+// func (apiServer *APIServer) UpdateVhostConf(vhost *serverVhost) error {
+// }

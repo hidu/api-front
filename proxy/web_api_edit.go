@@ -125,26 +125,26 @@ func (wr *webReq) apiBaseSave() {
 	}
 	apiID := req.FormValue("api_id")
 
-	//绑定路径
+	// 绑定路径
 	apiPath := URLPathClean(req.FormValue("path"))
 
 	if !apiIDReg.MatchString(apiID) {
-		wr.alert(fmt.Sprintf(`api Id not allow`, apiID))
+		wr.alert(fmt.Sprintf(`api (%q) not allow`, apiID))
 		return
 	}
 
 	api := wr.web.apiServer.getAPIByID(apiID)
 	if api != nil && mod == "new" {
-		wr.alert(fmt.Sprintf(`api(%s) already exist`, apiID))
+		wr.alert(fmt.Sprintf(`api (%s) already exist`, apiID))
 		return
 	}
 
 	if api != nil && !api.userCanEdit(wr.user) {
-		wr.alert("No permissions!")
+		wr.alert("No Permissions!")
 		return
 	}
 
-	//按照路径查找得到的api
+	// 按照路径查找得到的api
 	apiByPath := wr.web.apiServer.getAPIByPath(apiPath)
 
 	if apiByPath != nil {
@@ -184,14 +184,14 @@ func (wr *webReq) apiBaseSave() {
 		host := newHost(name, hostUrls[i], true)
 		host.Note = hostNotes[i]
 		host.Enable = hostEnables[i] == "1"
-		
+
 		host.HeaderStr = hostHeaders[i]
-		if err=host.init();err!=nil{
-			wr.alert("host="+name+" init failed :"+err.Error())
+		if err = host.init(); err != nil {
+			wr.alert("host=" + name + " init failed :" + err.Error())
 			return
 		}
 
-		//		wr.web.apiServer.
+		// 		wr.web.apiServer.
 		api.Hosts.addNewHost(host)
 		nameOrig := hostNameOrigs[i]
 		api.hostRename(nameOrig, name)

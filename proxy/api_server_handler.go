@@ -44,7 +44,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 
 		relPath := req.URL.Path[len(bindPath):]
 		req.Header.Set("Connection", "close")
-		//add this flag,so the real backend can catch it
+		// add this flag,so the real backend can catch it
 		req.Header.Add("Via", fmt.Sprintf("api-front/%s", APIFrontVersion))
 
 		logData := make(map[string]interface{})
@@ -63,14 +63,14 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			}
 			return
 		}
-		//get body must by before  parse callerPref
+		// get body must by before  parse callerPref
 
 		hosts, masterHost, cpf := api.getAPIHostsByReq(req)
 
 		if needBroad {
 			broadData.setData("master", masterHost)
 			broadData.setData("remote", cpf.GetIP())
-			broadData.setData("resp_status", 502) //default
+			broadData.setData("resp_status", 502) // default
 		}
 
 		_uri := req.URL.Path
@@ -106,7 +106,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		bodyLen := int64(len(body))
 		var reqs []*apiHostRequest
 
-		//build request
+		// build request
 		for _, apiHost := range hosts {
 			isMaster := apiHost.Name == masterHost
 			urlNew := ""
@@ -149,25 +149,25 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 
 			}
 			copyHeaders(reqNew.Header, req.Header)
-			
-			setHeader:=apiHost.Headers()
-			if setHeader!=nil{
-				for _k,_v:=range setHeader{
-					if(!strings.HasPrefix(_k, "_")){
+
+			setHeader := apiHost.Headers()
+			if setHeader != nil {
+				for _k, _v := range setHeader {
+					if !strings.HasPrefix(_k, "_") {
 						reqNew.Header.Set(_k, _v)
 					}
 				}
 			}
-			
-			if _hostName,_has:=setHeader[http.CanonicalHeaderKey("_host")];_has{
+
+			if _hostName, _has := setHeader[http.CanonicalHeaderKey("_host")]; _has {
 				reqNew.Host = _hostName
 			}
-			
-			if _cookieAppend,_has:=setHeader[http.CanonicalHeaderKey("_cookie_append")];_has{
+
+			if _cookieAppend, _has := setHeader[http.CanonicalHeaderKey("_cookie_append")]; _has {
 				reqNew.Header.Set("Cookie", reqNew.Header.Get("Cookie")+"; "+_cookieAppend)
 			}
 
-			//only accept gzip encode
+			// only accept gzip encode
 			acceptEncoding := reqNew.Header.Get("Accept-Encoding")
 			if acceptEncoding != "" && (InStringSlice("gzip", reqNew.Header["Accept-Encoding"]) || strings.Contains(acceptEncoding, "gzip")) {
 				reqNew.Header.Set("Accept-Encoding", "gzip")
@@ -220,7 +220,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			reqs = append(reqs, apiReq)
 		}
 
-		//call master at first sync
+		// call master at first sync
 		for index, apiReq := range reqs {
 			if !apiReq.isMaster {
 				continue
@@ -232,11 +232,11 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				logData[fmt.Sprintf("host_%s_%d", apiReq.apiHost.Name, index)] = backLog
 				logRw.Unlock()
 			})()
-			//			http.DefaultClient.Do();
+			// 			http.DefaultClient.Do();
 			hostStart := time.Now()
 			backLog["isMaster"] = apiReq.isMaster
 			backLog["start"] = fmt.Sprintf("%.4f", float64(hostStart.UnixNano())/1e9)
-			backLog["status"] = 502 //as default
+			backLog["status"] = 502 // as default
 
 			cc := rw.(http.CloseNotifier).CloseNotify()
 
@@ -265,8 +265,8 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			}
 			defer resp.Body.Close()
 
-			//--------------------------------------------------------------
-			//修改response 数据
+			// --------------------------------------------------------------
+			// 修改response 数据
 			_mod, _mod_err := api.RespModifier.ModifierResp(apiReq.reqRaw, resp)
 			backLog["resp_mod"] = _mod
 			backLog["resp_mod_err"] = _mod_err
@@ -280,7 +280,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				}
 				return
 			}
-			//--------------------------------------------------------------
+			// --------------------------------------------------------------
 
 			if needBroad {
 				apiServer.addBroadCastDataResponse(broadData, resp)
@@ -306,7 +306,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		}
 
 		if len(reqs) > 1 {
-			//call other hosts async
+			// call other hosts async
 			go (func(reqs []*apiHostRequest) {
 				defer (func() {
 					printLog(len(reqs))
@@ -352,8 +352,8 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 }
 
 type apiHostRequest struct {
-	req       *http.Request //修改后的请求
-	reqRaw    *http.Request //原始的请求
+	req       *http.Request // 修改后的请求
+	reqRaw    *http.Request // 原始的请求
 	urlRaw    string
 	urlNew    string
 	transport *http.Transport
@@ -404,7 +404,7 @@ func (apiServer *APIServer) addBroadCastDataResponse(broadData *BroadCastData, r
 	broadData.setData("content-type", ct)
 	if resp.StatusCode == http.StatusOK {
 		dumpBody = IsContentTypeText(ct) || strings.HasPrefix(ct, "image/")
-		//内容太长的也不广播
+		// 内容太长的也不广播
 		if dumpBody && resp.ContentLength > 0 && resp.ContentLength > 1e6 {
 			dumpBody = false
 		}
@@ -442,7 +442,7 @@ func (apiServer *APIServer) addBroadCastDataResponse(broadData *BroadCastData, r
 			resDetail += bd.String()
 		}
 	}
-	//	fmt.Println(res_detail)
+	// 	fmt.Println(res_detail)
 	broadData.setData("res_detail", base64.StdEncoding.EncodeToString([]byte(resDetail)))
 }
 
@@ -462,7 +462,7 @@ func (apiServer *APIServer) broadcastAPIReq(api *apiStruct, data *BroadCastData)
 	}
 }
 
-//判断是否需要将数据广播出去：有用户打开了页面在进行查看才广播
+// 判断是否需要将数据广播出去：有用户打开了页面在进行查看才广播
 func (apiServer *APIServer) needBroadcast(api *apiStruct) bool {
 	if apiServer.needStore() {
 		return true

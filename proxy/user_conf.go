@@ -4,9 +4,11 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"github.com/hidu/goutils"
 	"log"
 	"strings"
+
+	"github.com/hidu/goutils/fs"
+	"github.com/hidu/goutils/str_util"
 )
 
 type users []string
@@ -32,7 +34,7 @@ func NewUsers() users {
 }
 
 func (u *User) pswEnc() string {
-	return utils.StrMd5(fmt.Sprintf("%s201501116%s", u.ID, u.PswMd5))
+	return str_util.StrMd5(fmt.Sprintf("%s201501116%s", u.ID, u.PswMd5))
 }
 
 func (u *User) String() string {
@@ -61,7 +63,7 @@ func (us users) hasUser(id string) bool {
 }
 
 func (uc *usersConf) checkUser(id string, psw string) *User {
-	if u, has := uc.users[id]; has && u.PswMd5 == utils.StrMd5(psw) {
+	if u, has := uc.users[id]; has && u.PswMd5 == str_util.StrMd5(psw) {
 		return u
 	}
 	return nil
@@ -79,17 +81,17 @@ func loadUsers(confPath string) (uc *usersConf) {
 	uc = &usersConf{
 		users: make(map[string]*User),
 	}
-	if !utils.File_exists(confPath) {
+	if !fs.FileExists(confPath) {
 		log.Println("usersFile not exists")
 		return
 	}
-	userInfoByte, err := utils.File_get_contents(confPath)
+	userInfoByte, err := fs.FileGetContents(confPath)
 	if err != nil {
 		log.Println("load user file failed:", confPath, err)
 		return
 	}
 	log.Println(string(userInfoByte))
-	lines := utils.LoadText2SliceMap(string(userInfoByte))
+	lines := str_util.LoadText2SliceMap(string(userInfoByte))
 	for _, line := range lines {
 		id, has := line["id"]
 		if !has || id == "" {

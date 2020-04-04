@@ -3,16 +3,17 @@ package proxy
 import (
 	"bytes"
 	"fmt"
-	"github.com/hidu/goutils"
 	"html"
 	"strings"
 	"text/template"
 	"time"
+
+	"github.com/hidu/goutils/html_util"
 )
 
 func readerHTMLInclude(fileName string) string {
 
-	html := Assest.GetContent("/res/tpl/" + fileName)
+	html := string(Asset.GetContent("/resource/tpl/" + fileName))
 	myfn := template.FuncMap{
 		"my_include": func(name string) string {
 			return readerHTMLInclude(name)
@@ -55,7 +56,7 @@ func renderHTML(fileName string, values map[string]interface{}, layout bool) str
 			return "include (" + fileName + ") with Delims {%my_include %}"
 		},
 		"my_include_html": func(fileName string) string {
-			return Assest.GetContent("/res/tpl/" + fileName)
+			return string(Asset.GetContent("/resource/tpl/" + fileName))
 		},
 		"h": func(str string) string {
 			return html.EscapeString(str)
@@ -75,6 +76,6 @@ func renderHTML(fileName string, values map[string]interface{}, layout bool) str
 		values["body"] = body
 		return renderHTML("layout.html", values, false)
 	}
-	//	return body
-	return utils.Html_reduceSpace(body)
+	// 	return body
+	return html_util.Html_reduceSpace(body)
 }

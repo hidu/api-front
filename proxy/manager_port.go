@@ -34,13 +34,13 @@ func (ps *portServer) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (ps *portServer) getAPIServer(hostName string) *APIServer {
-	//只有一个域名的情况
+	// 只有一个域名的情况
 	if len(ps.APIServiers) == 1 {
 		for _, s := range ps.APIServiers {
 			return s
 		}
 	}
-	//域名匹配
+	// 域名匹配
 	for _, item := range ps.APIServiers {
 		if item.ServerVhostConf.hasDomain(hostName) || item.ServerVhostConf.hasDomain("default") {
 			return item

@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-//var API_PREF string = "api_pref"
+// var API_PREF string = "api_pref"
 
 const (
 	apiPrefParamName  string = "api_pref"
@@ -68,7 +68,7 @@ func (citem *CallerItem) isHostIgnore(hostHame string, cpf *CallerPrefConf) bool
 	isIgnore := InStringSlice(hostHame, citem.Ignore)
 	if isIgnore && cpf != nil {
 		hs := cpf.allPrefHosts()
-		//pref host must not ignore
+		// pref host must not ignore
 		if InStringSlice(hostHame, hs) {
 			return false
 		}

@@ -7,17 +7,17 @@ import (
 )
 
 type serverVhost struct {
-	Id           string       `json:"id"`     //配置文件名称，全局唯一
-	Group        string       `json:"group"`  //服务分组，展现用
-	Domains      []string     `json:"domain"` //域名，支持多个
-	Port         int          `json:"port"`
-	Name         string       `json:"name"` //名称，描述信息
-	Enable       bool         `json:"enable"`
-	Note         string       `json:"note"`          //备注
-	HiddenCookie bool         `json:"hidden_cookie"` //是否在http协议分析的时候隐藏cookie的具体值
-	Users        users        `json:"users"`         //具有管理权限的用户列表
-	rw           sync.RWMutex `json:"-"`
-	StoreAble    bool         `json:"store"` //是否需要保存-远程保存
+	Id           string   `json:"id"`     // 配置文件名称，全局唯一
+	Group        string   `json:"group"`  // 服务分组，展现用
+	Domains      []string `json:"domain"` // 域名，支持多个
+	Port         int      `json:"port"`
+	Name         string   `json:"name"` // 名称，描述信息
+	Enable       bool     `json:"enable"`
+	Note         string   `json:"note"`          // 备注
+	HiddenCookie bool     `json:"hidden_cookie"` // 是否在http协议分析的时候隐藏cookie的具体值
+	Users        users    `json:"users"`         // 具有管理权限的用户列表
+	rw           sync.RWMutex
+	StoreAble    bool `json:"store"` // 是否需要保存-远程保存
 }
 
 func (sv *serverVhost) HomeUrl(serverName string) string {

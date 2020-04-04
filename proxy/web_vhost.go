@@ -12,8 +12,8 @@ func (wr *webReq) vhostInfo() {
 		wr.render("vhost.html", true)
 	} else if wr.req.Method == "POST" {
 
-		//		id:=wr.req.FormValue("id")
-		//		port:=wr.req.FormValue("port")
+		// 		id:=wr.req.FormValue("id")
+		// 		port:=wr.req.FormValue("port")
 		vhost := wr.web.apiServer.ServerVhostConf
 		vhost.Name = wr.req.FormValue("name")
 		vhost.Note = wr.req.FormValue("note")

@@ -1,11 +1,14 @@
 package main
 
+//go:generate goasset asset.json
+
 import (
 	"flag"
 	"fmt"
-	"github.com/hidu/api-front/proxy"
 	"log"
 	"strings"
+
+	"github.com/hidu/api-front/proxy"
 )
 
 var confPath = flag.String("conf", "./conf/server.json", "server conf path")

@@ -15,28 +15,28 @@ import (
 )
 
 type apiStruct struct {
-	ID           string       `json:"-"`
-	ConfPath     string       `json:"-"`
-	Path         string       `json:"path"` //api 绑定地址 前缀
-	Note         string       `json:"note"`
-	TimeoutMs    int          `json:"timeout_ms"`
-	Hosts        Hosts        `json:"hosts"`
-	Enable       bool         `json:"enable"`
-	Caller       Caller       `json:"caller"`
-	rw           sync.RWMutex `json:"-"`
-	Exists       bool         `json:"-"`
-	HostAsProxy  bool         `json:"host_as_proxy"` //是否把后端当作代理
-	Pv           uint64       `json:"-"`
-	LastVisit    time.Time    `json:"-"`       //最后访问时间
-	Version      int64        `json:"version"` //配置文件的版本号
+	ID           string `json:"-"`
+	ConfPath     string `json:"-"`
+	Path         string `json:"path"` // api 绑定地址 前缀
+	Note         string `json:"note"`
+	TimeoutMs    int    `json:"timeout_ms"`
+	Hosts        Hosts  `json:"hosts"`
+	Enable       bool   `json:"enable"`
+	Caller       Caller `json:"caller"`
+	rw           sync.RWMutex
+	Exists       bool      `json:"-"`
+	HostAsProxy  bool      `json:"host_as_proxy"` // 是否把后端当作代理
+	Pv           uint64    `json:"-"`
+	LastVisit    time.Time `json:"-"`       // 最后访问时间
+	Version      int64     `json:"version"` // 配置文件的版本号
 	apiServer    *APIServer
 	Users        users        `json:"users"`
-	Proxy        string       `json:"proxy"`         //使用父代理
+	Proxy        string       `json:"proxy"`         // 使用父代理
 	RespModifier RespModifier `json:"resp_modifier"` //
 
-	proxyURL *url.URL `json:"-"` //父代理的URL object
+	proxyURL *url.URL // 父代理的URL object
 
-	analysisClientNum int `json:"-"` //正在进行协议分析的客户端数量
+	analysisClientNum int // 正在进行协议分析的客户端数量
 }
 
 // init new api for server

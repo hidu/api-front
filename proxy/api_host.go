@@ -1,21 +1,21 @@
 package proxy
 
 import (
-	"time"
 	"encoding/json"
 	"net/http"
+	"time"
 )
 
 // Host one api backend host
 type Host struct {
-	Name      string `json:"-"`
-	URLStr    string `json:"url"`
-	Enable    bool   `json:"enable"`
-	Note      string `json:"note"`
-	SortIndex int    `json:"sort"`
-	Checked   bool   `json:"-"`
-	Header   map[string]string   `json:"-"`
-	HeaderStr   string   `json:"header"`
+	Name      string            `json:"-"`
+	URLStr    string            `json:"url"`
+	Enable    bool              `json:"enable"`
+	Note      string            `json:"note"`
+	SortIndex int               `json:"sort"`
+	Checked   bool              `json:"-"`
+	Header    map[string]string `json:"-"`
+	HeaderStr string            `json:"header"`
 }
 
 // Hosts api hosts
@@ -38,23 +38,21 @@ func (h *Host) copy() *Host {
 
 func (h *Host) init() (err error) {
 	h.Header = make(map[string]string)
-	hs:=make(map[string]string)
-	if h.HeaderStr!=""{
-		err=json.Unmarshal([]byte(h.HeaderStr), &hs)
+	hs := make(map[string]string)
+	if h.HeaderStr != "" {
+		err = json.Unmarshal([]byte(h.HeaderStr), &hs)
 	}
-	
-	for k,v:=range hs{
+
+	for k, v := range hs {
 		h.Header[http.CanonicalHeaderKey(k)] = v
 	}
-	
+
 	return
 }
 
-func (h *Host)Headers()map[string]string{
+func (h *Host) Headers() map[string]string {
 	return h.Header
 }
-
-
 
 func (hs Hosts) addNewHost(host *Host) {
 	hs[host.Name] = host
@@ -66,7 +64,6 @@ func (hs Hosts) init() {
 		host.init()
 	}
 }
-
 
 func newHost(name string, url string, enable bool) *Host {
 	return &Host{

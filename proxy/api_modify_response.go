@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/robertkrimen/otto"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,6 +11,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/robertkrimen/otto"
 )
 
 type ApiRespModifier struct {
@@ -37,7 +38,7 @@ func (rm RespModifier) Init() error {
 	return nil
 }
 
-//ModifierResp 使用动态规则对response进行处理
+// ModifierResp 使用动态规则对response进行处理
 func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod bool, err error) {
 	if len(rm) == 0 {
 		return
@@ -70,7 +71,7 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 	for k, v := range reqMap {
 		reqJsObj.Set(k, v)
 	}
-	/////////////////////////////////////////////////
+	// ///////////////////////////////////////////////
 	resJsObj, _ := otto.New().Object(`res={}`)
 
 	resMap := make(map[string]interface{})
@@ -85,13 +86,13 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 	for k, v := range resMap {
 		resJsObj.Set(k, v)
 	}
-	//==============================================
+	// ==============================================
 	modReqBody := url.Values{}
 	_bs, _ := json.Marshal(reqMap)
 	modReqBody.Add("req", string(_bs))
 	_bs_res, _ := json.Marshal(resMap)
 	modReqBody.Add("resp", string(_bs_res))
-	//==============================================
+	// ==============================================
 	hasReadBody := false
 	notChangeRespStr := "NOT_CHANGE"
 	var rawBodyBf *bytes.Buffer
@@ -131,10 +132,10 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 			rawBodyBf = forgetRead(&resp.Body)
 			hasReadBody = true
 			var _respContent string
-			if resp.Header.Get("Content-Encoding") == "gzip"{
-				_respContent=gzipDocode(rawBodyBf)
-			}else{
-				_respContent=rawBodyBf.String()
+			if resp.Header.Get("Content-Encoding") == "gzip" {
+				_respContent = gzipDocode(rawBodyBf)
+			} else {
+				_respContent = rawBodyBf.String()
 			}
 			modReqBody.Add("resp_content", _respContent)
 		}
@@ -157,7 +158,7 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 			return true, err
 		}
 		msg := newRes.Header.Get("Api-Front-Modify-Response-Msg")
-		//强制性要求必须返回该header头部，以确保返回的内容确实是经过处理的，符合预期的
+		// 强制性要求必须返回该header头部，以确保返回的内容确实是经过处理的，符合预期的
 		if msg == "" {
 			return true, fmt.Errorf("Response Header Miss 'Api-Front-Modify-Response-Msg'")
 		}
@@ -169,16 +170,16 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 			resp.Status = newRes.Status
 		}
 
-		//透传该字段,以方便对实际修改有所了解
+		// 透传该字段,以方便对实际修改有所了解
 		resp.Header.Add("Api-Front-Modify-Response-Msg", msg)
 
 		buf := bytes.NewBuffer(newBodyBs)
 
 		if buf.Len() != len(notChangeRespStr) && buf.String() != notChangeRespStr {
 			resp.Header.Add("Api-Front-Modify-Body-Len", fmt.Sprintf("%d|%d", rawBodyBf.Len(), len(newBodyBs)))
-			
+
 			resp.Header.Del("Content-Encoding")
-			//直接对原始的response Body 进行替换
+			// 直接对原始的response Body 进行替换
 			resp.Body = ioutil.NopCloser(buf).(io.ReadCloser)
 			resp.ContentLength = int64(buf.Len())
 			if resp.Header.Get("Content-Length") != "" {
@@ -213,7 +214,7 @@ func (item *ApiRespModifier) Init() error {
 }
 
 func (item *ApiRespModifier) genVm() (fn *otto.Value, err error) {
-	jsTpl := Assest.GetContent("/res/sjs/modify-response.min.js")
+	jsTpl := string(Asset.GetContent("/resource/sjs/modify-response.min.js"))
 	jsStr := strings.Replace(jsTpl, "API_FRONT_CUSTOM_JS", item.Rule, 1)
 	vm := otto.New()
 	vm.Run(jsStr)
@@ -222,8 +223,8 @@ func (item *ApiRespModifier) genVm() (fn *otto.Value, err error) {
 		return &fnv, nil
 	}
 	fn = &fnv
-	////=====================================================
-	//对用户的js 代码进行一个基本的测试
+	// //=====================================================
+	// 对用户的js 代码进行一个基本的测试
 	fn_test, e := vm.Get("test_get_modify_response_api_url")
 	if e != nil {
 		return nil, e
@@ -261,6 +262,6 @@ func (item *ApiRespModifier) genVm() (fn *otto.Value, err error) {
 			return
 		}
 	}
-	////=====================================================
+	// //=====================================================
 	return nil, fmt.Errorf("other return value not allowed:%s", val.String())
 }

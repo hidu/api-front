@@ -111,7 +111,7 @@ func URLPathClean(urlPath string) string {
 
 var textContentTypes = []string{"text", "javascript", "json"}
 
-//IsContentTypeText check contentType is text
+// IsContentTypeText check contentType is text
 func IsContentTypeText(contentType string) bool {
 	for _, v := range textContentTypes {
 		if strings.Contains(contentType, v) {
@@ -206,6 +206,6 @@ func JSONEncode(obj interface{}) string {
 	return string(bs)
 }
 
-func StrQuote(str string)string{
+func StrQuote(str string) string {
 	return strings.Replace(str, `"`, "\\\"", -1)
 }
