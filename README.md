@@ -1,6 +1,6 @@
 # api-front
 
-version :0.7.6.1
+version :0.8.1
 
 ## 概述
 api front是HTTP API统一前端，用于测试环境api统一管理，主要功能是`请求代理转发`、`协议抓包分析`、`流量复制`。 
@@ -23,22 +23,11 @@ api front是HTTP API统一前端，用于测试环境api统一管理，主要功
 
 
 ## 部署示例
-![dispatch](res/img/dispatch.png)  
+![dispatch](resource/img/dispatch.png)  
 api-front作为对外统一api入口。  
 如上图，可打开页面  http:10.10.2.10/_/ 进行接口管理。(系统自己的接口，页面都是以_开头的)  
 
-## 安装
-
-### 下载二进制文件 
-[网盘下载:windows、linux、darwin版本](http://pan.baidu.com/s/1jH1sX8M)
-
-
-### 使用源码安装
-需要安装[golang](https://golang.org/dl/  "下载安装")  
-使用go1.5,同时使用如下命令开启 vender功能：
-```
-export GO15VENDOREXPERIMENT=1
-```
+## 下载安装
 
 使用go get命令安装：  
 ```
