@@ -1,8 +1,9 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	// "net/url"
@@ -100,7 +101,7 @@ func (conf *oauth2Conf) checkConf() {
 func (conf *oauth2Conf) getAccessToken(req *http.Request) (*oauth2.Token, error) {
 	code := req.FormValue("code")
 
-	tok, err := conf.config.Exchange(oauth2.NoContext, code)
+	tok, err := conf.config.Exchange(req.Context(), code)
 	if err != nil {
 		log.Println("Exchange failed,tok:", tok, "error:", err)
 		return nil, err
@@ -109,7 +110,7 @@ func (conf *oauth2Conf) getAccessToken(req *http.Request) (*oauth2.Token, error)
 }
 
 func (conf *oauth2Conf) getUserInfo(tok *oauth2.Token) (*User, error) {
-	client := conf.config.Client(oauth2.NoContext, tok)
+	client := conf.config.Client(context.Background(), tok)
 
 	api := conf.getOauthApi(OAUTH2_API_USER_INFO)
 	resp, err := client.Get(api.ApiUrl)
@@ -117,7 +118,7 @@ func (conf *oauth2Conf) getUserInfo(tok *oauth2.Token) (*User, error) {
 		log.Println("call api faild,error:", err)
 		return nil, err
 	}
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

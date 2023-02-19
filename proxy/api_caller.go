@@ -10,10 +10,10 @@ import (
 // var API_PREF string = "api_pref"
 
 const (
-	apiPrefParamName  string = "api_pref"
-	apiPrefTypeReq           = "req"
-	apiPrefTypeCookie        = "cookie"
-	apiPrefTypeHeader        = "header"
+	apiPrefParamName  = "api_pref"
+	apiPrefTypeReq    = "req"
+	apiPrefTypeCookie = "cookie"
+	apiPrefTypeHeader = "header"
 )
 
 var prefTypes = []string{apiPrefTypeReq, apiPrefTypeCookie, apiPrefTypeHeader}
@@ -41,8 +41,7 @@ func newCallerItem(ip string) (*CallerItem, error) {
 		Pref:   make([]string, 0),
 		Ignore: make([]string, 0),
 	}
-	var err error
-	err = item.init()
+	err := item.init()
 
 	return item, err
 }
@@ -54,7 +53,7 @@ func newCallerItemMust(ip string) *CallerItem {
 }
 
 func (citem *CallerItem) init() (err error) {
-	citem.IPReg, err = regexp.Compile(strings.Replace(strings.Replace(citem.IP, ".", `\.`, -1), "*", `\d+`, -1))
+	citem.IPReg, err = regexp.Compile(strings.ReplaceAll(strings.ReplaceAll(citem.IP, ".", `\.`), "*", `\d+`))
 	if err != nil {
 		log.Println("ip wrong:", citem.IP)
 	}
@@ -100,7 +99,6 @@ func (caller *Caller) init() (err error) {
 }
 
 func (caller *Caller) getPrefHostName(allowNames []string, cpf *CallerPrefConf) string {
-
 	if len(allowNames) == 0 || len(*caller) == 0 {
 		return StrSliceRandItem(allowNames)
 	}
@@ -127,6 +125,7 @@ func (caller *Caller) getPrefHostName(allowNames []string, cpf *CallerPrefConf) 
 func (caller Caller) Sort() {
 	sort.Sort(caller)
 }
+
 func (caller Caller) Len() int {
 	return len(caller)
 }

@@ -8,13 +8,13 @@ import (
 
 // BroadCastData broad to browser data
 type BroadCastData struct {
-	ID   string                 `json:"id"`
-	Data map[string]interface{} `json:"data"`
+	ID   string         `json:"id"`
+	Data map[string]any `json:"data"`
 }
 
 func newReqBroadCastData(req *http.Request) *BroadCastData {
 	data := &BroadCastData{
-		Data: make(map[string]interface{}),
+		Data: make(map[string]any),
 	}
 	data.Data["request_uri"] = req.URL.RequestURI()
 	remote := strings.Split(req.RemoteAddr, ":")
@@ -23,7 +23,7 @@ func newReqBroadCastData(req *http.Request) *BroadCastData {
 	return data
 }
 
-func (d *BroadCastData) setData(key string, val interface{}) {
+func (d *BroadCastData) setData(key string, val any) {
 	d.Data[key] = val
 }
 

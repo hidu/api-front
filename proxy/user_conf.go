@@ -3,7 +3,6 @@ package proxy
 import (
 	"encoding/gob"
 	"encoding/json"
-	"fmt"
 	"log"
 	"strings"
 
@@ -33,9 +32,9 @@ func NewUsers() users {
 	return users{}
 }
 
-func (u *User) pswEnc() string {
-	return str_util.StrMd5(fmt.Sprintf("%s201501116%s", u.ID, u.PswMd5))
-}
+// func (u *User) pswEnc() string {
+// 	return str_util.StrMd5(fmt.Sprintf("%s201501116%s", u.ID, u.PswMd5))
+// }
 
 func (u *User) String() string {
 	bs, _ := json.MarshalIndent(u, "", "  ")
@@ -69,12 +68,12 @@ func (uc *usersConf) checkUser(id string, psw string) *User {
 	return nil
 }
 
-func (uc *usersConf) getUser(id string) *User {
-	if u, has := uc.users[id]; has {
-		return u
-	}
-	return nil
-}
+// func (uc *usersConf) getUser(id string) *User {
+// 	if u, has := uc.users[id]; has {
+// 		return u
+// 	}
+// 	return nil
+// }
 
 func loadUsers(confPath string) (uc *usersConf) {
 	log.Println("loadUsers file:", confPath)

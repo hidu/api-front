@@ -1,3 +1,7 @@
+2023-02-19
+  1.update go.mod
+  2.format codes
+
 2020-04-04
    version:0.8.1
    1.使用go.mod 管理依赖，删除了vendor目录。

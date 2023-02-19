@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -33,7 +32,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			broadData.ID = uniqID
 			broadData.setData("api_id", api.ID)
 			defer func() {
-				used := float64(time.Now().Sub(start).Nanoseconds()) / 1e6
+				used := float64(time.Since(start).Nanoseconds()) / 1e6
 				broadData.setData("used", used)
 				go apiServer.broadcastAPIReq(api, broadData)
 			}()
@@ -47,10 +46,10 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		// add this flag,so the real backend can catch it
 		req.Header.Add("Via", fmt.Sprintf("api-front/%s", APIFrontVersion))
 
-		logData := make(map[string]interface{})
+		logData := make(map[string]any)
 		var logRw sync.RWMutex
 
-		body, err := ioutil.ReadAll(req.Body)
+		body, err := io.ReadAll(req.Body)
 
 		logData["body_len"] = len(body)
 
@@ -82,7 +81,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 		var printLog = func(logIndex int) {
 			logRw.RLock()
 			defer logRw.RUnlock()
-			totalUsed := fmt.Sprintf("%.3fms", float64(time.Now().Sub(start).Nanoseconds())/1e6)
+			totalUsed := fmt.Sprintf("%.3fms", float64(time.Since(start).Nanoseconds())/1e6)
 			log.Println(fmt.Sprintf("[access]logindex=%d/%d", logIndex, len(hosts)), mainLogStr, fmt.Sprintf("totalUsed=%s", totalUsed), logData)
 		}
 		defer (func() {
@@ -135,7 +134,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				broadData.setData("raw_url", rawURL)
 			}
 
-			reqNew, err := http.NewRequest(req.Method, urlNew, ioutil.NopCloser(bytes.NewReader(body)))
+			reqNew, err := http.NewRequest(req.Method, urlNew, io.NopCloser(bytes.NewReader(body)))
 			if err != nil {
 				log.Println("[error]build req failed:", err)
 				if isMaster {
@@ -146,16 +145,13 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 					broadData.setError(err.Error())
 				}
 				return
-
 			}
 			copyHeaders(reqNew.Header, req.Header)
 
 			setHeader := apiHost.Headers()
-			if setHeader != nil {
-				for _k, _v := range setHeader {
-					if !strings.HasPrefix(_k, "_") {
-						reqNew.Header.Set(_k, _v)
-					}
+			for _k, _v := range setHeader {
+				if !strings.HasPrefix(_k, "_") {
+					reqNew.Header.Set(_k, _v)
 				}
 			}
 
@@ -182,15 +178,15 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				reqNew.Header.Set("HTTP_X_FORWARDED_FOR", addrInfo[0])
 			}
 
-			timeoutMs := time.Duration(api.TimeoutMs) * time.Millisecond
+			timeout := time.Duration(api.TimeoutMs) * time.Millisecond
 
 			transport := &http.Transport{
 				Proxy: http.ProxyFromEnvironment,
 				Dial: (&net.Dialer{
-					Timeout:   timeoutMs,
+					Timeout:   timeout,
 					KeepAlive: 0,
 				}).Dial,
-				TLSHandshakeTimeout: timeoutMs,
+				TLSHandshakeTimeout: timeout,
 				DisableKeepAlives:   true,
 			}
 			if api.HostAsProxy {
@@ -215,7 +211,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 				isMaster:  isMaster,
 				urlNew:    urlNew,
 				urlRaw:    rawURL,
-				Timeout:   timeoutMs,
+				Timeout:   timeout,
 			}
 			reqs = append(reqs, apiReq)
 		}
@@ -225,7 +221,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			if !apiReq.isMaster {
 				continue
 			}
-			backLog := make(map[string]interface{})
+			backLog := make(map[string]any)
 
 			defer (func() {
 				logRw.Lock()
@@ -241,8 +237,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			cc := rw.(http.CloseNotifier).CloseNotify()
 
 			go (func() {
-				select {
-				case <-cc:
+				for range cc {
 					if !apiReq.isDone {
 						apiReq.transport.CancelRequest(apiReq.req)
 						backLog["status"] = 499
@@ -302,7 +297,6 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 			used := hostEnd.Sub(hostStart)
 			backLog["end"] = fmt.Sprintf("%.4f", float64(hostEnd.UnixNano())/1e9)
 			backLog["used"] = fmt.Sprintf("%.3fms", float64(used.Nanoseconds())/1e6)
-
 		}
 
 		if len(reqs) > 1 {
@@ -318,7 +312,7 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 					}
 					wgOther.Add(1)
 					go (func(index int, apiReq *apiHostRequest) {
-						backLog := make(map[string]interface{})
+						backLog := make(map[string]any)
 						defer (func() {
 							logRw.Lock()
 							logData[fmt.Sprintf("host_%s_%d", apiReq.apiHost.Name, index)] = backLog
@@ -345,7 +339,6 @@ func (apiServer *APIServer) newHandler(api *apiStruct) func(http.ResponseWriter,
 					})(index, apiReq)
 				}
 				wgOther.Wait()
-
 			})(reqs)
 		}
 	}

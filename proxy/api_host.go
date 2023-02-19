@@ -3,7 +3,6 @@ package proxy
 import (
 	"encoding/json"
 	"net/http"
-	"time"
 )
 
 // Host one api backend host
@@ -73,31 +72,29 @@ func newHost(name string, url string, enable bool) *Host {
 	}
 }
 
-func (hs Hosts) getDefaultHostName() string {
-	n := time.Now().UnixNano() % int64(len(hs))
-	for name := range hs {
-		if n == 0 {
-			return name
-		}
-		n = n - 1
-	}
-	return ""
-}
+// func (hs Hosts) getDefaultHostName() string {
+// 	n := time.Now().UnixNano() % int64(len(hs))
+// 	for name := range hs {
+// 		if n == 0 {
+// 			return name
+// 		}
+// 		n = n - 1
+// 	}
+// 	return ""
+// }
 
-func (hs Hosts) activeHostsNum() int {
-	num := 0
-	for _, host := range hs {
-		if host.Enable {
-			num = num + 1
-		}
-	}
-	return num
-}
+// func (hs Hosts) activeHostsNum() int {
+// 	num := 0
+// 	for _, host := range hs {
+// 		if host.Enable {
+// 			num = num + 1
+// 		}
+// 	}
+// 	return num
+// }
 
 // GetHostsWithPref tpl call this
-//
 func (hs Hosts) GetHostsWithPref(pref []string) []*Host {
-
 	enableNames := []string{}
 	for name, host := range hs {
 		if host.Enable {

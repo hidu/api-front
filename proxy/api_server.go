@@ -15,8 +15,10 @@ type APIServer struct {
 	Enable  bool
 	Apis    map[string]*apiStruct
 	manager *APIServerManager
+
 	// current apiServer's conf dir
-	ConfDir         string // 接口配置文件存放目录
+	ConfDir string // 接口配置文件存放目录
+
 	Rw              sync.RWMutex
 	routers         *routers
 	web             *webAdmin
@@ -147,9 +149,9 @@ func (apiServer *APIServer) serverNames() []string {
 	return names
 }
 
-func (apiServer *APIServer) domains() []string {
-	return apiServer.ServerVhostConf.Domains
-}
+// func (apiServer *APIServer) domains() []string {
+// 	return apiServer.ServerVhostConf.Domains
+// }
 
 func (apiServer *APIServer) getAPIByID(id string) *apiStruct {
 	if id == "" {

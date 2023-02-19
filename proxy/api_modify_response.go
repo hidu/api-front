@@ -3,9 +3,9 @@ package proxy
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -54,7 +54,7 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 		return
 	}
 
-	reqMap := make(map[string]interface{})
+	reqMap := make(map[string]any)
 	reqMap["get"] = req.URL.Query()
 	reqMap["method"] = req.Method
 	reqMap["request_uri"] = req.RequestURI
@@ -74,7 +74,7 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 	// ///////////////////////////////////////////////
 	resJsObj, _ := otto.New().Object(`res={}`)
 
-	resMap := make(map[string]interface{})
+	resMap := make(map[string]any)
 	resMap["http_code"] = resp.StatusCode
 	resMap["content_length"] = resp.ContentLength
 
@@ -153,14 +153,14 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 			return true, err
 		}
 		defer newRes.Body.Close()
-		newBodyBs, err := ioutil.ReadAll(newRes.Body)
+		newBodyBs, err := io.ReadAll(newRes.Body)
 		if err != nil {
 			return true, err
 		}
 		msg := newRes.Header.Get("Api-Front-Modify-Response-Msg")
 		// 强制性要求必须返回该header头部，以确保返回的内容确实是经过处理的，符合预期的
 		if msg == "" {
-			return true, fmt.Errorf("Response Header Miss 'Api-Front-Modify-Response-Msg'")
+			return true, errors.New("response Header Miss 'Api-Front-Modify-Response-Msg'")
 		}
 
 		statusCodeStr := newRes.Header.Get("Api-Front-Modify-Status")
@@ -180,7 +180,7 @@ func (rm RespModifier) ModifierResp(req *http.Request, resp *http.Response) (mod
 
 			resp.Header.Del("Content-Encoding")
 			// 直接对原始的response Body 进行替换
-			resp.Body = ioutil.NopCloser(buf).(io.ReadCloser)
+			resp.Body = io.NopCloser(buf)
 			resp.ContentLength = int64(buf.Len())
 			if resp.Header.Get("Content-Length") != "" {
 				resp.Header.Set("Content-Length", fmt.Sprintf("%d", buf.Len()))
@@ -241,7 +241,7 @@ func (item *ApiRespModifier) genVm() (fn *otto.Value, err error) {
 		if !_bv {
 			return
 		}
-		return nil, fmt.Errorf("return value now allow [true]")
+		return nil, errors.New("return value now allow [true]")
 	}
 
 	if val.IsString() {

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/googollee/go-socket.io"
+	socketio "github.com/googollee/go-socket.io"
 	"github.com/gorilla/sessions"
 	"github.com/hidu/goutils/time_util"
 )
@@ -86,14 +86,13 @@ func (web *webAdmin) wsInit() {
 					api.analysisClientNumInc(1)
 				}
 
-				msg := make(map[string]interface{})
+				msg := make(map[string]any)
 				msg["client_num"] = api.analysisClientNum
 				msg["api_id"] = api.ID
 
 				so.Emit("s_http_analysis", msg)
 			}
 		})
-
 	})
 	time_util.SetInterval(func() {
 		web.wsServer.BroadcastTo("api_pv", "hello", "hello,now:"+time.Now().String())
@@ -104,6 +103,7 @@ func (web *webAdmin) wsInit() {
 	})
 	web.broadAPIPvs()
 }
+
 func (web *webAdmin) broadAPIPvs() {
 	pvs := make(map[string]uint64)
 
@@ -118,7 +118,7 @@ func (web *webAdmin) broadAPIPvs() {
 				continue
 			}
 			pvs[name] = pv
-			data := make(map[string]interface{})
+			data := make(map[string]any)
 			data["name"] = name
 			data["pv"] = pv
 			web.wsServer.BroadcastTo("api_pv", "api_pv", data)
@@ -134,7 +134,6 @@ func (web *webAdmin) broadcastAPI(api *apiStruct, broadType string, reqData *Bro
 
 func (web *webAdmin) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	web.serveHTTP(rw, req)
-	return
 	// if !strings.Contains(req.Header.Get("Accept-Encoding"), "gzip") || strings.HasPrefix(req.URL.Path, "/_socket.io/") {
 	// 	web.serveHTTP(rw, req)
 	// 	return
@@ -162,7 +161,7 @@ func (web *webAdmin) serveHTTP(rw http.ResponseWriter, req *http.Request) {
 		rw:      rw,
 		req:     req,
 		web:     web,
-		values:  make(map[string]interface{}),
+		values:  make(map[string]any),
 		session: session,
 	}
 	wr.execute()
@@ -172,7 +171,7 @@ type webReq struct {
 	rw      http.ResponseWriter
 	req     *http.Request
 	web     *webAdmin
-	values  map[string]interface{}
+	values  map[string]any
 	user    *User
 	session *sessions.Session
 }
@@ -213,7 +212,7 @@ func (wr *webReq) execute() {
 	// /_/index
 	req_path := strings.TrimLeft(strings.Trim(wr.req.URL.Path, "/"), "_")
 	if req_path == "" {
-		http.Redirect(wr.rw, wr.req, "/_/index", 302)
+		http.Redirect(wr.rw, wr.req, "/_/index", http.StatusFound)
 		return
 	}
 	switch req_path {
@@ -264,6 +263,7 @@ func (wr *webReq) execute() {
 	// 	wr.saveSession()
 	wr.render("index.html", true)
 }
+
 func (wr *webReq) getServerVhostConf() *mainConf {
 	return wr.web.apiServer.manager.mainConf
 }
@@ -296,7 +296,7 @@ func (wr *webReq) oauth2CallBack() {
 	wr.session.Values["user"] = user
 	wr.saveSession()
 
-	http.Redirect(wr.rw, wr.req, "/_/index", 302)
+	http.Redirect(wr.rw, wr.req, "/_/index", http.StatusFound)
 }
 
 func (wr *webReq) getUser() {
@@ -304,7 +304,6 @@ func (wr *webReq) getUser() {
 		wr.user = u.(*User)
 		log.Println("get user from useesion:", wr.user)
 	}
-
 }
 
 func (wr *webReq) getUserID() string {
@@ -321,9 +320,9 @@ func (wr *webReq) apiList() {
 
 func (wr *webReq) logout() {
 	wr.session.Options.MaxAge = -1
-	wr.session.Values = make(map[interface{}]interface{})
+	wr.session.Values = make(map[any]any)
 	wr.saveSession()
-	http.Redirect(wr.rw, wr.req, "/_/index", 302)
+	http.Redirect(wr.rw, wr.req, "/_/index", http.StatusFound)
 }
 
 func (wr *webReq) login() {
@@ -331,7 +330,7 @@ func (wr *webReq) login() {
 	if oauthconf != nil && oauthconf.Enable {
 		urlStr := oauthconf.getOauthUrl("http://" + wr.req.Host + "/_/oauth2_callback")
 		log.Println("redirect to:", urlStr)
-		http.Redirect(wr.rw, wr.req, urlStr, 302)
+		http.Redirect(wr.rw, wr.req, urlStr, http.StatusFound)
 		return
 	}
 	if wr.req.Method == "POST" {
@@ -424,8 +423,8 @@ func (wr *webReq) apiAnalysis() {
 	// 查看远程存储的地址
 	store_view_url := ""
 	if wr.web.apiServer.needStore() {
-		store_view_url = strings.Replace(wr.web.apiServer.manager.mainConf.StoreViewUrl, "{host_id}", wr.web.apiServer.ServerVhostConf.Id, -1)
-		store_view_url = strings.Replace(store_view_url, "{api_id}", api.ID, -1)
+		store_view_url = strings.ReplaceAll(wr.web.apiServer.manager.mainConf.StoreViewUrl, "{host_id}", wr.web.apiServer.ServerVhostConf.Id)
+		store_view_url = strings.ReplaceAll(store_view_url, "{api_id}", api.ID)
 	}
 	wr.values["store_view_url"] = store_view_url
 
@@ -438,21 +437,22 @@ func (wr *webReq) showError(msg string) {
 }
 
 func (wr *webReq) alert(msg string) {
-	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s")</script>`, StrQuote(msg))))
+	fmt.Fprintf(wr.rw, `<script>alert("%s")</script>`, StrQuote(msg))
 }
+
 func (wr *webReq) alertAndGo(msg string, urlstr string) {
-	wr.rw.Write([]byte(fmt.Sprintf(`<script>alert("%s");top.location.href="%s";</script>`, StrQuote(msg), urlstr)))
+	fmt.Fprintf(wr.rw, `<script>alert("%s");top.location.href="%s";</script>`, StrQuote(msg), urlstr)
 }
 
 // JSONResult json result when ajax call
 type JSONResult struct {
-	Code int         `json:"code"`
-	Msg  string      `json:"msg"`
-	Data interface{} `json:"data"`
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+	Data any    `json:"data"`
 }
 
-func (wr *webReq) json(code int, msg string, data interface{}) {
-	ret := &JSONResult{code, msg, data}
+func (wr *webReq) json(code int, msg string, data any) {
+	ret := &JSONResult{Code: code, Msg: msg, Data: data}
 	bs, _ := json.Marshal(ret)
 	wr.rw.Header().Set("Content-Type", "application/json;charset=utf-8")
 	wr.rw.Write(bs)

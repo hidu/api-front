@@ -3,8 +3,8 @@ package proxy
 import (
 	"encoding/json"
 	// "fmt"
-	"io/ioutil"
 	"log"
+	"os"
 	"path/filepath"
 )
 
@@ -33,7 +33,7 @@ const LOGIN_TYPE_FILE string = "file"
 const LOGIN_TYPE_OAUTH string = "oauth"
 
 func loadMainConf(confPath string) *mainConf {
-	data, err := ioutil.ReadFile(confPath)
+	data, err := os.ReadFile(confPath)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -98,14 +98,15 @@ func (conf *mainConf) loadVhosts() {
 		}
 	}
 }
-func (conf *mainConf) ports() (ports []int) {
-	for _, item := range conf.VhostConfs {
-		if !InIntSlice(item.Port, ports) {
-			ports = append(ports, item.Port)
-		}
-	}
-	return
-}
+
+// func (conf *mainConf) ports() (ports []int) {
+// 	for _, item := range conf.VhostConfs {
+// 		if !InIntSlice(item.Port, ports) {
+// 			ports = append(ports, item.Port)
+// 		}
+// 	}
+// 	return
+// }
 
 func (conf *mainConf) parseOauthConf() {
 	if conf.Oauth2Conf == nil {

@@ -12,7 +12,6 @@ import (
 )
 
 func readerHTMLInclude(fileName string) string {
-
 	html := string(Asset.GetContent("/resource/tpl/" + fileName))
 	myfn := template.FuncMap{
 		"my_include": func(name string) string {
@@ -27,7 +26,7 @@ func readerHTMLInclude(fileName string) string {
 	return body
 }
 
-func renderHTML(fileName string, values map[string]interface{}, layout bool) string {
+func renderHTML(fileName string, values map[string]any, layout bool) string {
 	htmlStr := readerHTMLInclude(fileName)
 	myfn := template.FuncMap{
 		"shortTime": func(tu int64) string {
@@ -48,7 +47,7 @@ func renderHTML(fileName string, values map[string]interface{}, layout bool) str
 			}
 			return false
 		},
-		"str_eq": func(x, y interface{}) bool {
+		"str_eq": func(x, y any) bool {
 			ret := fmt.Sprintf("%x", x) == fmt.Sprintf("%x", y)
 			return ret
 		},

@@ -2,8 +2,8 @@ package proxy
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
+	"os"
 	"sync"
 	"time"
 )
@@ -69,12 +69,9 @@ func (c *Counter) GetTotalPv() uint64 {
 // AutoSave auto save to file
 func (c *Counter) AutoSave(sec int64) {
 	t := time.NewTicker(time.Duration(sec) * time.Second)
-	for {
-		select {
-		case <-t.C:
-			if c.lastWrite.UnixNano() < c.lastMod.UnixNano() {
-				c.SaveFile()
-			}
+	for range t.C {
+		if c.lastWrite.UnixNano() < c.lastMod.UnixNano() {
+			c.SaveFile()
 		}
 	}
 }
@@ -89,5 +86,5 @@ func (c *Counter) SaveFile() error {
 		return err
 	}
 	c.lastWrite = time.Now()
-	return ioutil.WriteFile(c.filePath, data, 0666)
+	return os.WriteFile(c.filePath, data, 0666)
 }

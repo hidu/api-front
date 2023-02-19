@@ -3,7 +3,6 @@ package proxy
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -105,14 +104,14 @@ func (api *apiStruct) save() error {
 	if err != nil {
 		return err
 	}
-	oldData, _ := ioutil.ReadFile(api.ConfPath)
+	oldData, _ := os.ReadFile(api.ConfPath)
 	if string(oldData) != string(data) {
 		backPath := filepath.Dir(api.ConfPath) + "/_back/" + filepath.Base(api.ConfPath) + "." + time.Now().Format(timeFormatInt)
 		DirCheck(backPath)
-		err = ioutil.WriteFile(backPath, oldData, 0644)
+		err = os.WriteFile(backPath, oldData, 0644)
 		log.Println("backup ", backPath, err)
 	}
-	err = ioutil.WriteFile(api.ConfPath, data, 0644)
+	err = os.WriteFile(api.ConfPath, data, 0644)
 	return err
 }
 
@@ -162,9 +161,7 @@ func (api *apiStruct) hostRename(origName, newName string) {
 	api.rw.Lock()
 	defer api.rw.Unlock()
 
-	if _, has := api.Hosts[origName]; has {
-		delete(api.Hosts, origName)
-	}
+	delete(api.Hosts, origName)
 }
 
 func (api *apiStruct) hostCheckDelete(hostNames []string) {
@@ -181,7 +178,6 @@ func (api *apiStruct) hostCheckDelete(hostNames []string) {
 			delete(api.Hosts, n)
 		}
 	}
-
 }
 
 func (api *apiStruct) getMasterHostName(cpf *CallerPrefConf) string {
@@ -208,7 +204,7 @@ func loadAPIByConf(apiServer *APIServer, apiID string) (*apiStruct, error) {
 
 	log.Println(logMsg, "start")
 
-	data, err := ioutil.ReadFile(api.ConfPath)
+	data, err := os.ReadFile(api.ConfPath)
 	if err != nil {
 		log.Println(logMsg, "failed,", err)
 		return api, err

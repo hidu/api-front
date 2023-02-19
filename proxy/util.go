@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -23,11 +22,8 @@ const timeFormatInt string = "20060102150405"
 func SetInterval(call func(), sec int64) *time.Ticker {
 	ticker := time.NewTicker(time.Duration(sec) * time.Second)
 	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				call()
-			}
+		for range ticker.C {
+			call()
 		}
 	}()
 	return ticker
@@ -122,8 +118,8 @@ func IsContentTypeText(contentType string) bool {
 }
 
 // LoadJSONFile easy load json file
-func LoadJSONFile(jsonPath string, obj interface{}) error {
-	data, err := ioutil.ReadFile(jsonPath)
+func LoadJSONFile(jsonPath string, obj any) error {
+	data, err := os.ReadFile(jsonPath)
 	if err != nil {
 		return err
 	}
@@ -153,7 +149,7 @@ func IsRequestDumpBody(req *http.Request) bool {
 func forgetRead(reader *io.ReadCloser) *bytes.Buffer {
 	buf := bytes.NewBuffer([]byte{})
 	io.Copy(buf, *reader)
-	*reader = ioutil.NopCloser(buf).(io.ReadCloser)
+	*reader = io.NopCloser(buf)
 	return bytes.NewBuffer(buf.Bytes())
 }
 
@@ -184,9 +180,9 @@ func gzipDocode(buf *bytes.Buffer) string {
 		return ""
 	}
 	gr, err := gzip.NewReader(buf)
-	defer gr.Close()
 	if err == nil {
-		bdBt, _ := ioutil.ReadAll(gr)
+		defer gr.Close()
+		bdBt, _ := io.ReadAll(gr)
 		return string(bdBt)
 	}
 	log.Println("unzip body failed", err)
@@ -197,15 +193,15 @@ func loadFile(file string) string {
 	if !FileExists(file) {
 		return ""
 	}
-	ds, _ := ioutil.ReadFile(file)
+	ds, _ := os.ReadFile(file)
 	return string(ds)
 }
 
-func JSONEncode(obj interface{}) string {
+func JSONEncode(obj any) string {
 	bs, _ := json.Marshal(obj)
 	return string(bs)
 }
 
 func StrQuote(str string) string {
-	return strings.Replace(str, `"`, "\\\"", -1)
+	return strings.ReplaceAll(str, `"`, "\\\"")
 }

@@ -2,17 +2,10 @@ package proxy
 
 import (
 	"log"
-	"math/rand"
 	"os"
 	"path/filepath"
 	"time"
 )
-
-var randR *rand.Rand
-
-func init() {
-	randR = rand.New(rand.NewSource(time.Now().UnixNano()))
-}
 
 // APIServerManager server manager
 type APIServerManager struct {
