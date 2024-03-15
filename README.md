@@ -39,6 +39,32 @@ go get -u github.com/hidu/api-front
 api-front -conf ./conf/server.json
 ```
 
+## 编译安装(docker)
+
+整个工程上传到服务器的一个目录
+
+### 编译
+```shell
+docker build -t api-front .
+```
+
+### 启动方式1(如果没有安装docker-compose 请使用方式2)
+```shell
+docker-compose up -d
+```
+
+### 启动方式2
+```shell
+docker run -d --name api-front --net=host \
+ -v conf:/home/appuser/app/conf \
+ -v log:/home/appuser/app/log api-front
+```
+
+### 查看运行日志
+```shell
+docker logs -ft api-front
+```
+
 
 ## 配置
 

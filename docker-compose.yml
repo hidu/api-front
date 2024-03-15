@@ -1,0 +1,15 @@
+version: "3"
+
+services:
+  api-front:
+    image: api-front
+    container_name: api-front
+    restart: always
+    privileged: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    volumes:
+      - ./conf:/home/appuser/app/conf
+      - ./log:/home/appuser/app/log
